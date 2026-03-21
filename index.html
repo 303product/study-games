@@ -2,72 +2,169 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>ことわざバトル道場</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Study Games</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: #0d0500;
-      overflow: hidden;
-      touch-action: none;
+    :root{
+      --bg1:#09101d;
+      --bg2:#0f1831;
+      --panel:#141f3c;
+      --line:rgba(255,255,255,.10);
+      --text:#f4f7ff;
+      --muted:#b8c4e6;
+      --accent:#73b7ff;
     }
-    #game-container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, rgba(115,183,255,.18), transparent 28%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
     }
-    canvas {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:24px 16px 40px;
     }
-
-    /* 縦持ち警告オーバーレイ */
-    #rotate-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #0d0500;
-      z-index: 9999;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
+    h1{
+      margin:0 0 8px;
+      font-size:clamp(28px,5vw,44px);
+      line-height:1.1;
     }
-    #rotate-overlay .icon {
-      font-size: 72px;
-      animation: spin 2s ease-in-out infinite alternate;
+    .lead{
+      margin:0 0 24px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.6;
     }
-    #rotate-overlay p {
-      font-family: "Noto Serif JP", serif;
-      font-size: 22px;
-      color: #f5e6c8;
-      text-align: center;
-      line-height: 1.8;
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:16px;
     }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(90deg); }
+    .card{
+      background:linear-gradient(180deg, rgba(24,34,66,.95), rgba(15,22,42,.95));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:18px;
+      box-shadow:0 16px 40px rgba(0,0,0,.22);
     }
-    @media (orientation: portrait) {
-      #rotate-overlay { display: flex; }
+    .tag{
+      display:inline-block;
+      margin-bottom:10px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(115,183,255,.12);
+      color:#cfe6ff;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.02em;
+    }
+    h2{
+      margin:0 0 8px;
+      font-size:24px;
+    }
+    .desc{
+      min-height:72px;
+      margin:0 0 14px;
+      color:var(--muted);
+      line-height:1.6;
+      font-size:15px;
+    }
+    .meta{
+      margin:0 0 16px;
+      padding-left:18px;
+      color:#dbe6ff;
+      font-size:14px;
+      line-height:1.7;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:100%;
+      min-height:52px;
+      border-radius:16px;
+      background:linear-gradient(180deg, #2b4d90, #1d3563);
+      color:white;
+      text-decoration:none;
+      font-weight:800;
+      font-size:17px;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .btn:hover{
+      filter:brightness(1.08);
+    }
+    .note{
+      margin-top:24px;
+      padding:16px 18px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      line-height:1.7;
+      font-size:14px;
     }
   </style>
 </head>
 <body>
-  <div id="rotate-overlay">
-    <div class="icon">📱</div>
-    <p>このゲームは横向き専用です。<br>端末を横に回してください。</p>
+  <div class="wrap">
+    <h1>Study Games</h1>
+    <p class="lead">
+      子ども向けの学習ゲーム置き場。<br>
+      まずは好きなゲームを1つ選んでスタート。
+    </p>
+
+    <div class="grid">
+      <section class="card">
+        <div class="tag">算数 / シューティング</div>
+        <h2>算数シューティングバトル</h2>
+        <p class="desc">
+          4択に正解して弾をためて、左右に動いてボスを撃つ。いま一番ゲームっぽいやつ。
+        </p>
+        <ul class="meta">
+          <li>小6向け算数</li>
+          <li>正解で弾チャージ</li>
+          <li>シューティング要素あり</li>
+        </ul>
+        <a class="btn" href="./math_shooting_battle_v2.html">このゲームで遊ぶ</a>
+      </section>
+
+      <section class="card">
+        <div class="tag">算数 / バトル</div>
+        <h2>算数ボスバトル</h2>
+        <p class="desc">
+          こっちはシンプルなクイズバトル版。軽く試したいとき向け。
+        </p>
+        <ul class="meta">
+          <li>小6向け算数</li>
+          <li>4択クイズ中心</li>
+          <li>復習しやすい</li>
+        </ul>
+        <a class="btn" href="./math_boss_battle_ios.html">このゲームで遊ぶ</a>
+      </section>
+
+      <section class="card">
+        <div class="tag">国語 / ことわざ</div>
+        <h2>ことわざバトル道場</h2>
+        <p class="desc">
+          ことわざを覚えながら戦う国語ゲーム。算数に飽きたらこっち。
+        </p>
+        <ul class="meta">
+          <li>ことわざ学習</li>
+          <li>バトル形式</li>
+          <li>国語の反復向け</li>
+        </ul>
+        <a class="btn" href="./kotowaza-game-v2.html">このゲームで遊ぶ</a>
+      </section>
+    </div>
+
+    <div class="note">
+      iPadで使うなら、Safariでこのページを開いてホーム画面に追加すると使いやすい。
+    </div>
   </div>
-  <div id="game-container"></div>
-  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
