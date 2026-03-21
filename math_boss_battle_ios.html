@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>算数ボスバトル ミニ版</title>
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --card: rgba(255,255,255,0.08);
+      --card-2: rgba(255,255,255,0.12);
+      --text: #f8fafc;
+      --sub: #cbd5e1;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --line: rgba(255,255,255,0.12);
+      --shadow: 0 12px 30px rgba(0,0,0,0.28);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #1e293b 0%, var(--bg1) 45%, var(--bg2) 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    .app {
+      width: min(100vw, 900px);
+      height: 100dvh;
+      padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom)) 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .topbar, .panel, .choice, .btn {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      min-height: 64px;
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .tiny { font-size: 12px; color: var(--sub); }
+    .hp-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .hp-label { font-size: 12px; color: var(--sub); }
+    .bar {
+      height: 12px;
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .fill {
+      height: 100%;
+      width: 100%;
+      transition: width 0.35s ease;
+      border-radius: 999px;
+    }
+    .player { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .boss { background: linear-gradient(90deg, #fb7185, #ef4444); }
+
+    .battle {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+    }
+
+    .scene {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      min-height: 114px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .character {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      flex: 0 0 auto;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .sub {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 3px;
+    }
+    .combo {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 12px;
+      padding: 5px 8px;
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 999px;
+      color: #fde68a;
+      font-weight: 700;
+    }
+
+    .question-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.07));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      min-height: 126px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+    .meta {
+      font-size: 12px;
+      color: var(--sub);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .question {
+      font-size: clamp(20px, 4vw, 28px);
+      line-height: 1.35;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+    .explanation {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      min-height: 38px;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-content: start;
+      min-height: 0;
+    }
+    .choice {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--card-2);
+      border-radius: 18px;
+      color: var(--text);
+      padding: 16px 12px;
+      text-align: left;
+      font-size: clamp(18px, 3.5vw, 24px);
+      font-weight: 800;
+      min-height: 84px;
+      box-shadow: var(--shadow);
+      transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .choice:active { transform: scale(0.98); }
+    .choice.correct {
+      border-color: rgba(34,197,94,0.5);
+      background: rgba(34,197,94,0.18);
+    }
+    .choice.wrong {
+      border-color: rgba(239,68,68,0.5);
+      background: rgba(239,68,68,0.18);
+    }
+    .choice.disabled {
+      opacity: 0.75;
+      pointer-events: none;
+    }
+
+    .footer {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      min-height: 58px;
+    }
+    .btns { display: flex; gap: 8px; }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .btn.primary { background: rgba(34,197,94,0.22); border-color: rgba(34,197,94,0.35); }
+    .btn.warn { background: rgba(245,158,11,0.22); border-color: rgba(245,158,11,0.35); }
+    .btn:active { transform: scale(0.98); }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 20;
+    }
+    .overlay.show { display: flex; }
+    .modal {
+      width: min(100%, 680px);
+      max-height: 90dvh;
+      overflow: auto;
+      background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(17,24,39,0.98));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .modal h2 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 12px 0 14px;
+    }
+    .stat {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat b { display: block; font-size: 22px; margin-top: 4px; }
+    .miss-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .miss-item {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 720px) {
+      .scene { grid-template-columns: 1fr; }
+      .choices { grid-template-columns: 1fr 1fr; }
+      .title { font-size: 16px; }
+      .avatar { width: 56px; height: 56px; font-size: 30px; }
+    }
+
+    @media (max-width: 480px) {
+      .choices { grid-template-columns: 1fr; }
+      .topbar { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: 1fr; }
+      .footer { flex-direction: column; align-items: stretch; }
+      .btns { width: 100%; }
+      .btn { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="hp-wrap">
+        <div class="hp-label">きみ HP <span id="playerHpText">100/100</span></div>
+        <div class="bar"><div id="playerHp" class="fill player"></div></div>
+      </div>
+      <div class="title">算数ボスバトル ミニ版</div>
+      <div class="hp-wrap">
+        <div class="hp-label">ボス HP <span id="bossHpText">100/100</span></div>
+        <div class="bar"><div id="bossHp" class="fill boss"></div></div>
+      </div>
+    </div>
+
+    <div class="battle">
+      <div class="scene">
+        <div class="panel">
+          <div class="combo" id="comboBadge">コンボ 0</div>
+          <div class="character">
+            <div class="avatar">🧠</div>
+            <div>
+              <div class="name">きみ</div>
+              <div class="sub">正解してボスをたおせ</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="character">
+            <div class="avatar" id="bossAvatar">👾</div>
+            <div>
+              <div class="name" id="bossName">割合ドラゴン</div>
+              <div class="sub" id="bossSub">小6算数の問題を出してくるぞ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <div class="meta">
+          <span id="progressText">1 / 10 問</span>
+          <span id="unitText">割合</span>
+        </div>
+        <div class="question" id="questionText">問題読み込み中...</div>
+        <div class="explanation" id="explanationText">タップして答えよう。</div>
+      </div>
+
+      <div class="choices" id="choices"></div>
+
+      <div class="footer">
+        <div class="tiny" id="footerText">正解すると攻撃。不正解だとダメージ。3連続正解で必殺技。</div>
+        <div class="btns">
+          <button class="btn warn" id="reviewBtn">ミスだけ復習</button>
+          <button class="btn primary" id="restartBtn">最初から</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="resultOverlay">
+    <div class="modal">
+      <h2 id="resultTitle">結果</h2>
+      <div class="tiny" id="resultSubtitle">おつかれ。</div>
+      <div class="result-grid">
+        <div class="stat">正解数<b id="correctCount">0</b></div>
+        <div class="stat">ミス数<b id="wrongCount">0</b></div>
+        <div class="stat">最高コンボ<b id="bestCombo">0</b></div>
+      </div>
+      <div class="tiny">まちがえた問題</div>
+      <div class="miss-list" id="missList"></div>
+      <div class="modal-actions">
+        <button class="btn warn" id="modalReviewBtn">ミスだけ再戦</button>
+        <button class="btn primary" id="modalRestartBtn">もう一回</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const QUESTION_BANK = [
+      { id: 'M6-009', unit: '割合', difficulty: 1, question: '80円の25%はいくら？', choices: ['10円', '20円', '25円', '40円'], answerIndex: 1, explanation: '25% は 1/4。80÷4=20。' },
+      { id: 'M6-010', unit: '割合', difficulty: 1, question: '240人の30%は何人？', choices: ['48人', '60人', '72人', '80人'], answerIndex: 2, explanation: '240×0.3=72。' },
+      { id: 'M6-011', unit: '割合', difficulty: 1, question: '36の50%はいくつ？', choices: ['12', '18', '20', '24'], answerIndex: 1, explanation: '50% は半分。36の半分は18。' },
+      { id: 'M6-012', unit: '割合', difficulty: 2, question: '1200円の10%引きの値段はいくら？', choices: ['1080円', '1100円', '1120円', '1180円'], answerIndex: 0, explanation: '10%引きは 1200×0.9=1080。' },
+      { id: 'M6-013', unit: '割合', difficulty: 2, question: 'ある数の20%が16です。ある数はいくつ？', choices: ['64', '72', '80', '96'], answerIndex: 2, explanation: '16÷0.2=80。' },
+      { id: 'M6-017', unit: '速さ', difficulty: 1, question: '時速60kmで2時間進むと何km？', choices: ['100km', '110km', '120km', '130km'], answerIndex: 2, explanation: '道のり = 速さ×時間。60×2=120。' },
+      { id: 'M6-018', unit: '速さ', difficulty: 1, question: '120kmを3時間で進みました。時速は何km？', choices: ['30km', '40km', '50km', '60km'], answerIndex: 1, explanation: '速さ = 道のり÷時間。120÷3=40。' },
+      { id: 'M6-020', unit: '速さ', difficulty: 2, question: '1500mを5分で進みました。分速は何m？', choices: ['250m', '300m', '350m', '400m'], answerIndex: 1, explanation: '1500÷5=300。' },
+      { id: 'M6-023', unit: '速さ', difficulty: 3, question: '時速72kmは秒速何m？', choices: ['18m', '20m', '22m', '24m'], answerIndex: 1, explanation: '72km=72000m、1時間=3600秒。72000÷3600=20。' },
+      { id: 'M6-025', unit: '比', difficulty: 1, question: '8:12 をいちばん簡単な比にすると？', choices: ['1:2', '2:3', '3:4', '4:5'], answerIndex: 1, explanation: '8も12も4で割ると 2:3。' },
+      { id: 'M6-027', unit: '比', difficulty: 2, question: '24を3:1に分けると、大きい方はいくつ？', choices: ['6', '12', '18', '20'], answerIndex: 2, explanation: '全部で4つ分。24÷4=6、3つ分は18。' },
+      { id: 'M6-030', unit: '比', difficulty: 3, question: 'A:B=3:2 で、AとBの合計が25のとき、Aはいくつ？', choices: ['10', '12', '15', '18'], answerIndex: 2, explanation: '全部で5つ分。25÷5=5、Aは3つ分で15。' },
+      { id: 'M6-033', unit: '面積・体積', difficulty: 1, question: '底辺10cm、高さ6cmの三角形の面積は？', choices: ['16cm²', '30cm²', '36cm²', '60cm²'], answerIndex: 1, explanation: '三角形の面積は 底辺×高さ÷2。10×6÷2=30。' },
+      { id: 'M6-035', unit: '面積・体積', difficulty: 1, question: '一辺4cmの立方体の体積は？', choices: ['16cm³', '32cm³', '48cm³', '64cm³'], answerIndex: 3, explanation: '4×4×4=64。' },
+      { id: 'M6-041', unit: '円', difficulty: 2, question: '円周率を3.14として、直径6cmの円の円周は？', choices: ['12.56cm', '18.84cm', '25.12cm', '37.68cm'], answerIndex: 1, explanation: '円周は 直径×3.14。6×3.14=18.84。' },
+      { id: 'M6-043', unit: '円', difficulty: 2, question: '円周率を3.14として、半径5cmの円の面積は？', choices: ['31.4cm²', '62.8cm²', '78.5cm²', '157cm²'], answerIndex: 2, explanation: '5×5×3.14=78.5。' },
+      { id: 'M6-045', unit: '単位変換', difficulty: 1, question: '1.5m は何cm？', choices: ['15cm', '150cm', '1500cm', '15000cm'], answerIndex: 1, explanation: '1m=100cm。1.5m=150cm。' },
+      { id: 'M6-046', unit: '単位変換', difficulty: 1, question: '2500m は何km？', choices: ['0.25km', '2.5km', '25km', '250km'], answerIndex: 1, explanation: '1000m=1km。2500m=2.5km。' },
+      { id: 'M6-047', unit: '単位変換', difficulty: 1, question: '3L は何mL？', choices: ['30mL', '300mL', '3000mL', '30000mL'], answerIndex: 2, explanation: '1L=1000mL。3L=3000mL。' },
+      { id: 'M6-049', unit: '単位変換', difficulty: 2, question: '1時間30分 は何分？', choices: ['60分', '70分', '80分', '90分'], answerIndex: 3, explanation: '60+30=90。' }
+    ];
+
+    const BOSSES = [
+      { name: '割合ドラゴン', avatar: '🐉', sub: '割合と速さをねじこんでくる' },
+      { name: '単位ゴーレム', avatar: '🪨', sub: 'm と km と g を混ぜてくる' },
+      { name: '円のまじん', avatar: '🌀', sub: '円周と面積が大好き' },
+      { name: '比のファントム', avatar: '👻', sub: '比で分けろと迫ってくる' }
+    ];
+
+    const state = {
+      deck: [],
+      index: 0,
+      playerHp: 100,
+      bossHp: 100,
+      streak: 0,
+      maxStreak: 0,
+      correct: 0,
+      wrong: 0,
+      answered: false,
+      missed: [],
+      reviewMode: false,
+      boss: BOSSES[0]
+    };
+
+    const els = {
+      playerHp: document.getElementById('playerHp'),
+      bossHp: document.getElementById('bossHp'),
+      playerHpText: document.getElementById('playerHpText'),
+      bossHpText: document.getElementById('bossHpText'),
+      comboBadge: document.getElementById('comboBadge'),
+      progressText: document.getElementById('progressText'),
+      unitText: document.getElementById('unitText'),
+      questionText: document.getElementById('questionText'),
+      explanationText: document.getElementById('explanationText'),
+      choices: document.getElementById('choices'),
+      footerText: document.getElementById('footerText'),
+      reviewBtn: document.getElementById('reviewBtn'),
+      restartBtn: document.getElementById('restartBtn'),
+      resultOverlay: document.getElementById('resultOverlay'),
+      resultTitle: document.getElementById('resultTitle'),
+      resultSubtitle: document.getElementById('resultSubtitle'),
+      correctCount: document.getElementById('correctCount'),
+      wrongCount: document.getElementById('wrongCount'),
+      bestCombo: document.getElementById('bestCombo'),
+      missList: document.getElementById('missList'),
+      modalReviewBtn: document.getElementById('modalReviewBtn'),
+      modalRestartBtn: document.getElementById('modalRestartBtn'),
+      bossName: document.getElementById('bossName'),
+      bossAvatar: document.getElementById('bossAvatar'),
+      bossSub: document.getElementById('bossSub')
+    };
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function pickBalancedQuestions(count = 10) {
+      const byUnit = {};
+      for (const q of QUESTION_BANK) {
+        byUnit[q.unit] ||= [];
+        byUnit[q.unit].push(q);
+      }
+      const units = shuffle(Object.keys(byUnit));
+      const picked = [];
+      for (const unit of units) {
+        const list = shuffle(byUnit[unit]);
+        if (list[0]) picked.push(list[0]);
+        if (picked.length >= count) break;
+      }
+      const remaining = shuffle(QUESTION_BANK.filter(q => !picked.find(p => p.id === q.id)));
+      while (picked.length < count && remaining.length) {
+        picked.push(remaining.shift());
+      }
+      return shuffle(picked).slice(0, count);
+    }
+
+    function setBoss() {
+      state.boss = BOSSES[Math.floor(Math.random() * BOSSES.length)];
+      els.bossName.textContent = state.boss.name;
+      els.bossAvatar.textContent = state.boss.avatar;
+      els.bossSub.textContent = state.boss.sub;
+    }
+
+    function startGame(deck = null, reviewMode = false) {
+      state.deck = deck ? shuffle(deck).slice(0, 10) : pickBalancedQuestions(10);
+      state.index = 0;
+      state.playerHp = 100;
+      state.bossHp = 100;
+      state.streak = 0;
+      state.maxStreak = 0;
+      state.correct = 0;
+      state.wrong = 0;
+      state.answered = false;
+      state.reviewMode = reviewMode;
+      if (!reviewMode) state.missed = [];
+      setBoss();
+      hideResult();
+      render();
+    }
+
+    function currentQuestion() {
+      return state.deck[state.index];
+    }
+
+    function damageBoss(amount) {
+      state.bossHp = Math.max(0, state.bossHp - amount);
+    }
+    function damagePlayer(amount) {
+      state.playerHp = Math.max(0, state.playerHp - amount);
+    }
+
+    function onChoose(index) {
+      if (state.answered) return;
+      state.answered = true;
+      const q = currentQuestion();
+      const buttons = [...els.choices.querySelectorAll('button')];
+      buttons.forEach(b => b.classList.add('disabled'));
+      buttons[q.answerIndex].classList.add('correct');
+
+      const special = state.streak >= 2;
+      if (index === q.answerIndex) {
+        state.correct += 1;
+        state.streak += 1;
+        state.maxStreak = Math.max(state.maxStreak, state.streak);
+        const dmg = special ? 28 : 16;
+        damageBoss(dmg);
+        els.explanationText.textContent = special
+          ? `正解。必殺技発動で ${dmg} ダメージ。 ${q.explanation}`
+          : `正解。 ${dmg} ダメージ。 ${q.explanation}`;
+      } else {
+        state.wrong += 1;
+        state.streak = 0;
+        buttons[index].classList.add('wrong');
+        damagePlayer(14);
+        if (!state.missed.find(m => m.id === q.id)) state.missed.push(q);
+        els.explanationText.textContent = `不正解。14ダメージ受けた。 ${q.explanation}`;
+      }
+
+      updateBars();
+      updateMeta();
+
+      setTimeout(() => {
+        if (state.playerHp <= 0 || state.bossHp <= 0 || state.index >= state.deck.length - 1) {
+          endGame();
+          return;
+        }
+        state.index += 1;
+        state.answered = false;
+        render();
+      }, 1100);
+    }
+
+    function updateBars() {
+      els.playerHp.style.width = `${state.playerHp}%`;
+      els.bossHp.style.width = `${state.bossHp}%`;
+      els.playerHpText.textContent = `${state.playerHp}/100`;
+      els.bossHpText.textContent = `${state.bossHp}/100`;
+      els.comboBadge.textContent = `コンボ ${state.streak}`;
+    }
+
+    function updateMeta() {
+      els.progressText.textContent = `${Math.min(state.index + 1, state.deck.length)} / ${state.deck.length} 問`;
+      els.footerText.textContent = state.reviewMode
+        ? '復習モード。ミスした問題だけ出ている。'
+        : '正解すると攻撃。不正解だとダメージ。3連続正解で必殺技。';
+    }
+
+    function render() {
+      updateBars();
+      updateMeta();
+      const q = currentQuestion();
+      els.unitText.textContent = q.unit;
+      els.questionText.textContent = q.question;
+      els.explanationText.textContent = 'タップして答えよう。';
+      els.choices.innerHTML = '';
+      q.choices.forEach((choice, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.textContent = choice;
+        btn.addEventListener('click', () => onChoose(i));
+        els.choices.appendChild(btn);
+      });
+    }
+
+    function endGame() {
+      const won = state.bossHp <= 0 || state.correct >= Math.ceil(state.deck.length / 2);
+      els.resultTitle.textContent = won ? '勝利' : '再戦推奨';
+      els.resultSubtitle.textContent = won
+        ? 'いいじゃん。中学前の土台、ちゃんと積めてる。'
+        : 'まだ甘い。でもミスだけ回せば伸びる。';
+      els.correctCount.textContent = String(state.correct);
+      els.wrongCount.textContent = String(state.wrong);
+      els.bestCombo.textContent = String(state.maxStreak);
+      els.missList.innerHTML = '';
+      if (state.missed.length === 0) {
+        const div = document.createElement('div');
+        div.className = 'miss-item';
+        div.textContent = 'ノーミス。えらい。';
+        els.missList.appendChild(div);
+      } else {
+        state.missed.forEach(q => {
+          const div = document.createElement('div');
+          div.className = 'miss-item';
+          div.innerHTML = `<b>[${q.unit}]</b> ${q.question}<br><span class="tiny">${q.explanation}</span>`;
+          els.missList.appendChild(div);
+        });
+      }
+      saveProgress();
+      showResult();
+    }
+
+    function showResult() {
+      els.resultOverlay.classList.add('show');
+    }
+    function hideResult() {
+      els.resultOverlay.classList.remove('show');
+    }
+
+    function saveProgress() {
+      try {
+        const prev = JSON.parse(localStorage.getItem('mathBossBattleStats') || '{}');
+        const stats = {
+          playCount: (prev.playCount || 0) + 1,
+          bestCorrect: Math.max(prev.bestCorrect || 0, state.correct),
+          bestCombo: Math.max(prev.bestCombo || 0, state.maxStreak)
+        };
+        localStorage.setItem('mathBossBattleStats', JSON.stringify(stats));
+      } catch (_) {}
+    }
+
+    els.restartBtn.addEventListener('click', () => startGame());
+    els.modalRestartBtn.addEventListener('click', () => startGame());
+    els.reviewBtn.addEventListener('click', () => {
+      if (state.missed.length === 0) {
+        els.footerText.textContent = 'いま復習するミス問題がない。かなりいい。';
+        return;
+      }
+      startGame(state.missed, true);
+    });
+    els.modalReviewBtn.addEventListener('click', () => {
+      if (state.missed.length === 0) {
+        hideResult();
+        return;
+      }
+      startGame(state.missed, true);
+    });
+
+    startGame();
+  </script>
+</body>
+</html>
