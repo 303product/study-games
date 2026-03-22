@@ -73,7 +73,7 @@
     <div class="mini"><div class="label">モード</div><div class="value" id="hudMode">日本の地理</div></div>
     <div class="mini"><div class="label">ステージ</div><div class="value" id="hudStage">1 / 5</div></div>
     <div class="mini"><div class="label">クリア数</div><div class="value" id="hudClear">0 / 5</div></div>
-    <div class="mini"><div class="label">操作</div><div class="value" id="hudHelp">←→ または下のボタン / JUMP</div></div>
+    <div class="mini"><div class="label">操作</div><div class="value" id="hudHelp">移動 / JUMP / ATTACK</div></div>
   </div>
 
   <div id="touchControls" style="display:none; position:absolute; left:12px; right:12px; bottom:12px; z-index:9; pointer-events:none;">
@@ -84,6 +84,7 @@
       </div>
       <div style="display:flex; gap:10px; pointer-events:auto;">
         <button id="btnJump" style="width:92px; height:74px; border-radius:22px; border:none; color:white; font-size:24px; font-weight:900; background:linear-gradient(180deg, rgba(52,100,179,.96), rgba(36,68,123,.96)); box-shadow:0 10px 24px rgba(0,0,0,.25);">JUMP</button>
+        <button id="btnAttack" style="width:92px; height:74px; border-radius:22px; border:none; color:white; font-size:21px; font-weight:900; background:linear-gradient(180deg, rgba(185,87,87,.96), rgba(120,41,41,.96)); box-shadow:0 10px 24px rgba(0,0,0,.25);">ATTACK</button>
       </div>
     </div>
   </div>
@@ -111,8 +112,8 @@
           <p class="lead">富士山・城・港町っぽい背景で、地方区分、県庁所在地、地形、川、産業を学ぶ。</p>
           <ul>
             <li>ステージごとに背景色・地面色が変化</li>
-            <li>敵: 富士山いわゴン / お城おばけ / 地図だぬき</li>
-            <li>5つの問題ポイントを突破してゴールへ</li>
+            <li>敵: 富士山いわゴン / お城おばけ / 地図だぬき / ボス城</li>
+            <li>10個の問題ポイントを突破し、最後にボスを倒してゴールへ</li>
           </ul>
           <div class="btnrow"><button id="startJapan">日本の地理ではじめる</button></div>
         </div>
@@ -121,7 +122,7 @@
           <h2>せかい探検コース</h2>
           <p class="lead">ピラミッド・地球・熱帯・雪原っぽい背景で、大陸、首都、気候、文化を学ぶ。</p>
           <ul>
-            <li>敵: 地球スライム / ピラミッドミイラ / サボテンバンディット</li>
+            <li>敵: 地球スライム / ピラミッドミイラ / サボテン / 地球ボス</li>
             <li>ステージごとに世界観が切り替わる</li>
             <li>総合ボス神殿まで進む</li>
           </ul>
@@ -166,81 +167,134 @@
 </div>
 
 <script>
+
 const JAPAN_STAGES = [
-  { name:"地方区分の丘", sky:["#79d2ff","#dff7ff"], ground:"#4fa55b", deco:"#75bf80", enemy:"fuji", questions:[
+  { name:"地方区分の丘", sky:["#79d2ff","#dff7ff"], ground:"#4fa55b", deco:"#75bf80", enemy:"fuji", boss:"castleboss", questions:[
     {q:"北海道はどの地方？", choices:["東北地方","北海道地方","関東地方","中部地方"], a:1, exp:"北海道は北海道地方。"},
     {q:"東京都がある地方は？", choices:["近畿地方","中部地方","関東地方","中国地方"], a:2, exp:"東京都は関東地方。"},
     {q:"大阪府はどの地方？", choices:["近畿地方","四国地方","九州地方","中部地方"], a:0, exp:"大阪府は近畿地方。"},
     {q:"福岡県はどの地方？", choices:["中国地方","四国地方","九州地方","近畿地方"], a:2, exp:"福岡県は九州地方。"},
-    {q:"宮城県はどの地方？", choices:["東北地方","北海道地方","中部地方","関東地方"], a:0, exp:"宮城県は東北地方。"}
+    {q:"宮城県はどの地方？", choices:["東北地方","北海道地方","中部地方","関東地方"], a:0, exp:"宮城県は東北地方。"},
+    {q:"新潟県がふくまれることが多い地方は？", choices:["関東地方","中部地方","近畿地方","中国地方"], a:1, exp:"新潟県は中部地方に含まれることが多い。"},
+    {q:"沖縄県はどの地方？", choices:["四国地方","九州地方","沖縄地方","中国地方"], a:1, exp:"沖縄県は九州地方に含めるのが一般的。"},
+    {q:"愛知県がある地方は？", choices:["中部地方","関東地方","東北地方","近畿地方"], a:0, exp:"愛知県は中部地方。"},
+    {q:"香川県がある地方は？", choices:["中国地方","四国地方","近畿地方","中部地方"], a:1, exp:"香川県は四国地方。"},
+    {q:"島根県がある地方は？", choices:["中国地方","九州地方","近畿地方","東北地方"], a:0, exp:"島根県は中国地方。"}
   ]},
-  { name:"県庁所在地シティ", sky:["#8dcaff","#f6fbff"], ground:"#676fda", deco:"#9098ef", enemy:"castle", questions:[
+  { name:"県庁所在地シティ", sky:["#8dcaff","#f6fbff"], ground:"#676fda", deco:"#9098ef", enemy:"castle", boss:"castleboss", questions:[
     {q:"神奈川県の県庁所在地は？", choices:["川崎市","横浜市","相模原市","藤沢市"], a:1, exp:"神奈川県の県庁所在地は横浜市。"},
     {q:"愛知県の県庁所在地は？", choices:["豊田市","岡崎市","名古屋市","一宮市"], a:2, exp:"愛知県の県庁所在地は名古屋市。"},
     {q:"宮城県の県庁所在地は？", choices:["仙台市","石巻市","青葉市","塩竈市"], a:0, exp:"宮城県の県庁所在地は仙台市。"},
     {q:"広島県の県庁所在地は？", choices:["福山市","呉市","広島市","尾道市"], a:2, exp:"広島県の県庁所在地は広島市。"},
-    {q:"北海道の道庁所在地は？", choices:["函館市","旭川市","札幌市","帯広市"], a:2, exp:"道庁所在地は札幌市。"}
+    {q:"北海道の道庁所在地は？", choices:["函館市","旭川市","札幌市","帯広市"], a:2, exp:"道庁所在地は札幌市。"},
+    {q:"静岡県の県庁所在地は？", choices:["浜松市","静岡市","沼津市","熱海市"], a:1, exp:"静岡県の県庁所在地は静岡市。"},
+    {q:"新潟県の県庁所在地は？", choices:["長岡市","上越市","新潟市","柏崎市"], a:2, exp:"新潟県の県庁所在地は新潟市。"},
+    {q:"福岡県の県庁所在地は？", choices:["北九州市","久留米市","福岡市","大牟田市"], a:2, exp:"福岡県の県庁所在地は福岡市。"},
+    {q:"長野県の県庁所在地は？", choices:["松本市","長野市","上田市","飯田市"], a:1, exp:"長野県の県庁所在地は長野市。"},
+    {q:"石川県の県庁所在地は？", choices:["小松市","金沢市","七尾市","加賀市"], a:1, exp:"石川県の県庁所在地は金沢市。"}
   ]},
-  { name:"山地と平野の谷", sky:["#93edc7","#f0fff8"], ground:"#5d8f4f", deco:"#7bb26c", enemy:"tanuki", questions:[
+  { name:"山地と平野の谷", sky:["#93edc7","#f0fff8"], ground:"#5d8f4f", deco:"#7bb26c", enemy:"tanuki", boss:"castleboss", questions:[
     {q:"日本でいちばん高い山は？", choices:["槍ヶ岳","富士山","白山","浅間山"], a:1, exp:"日本一高い山は富士山。"},
     {q:"関東地方に広がる平野は？", choices:["石狩平野","関東平野","濃尾平野","筑紫平野"], a:1, exp:"関東地方には関東平野。"},
     {q:"日本アルプスがあるのは主にどの地方？", choices:["中部地方","九州地方","中国地方","北海道地方"], a:0, exp:"日本アルプスは中部地方。"},
     {q:"北海道の大きな平野として有名なのは？", choices:["庄内平野","石狩平野","仙台平野","越後平野"], a:1, exp:"北海道では石狩平野が有名。"},
-    {q:"濃尾平野があるのは主にどこ？", choices:["愛知県と岐阜県","東京都と神奈川県","大阪府と奈良県","宮城県と福島県"], a:0, exp:"濃尾平野は愛知県・岐阜県。"}
+    {q:"濃尾平野があるのは主にどこ？", choices:["愛知県と岐阜県","東京都と神奈川県","大阪府と奈良県","宮城県と福島県"], a:0, exp:"濃尾平野は愛知県・岐阜県。"},
+    {q:"日本一広い平野は？", choices:["石狩平野","関東平野","仙台平野","筑紫平野"], a:1, exp:"日本一広い平野は関東平野。"},
+    {q:"十勝平野がある都道府県は？", choices:["青森県","北海道","岩手県","秋田県"], a:1, exp:"十勝平野は北海道。"},
+    {q:"筑紫平野がある地方は？", choices:["四国地方","九州地方","関東地方","中国地方"], a:1, exp:"筑紫平野は九州地方。"},
+    {q:"山が多く、平地が少ない日本の特徴として正しいのは？", choices:["海がない","平野が広すぎる","国土の多くが山地","砂漠が多い"], a:2, exp:"日本は国土の多くが山地。"},
+    {q:"富士山があるのは主にどの都道府県？", choices:["長野県","静岡県と山梨県","東京都","新潟県"], a:1, exp:"富士山は静岡県と山梨県にまたがる。"}
   ]},
-  { name:"川と産業の港町", sky:["#7edcff","#ebfdff"], ground:"#3f8fa5", deco:"#67b0c8", enemy:"mapfish", questions:[
+  { name:"川と産業の港町", sky:["#7edcff","#ebfdff"], ground:"#3f8fa5", deco:"#67b0c8", enemy:"mapfish", boss:"castleboss", questions:[
     {q:"日本でいちばん長い川は？", choices:["信濃川","利根川","石狩川","吉野川"], a:0, exp:"日本最長は信濃川。"},
     {q:"米づくりがさかんな平野として有名なのは？", choices:["関東平野","越後平野","仙台平野","十勝平野"], a:1, exp:"越後平野は米づくりが有名。"},
     {q:"自動車工業が特にさかんな都道府県は？", choices:["愛知県","沖縄県","鳥取県","青森県"], a:0, exp:"愛知県は自動車工業が有名。"},
     {q:"みかんの生産で有名な県の一つは？", choices:["北海道","和歌山県","群馬県","長野県"], a:1, exp:"和歌山県はみかんで有名。"},
-    {q:"火山が多いことに関係が深い日本の特徴は？", choices:["偏西風","島国","プレートの境目","赤道に近い"], a:2, exp:"日本はプレートの境目にある。"}
+    {q:"火山が多いことに関係が深い日本の特徴は？", choices:["偏西風","島国","プレートの境目","赤道に近い"], a:2, exp:"日本はプレートの境目にある。"},
+    {q:"利根川が流れる地方は主にどこ？", choices:["関東地方","北海道地方","中国地方","九州地方"], a:0, exp:"利根川は関東地方を流れる。"},
+    {q:"北海道で酪農がさかんな理由として近いのは？", choices:["気温が高いから","広い土地があるから","火山がないから","人口が多いから"], a:1, exp:"広い土地があり酪農に向く。"},
+    {q:"瀬戸内地方で工業が発達した理由の一つは？", choices:["雪が多い","海上交通が便利","砂漠が近い","森林がない"], a:1, exp:"瀬戸内海は海上交通に便利。"},
+    {q:"鹿児島県でさかんな農業として有名なのは？", choices:["りんご","さつまいも","ぶどう","なし"], a:1, exp:"鹿児島県はさつまいもが有名。"},
+    {q:"日本海側で冬に雪が多い理由として近いのは？", choices:["季節風の影響","赤道に近いから","砂漠が近いから","標高が低いから"], a:0, exp:"冬の季節風の影響で雪が多い。"}
   ]},
-  { name:"日本総合ボス城", sky:["#ffbd8c","#fff0de"], ground:"#8a4b39", deco:"#b56d58", enemy:"castleboss", questions:[
+  { name:"日本総合ボス城", sky:["#ffbd8c","#fff0de"], ground:"#8a4b39", deco:"#b56d58", enemy:"castleboss", boss:"castleboss", questions:[
     {q:"九州地方にある県はどれ？", choices:["岡山県","熊本県","滋賀県","静岡県"], a:1, exp:"熊本県は九州地方。"},
     {q:"県庁所在地が仙台市なのは？", choices:["山形県","宮城県","福島県","岩手県"], a:1, exp:"仙台市は宮城県の県庁所在地。"},
     {q:"日本一高い山は？", choices:["御岳山","富士山","桜島","阿蘇山"], a:1, exp:"日本一高い山は富士山。"},
     {q:"日本でいちばん長い川は？", choices:["利根川","木曽川","信濃川","最上川"], a:2, exp:"最長は信濃川。"},
-    {q:"自動車工業がさかんな県は？", choices:["愛知県","福井県","高知県","山梨県"], a:0, exp:"愛知県が有名。"}
+    {q:"自動車工業がさかんな県は？", choices:["愛知県","福井県","高知県","山梨県"], a:0, exp:"愛知県が有名。"},
+    {q:"関東平野にある都道府県として近いのは？", choices:["群馬県","長崎県","香川県","高知県"], a:0, exp:"群馬県は関東平野に関係する県の一つ。"},
+    {q:"北海道の道庁所在地は？", choices:["旭川市","函館市","札幌市","釧路市"], a:2, exp:"札幌市。"},
+    {q:"みかんで有名な県の一つは？", choices:["和歌山県","青森県","岩手県","長野県"], a:0, exp:"和歌山県が有名。"},
+    {q:"日本アルプスがある地方は？", choices:["中部地方","東北地方","九州地方","北海道地方"], a:0, exp:"中部地方。"},
+    {q:"火山が多い理由に近いのは？", choices:["プレートの境目","大陸の中央","砂漠気候","海がない"], a:0, exp:"プレートの境目にあるため。"}
   ]},
 ];
 
+
 const WORLD_STAGES = [
-  { name:"大陸ジャンプ平原", sky:["#87d3ff","#e9fbff"], ground:"#57b87d", deco:"#7ccd98", enemy:"globe", questions:[
+  { name:"大陸ジャンプ平原", sky:["#87d3ff","#e9fbff"], ground:"#57b87d", deco:"#7ccd98", enemy:"globe", boss:"bossglobe", questions:[
     {q:"日本がある大陸は？", choices:["ヨーロッパ","アジア","アフリカ","南アメリカ"], a:1, exp:"日本はアジア州。"},
     {q:"エジプトがある大陸は？", choices:["アフリカ","ヨーロッパ","北アメリカ","オセアニア"], a:0, exp:"エジプトはアフリカ州。"},
     {q:"ブラジルがある大陸は？", choices:["南アメリカ","北アメリカ","アジア","ヨーロッパ"], a:0, exp:"ブラジルは南アメリカ州。"},
     {q:"オーストラリアが属する州は？", choices:["南極州","オセアニア州","ヨーロッパ州","アフリカ州"], a:1, exp:"オーストラリアはオセアニア州。"},
-    {q:"地球でいちばん広い海洋は？", choices:["大西洋","太平洋","インド洋","北極海"], a:1, exp:"太平洋が最大。"}
+    {q:"地球でいちばん広い海洋は？", choices:["大西洋","太平洋","インド洋","北極海"], a:1, exp:"太平洋が最大。"},
+    {q:"カナダがある大陸は？", choices:["北アメリカ","南アメリカ","ヨーロッパ","アジア"], a:0, exp:"カナダは北アメリカ州。"},
+    {q:"インドがある州は？", choices:["ヨーロッパ州","アジア州","アフリカ州","南極州"], a:1, exp:"インドはアジア州。"},
+    {q:"南極がある州は？", choices:["南極州","オセアニア州","アフリカ州","ヨーロッパ州"], a:0, exp:"南極州。"},
+    {q:"スペインがある大陸は？", choices:["ヨーロッパ","アジア","アフリカ","南アメリカ"], a:0, exp:"スペインはヨーロッパ州。"},
+    {q:"インド洋に面している大陸として近いのは？", choices:["アフリカ","南極だけ","南アメリカだけ","ヨーロッパだけ"], a:0, exp:"アフリカはインド洋に面している。"}
   ]},
-  { name:"首都スカイタワー", sky:["#9acbff","#f6faff"], ground:"#5669d4", deco:"#8b9bf2", enemy:"mummy", questions:[
+  { name:"首都スカイタワー", sky:["#9acbff","#f6faff"], ground:"#5669d4", deco:"#8b9bf2", enemy:"mummy", boss:"bossglobe", questions:[
     {q:"アメリカ合衆国の首都は？", choices:["ニューヨーク","ロサンゼルス","ワシントンD.C.","シカゴ"], a:2, exp:"アメリカの首都はワシントンD.C."},
     {q:"フランスの首都は？", choices:["パリ","ロンドン","ローマ","ベルリン"], a:0, exp:"フランスの首都はパリ。"},
     {q:"オーストラリアの首都は？", choices:["シドニー","メルボルン","キャンベラ","パース"], a:2, exp:"首都はキャンベラ。"},
     {q:"中国の首都は？", choices:["上海","北京","広州","深圳"], a:1, exp:"中国の首都は北京。"},
-    {q:"ブラジルの首都は？", choices:["リオデジャネイロ","ブラジリア","サンパウロ","リマ"], a:1, exp:"ブラジルの首都はブラジリア。"}
+    {q:"ブラジルの首都は？", choices:["リオデジャネイロ","ブラジリア","サンパウロ","リマ"], a:1, exp:"ブラジルの首都はブラジリア。"},
+    {q:"イギリスの首都は？", choices:["マンチェスター","ロンドン","リバプール","オックスフォード"], a:1, exp:"イギリスの首都はロンドン。"},
+    {q:"イタリアの首都は？", choices:["ミラノ","ナポリ","ローマ","ベネチア"], a:2, exp:"イタリアの首都はローマ。"},
+    {q:"韓国の首都は？", choices:["釜山","仁川","ソウル","大田"], a:2, exp:"韓国の首都はソウル。"},
+    {q:"タイの首都は？", choices:["バンコク","チェンマイ","プーケット","ハノイ"], a:0, exp:"タイの首都はバンコク。"},
+    {q:"エジプトの首都は？", choices:["カイロ","ナイロビ","ラゴス","カサブランカ"], a:0, exp:"エジプトの首都はカイロ。"}
   ]},
-  { name:"気候と地形の砂漠", sky:["#ffd49e","#fff3df"], ground:"#cb9a4a", deco:"#e1bb73", enemy:"cactus", questions:[
+  { name:"気候と地形の砂漠", sky:["#ffd49e","#fff3df"], ground:"#cb9a4a", deco:"#e1bb73", enemy:"cactus", boss:"bossglobe", questions:[
     {q:"サハラ砂漠がある大陸は？", choices:["アジア","アフリカ","北アメリカ","オセアニア"], a:1, exp:"サハラ砂漠はアフリカ。"},
     {q:"ヒマラヤ山脈がある地域は？", choices:["ヨーロッパ","南アジア","南アメリカ","北アメリカ"], a:1, exp:"ヒマラヤは南アジア。"},
     {q:"一年中暑く雨が多い地域の気候は？", choices:["砂漠気候","地中海性気候","熱帯雨林気候","寒帯気候"], a:2, exp:"熱帯雨林気候。"},
     {q:"アルプス山脈がある大陸は？", choices:["アジア","ヨーロッパ","アフリカ","南極"], a:1, exp:"アルプスはヨーロッパ。"},
-    {q:"オーストラリア内陸部に多い気候は？", choices:["砂漠気候","西岸海洋性気候","寒帯気候","熱帯雨林気候"], a:0, exp:"内陸部は乾燥し砂漠気候が多い。"}
+    {q:"オーストラリア内陸部に多い気候は？", choices:["砂漠気候","西岸海洋性気候","寒帯気候","熱帯雨林気候"], a:0, exp:"内陸部は乾燥し砂漠気候が多い。"},
+    {q:"アマゾン川流域に多い気候は？", choices:["熱帯雨林気候","寒帯気候","地中海性気候","砂漠気候"], a:0, exp:"アマゾン流域は熱帯雨林気候。"},
+    {q:"一年を通して寒さが厳しい地域の気候は？", choices:["寒帯気候","熱帯気候","温帯気候","乾燥帯"], a:0, exp:"寒帯気候。"},
+    {q:"砂漠気候で雨が少ない理由として近いのは？", choices:["雲ができにくい","海が多い","森が多い","雪が多い"], a:0, exp:"乾燥して雲ができにくい。"},
+    {q:"アンデス山脈がある大陸は？", choices:["アフリカ","南アメリカ","ヨーロッパ","オセアニア"], a:1, exp:"アンデス山脈は南アメリカ。"},
+    {q:"気候帯のうち、四季がはっきりしやすいのは？", choices:["温帯","寒帯","乾燥帯だけ","高山気候だけ"], a:0, exp:"温帯は四季の変化がわかりやすい。"}
   ]},
-  { name:"文化と特産の海岸", sky:["#7fdfff","#e6fbff"], ground:"#3f90b7", deco:"#66b3d0", enemy:"penguin", questions:[
+  { name:"文化と特産の海岸", sky:["#7fdfff","#e6fbff"], ground:"#3f90b7", deco:"#66b3d0", enemy:"penguin", boss:"bossglobe", questions:[
     {q:"コーヒー豆の生産で有名な国の一つは？", choices:["ブラジル","ノルウェー","カナダ","モンゴル"], a:0, exp:"ブラジルはコーヒー生産大国。"},
     {q:"ピラミッドで有名な国は？", choices:["インド","エジプト","イタリア","メキシコ"], a:1, exp:"ピラミッドで有名なのはエジプト。"},
     {q:"サッカーが特に人気で有名な国の一つは？", choices:["ブラジル","アイスランド","ネパール","フィンランド"], a:0, exp:"ブラジルはサッカー大国。"},
     {q:"イタリアで有名な都市といえば？", choices:["ローマ","チューリッヒ","ダブリン","ウィーン"], a:0, exp:"ローマはイタリアの首都でもある。"},
-    {q:"中国で有名な農産物の一つは？", choices:["米","オリーブ","じゃがいもだけ","カカオだけ"], a:0, exp:"中国は米の生産が多い地域がある。"}
+    {q:"中国で有名な農産物の一つは？", choices:["米","オリーブ","じゃがいもだけ","カカオだけ"], a:0, exp:"中国は米の生産が多い地域がある。"},
+    {q:"フランスで有名な建造物の一つは？", choices:["エッフェル塔","自由の女神","ピラミッド","万里の長城"], a:0, exp:"エッフェル塔はフランスで有名。"},
+    {q:"スイスで有名な産業や製品として近いのは？", choices:["時計","さとうきび","石油だけ","バナナだけ"], a:0, exp:"スイスは時計で有名。"},
+    {q:"エジプトで多くの人が利用する大きな川は？", choices:["ナイル川","アマゾン川","ミシシッピ川","長江"], a:0, exp:"エジプトではナイル川が重要。"},
+    {q:"オランダでさかんな産業や農業として近いのは？", choices:["花の栽培","らくだの放牧","米の棚田","コーヒー豆だけ"], a:0, exp:"オランダは花の栽培で有名。"},
+    {q:"アメリカ合衆国で映画産業が有名な都市は？", choices:["ハリウッドのあるロサンゼルス","ワシントンD.C.","ボストン","デンバー"], a:0, exp:"ロサンゼルスのハリウッドが有名。"}
   ]},
-  { name:"世界総合ボス神殿", sky:["#ffbcc0","#fff0f2"], ground:"#7a4248", deco:"#a55e66", enemy:"bossglobe", questions:[
+  { name:"世界総合ボス神殿", sky:["#ffbcc0","#fff0f2"], ground:"#7a4248", deco:"#a55e66", enemy:"bossglobe", boss:"bossglobe", questions:[
     {q:"日本がある州は？", choices:["アフリカ州","アジア州","ヨーロッパ州","南アメリカ州"], a:1, exp:"日本はアジア州。"},
     {q:"フランスの首都は？", choices:["ローマ","ベルリン","パリ","マドリード"], a:2, exp:"フランスの首都はパリ。"},
     {q:"サハラ砂漠がある大陸は？", choices:["アフリカ","アジア","南極","オセアニア"], a:0, exp:"サハラ砂漠はアフリカ。"},
     {q:"アメリカ合衆国の首都は？", choices:["ワシントンD.C.","ニューヨーク","ロサンゼルス","ヒューストン"], a:0, exp:"首都はワシントンD.C."},
-    {q:"ブラジルがある大陸は？", choices:["北アメリカ","南アメリカ","ヨーロッパ","アフリカ"], a:1, exp:"ブラジルは南アメリカ州。"}
+    {q:"ブラジルがある大陸は？", choices:["北アメリカ","南アメリカ","ヨーロッパ","アフリカ"], a:1, exp:"ブラジルは南アメリカ州。"},
+    {q:"オーストラリアの首都は？", choices:["シドニー","メルボルン","キャンベラ","パース"], a:2, exp:"首都はキャンベラ。"},
+    {q:"太平洋はどんな海洋？", choices:["世界最大","世界最小","川の名前","湖の名前"], a:0, exp:"太平洋は世界最大の海洋。"},
+    {q:"エジプトで有名な建造物は？", choices:["ピラミッド","コロッセオ","ビッグベン","自由の女神"], a:0, exp:"エジプトはピラミッドで有名。"},
+    {q:"アマゾン川がある大陸は？", choices:["南アメリカ","ヨーロッパ","アフリカ","オセアニア"], a:0, exp:"アマゾン川は南アメリカ。"},
+    {q:"イギリスの首都は？", choices:["ロンドン","パリ","ダブリン","リスボン"], a:0, exp:"イギリスの首都はロンドン。"}
   ]},
 ];
+
 
 const MODE_INFO = {
   japan: { title:"日本の地理", stages:JAPAN_STAGES },
@@ -254,6 +308,7 @@ const touchControls = document.getElementById("touchControls");
 const btnLeft = document.getElementById("btnLeft");
 const btnRight = document.getElementById("btnRight");
 const btnJump = document.getElementById("btnJump");
+const btnAttack = document.getElementById("btnAttack");
 const hudMode = document.getElementById("hudMode");
 const hudStage = document.getElementById("hudStage");
 const hudClear = document.getElementById("hudClear");
@@ -294,7 +349,7 @@ const state = {
   platforms:[],
   questionSpots:[],
   enemies:[],
-  player:{ x:120, y:0, vx:0, vy:0, w:76, h:76, onGround:false }
+  player:{ x:120, y:0, vx:0, vy:0, w:76, h:76, onGround:false, face:1, attackTimer:0, invincible:0 }, projectiles:[], particles:[], boss:null
 };
 
 function resize(){
@@ -342,23 +397,33 @@ function buildStage(){
   state.solvedSpotIds = new Set();
   state.currentQuestions = stage.questions;
   state.platforms = [
-    {x:0, y:610, w:900, h:110},
-    {x:940, y:560, w:240, h:30},
-    {x:1270, y:515, w:220, h:30},
-    {x:1600, y:475, w:220, h:30},
-    {x:1910, y:610, w:600, h:110},
-    {x:2570, y:540, w:260, h:30},
-    {x:2920, y:500, w:260, h:30},
-    {x:3250, y:610, w:700, h:110},
+    {x:0, y:610, w:560, h:110},
+    {x:620, y:575, w:180, h:28},
+    {x:860, y:535, w:160, h:28},
+    {x:1080, y:495, w:180, h:28},
+    {x:1320, y:610, w:260, h:110},
+    {x:1650, y:560, w:160, h:28},
+    {x:1860, y:510, w:140, h:28},
+    {x:2050, y:460, w:140, h:28},
+    {x:2250, y:610, w:420, h:110},
+    {x:2740, y:560, w:180, h:28},
+    {x:2960, y:510, w:180, h:28},
+    {x:3190, y:460, w:180, h:28},
+    {x:3420, y:610, w:520, h:110},
   ];
   state.questionSpots = [
-    {id:0,x:1040,y:500},{id:1,x:1360,y:455},{id:2,x:1690,y:415},{id:3,x:2660,y:480},{id:4,x:3020,y:440},
+    {id:0,x:500,y:550},{id:1,x:690,y:515},{id:2,x:930,y:475},{id:3,x:1160,y:435},{id:4,x:1490,y:550},
+    {id:5,x:1715,y:500},{id:6,x:1910,y:450},{id:7,x:2460,y:550},{id:8,x:2820,y:500},{id:9,x:3280,y:400},
   ];
   state.enemies = [
-    {x:720,y:552,type:stage.enemy,dir:1,base:720},
-    {x:2140,y:552,type:stage.enemy,dir:-1,base:2140},
-    {x:3400,y:552,type:stage.enemy,dir:1,base:3400}
+    {x:470,y:552,type:stage.enemy,dir:1,base:470,hp:2,alive:true},
+    {x:1450,y:552,type:stage.enemy,dir:-1,base:1450,hp:2,alive:true},
+    {x:2380,y:552,type:stage.enemy,dir:1,base:2380,hp:2,alive:true},
+    {x:3550,y:552,type:stage.enemy,dir:-1,base:3550,hp:2,alive:true}
   ];
+  state.projectiles = [];
+  state.particles = [];
+  state.boss = {x:3730,y:520,type:stage.boss,dir:-1,hp:8,maxHp:8,alive:true,cooldown:0};
   state.scene = "play";
   hud.style.display = "grid";
   touchControls.style.display = "block";
@@ -422,6 +487,8 @@ function drawBackground(){
 }
 
 function drawEnemy(e){
+  if (e.alive === false) return;
+
   const x = e.x, y = e.y;
   ctx.save();
   ctx.translate(x,y);
@@ -502,6 +569,32 @@ function drawWorld(){
   });
 
   state.enemies.forEach(drawEnemy);
+  if (state.boss && state.boss.alive) {
+    drawEnemy(state.boss);
+    ctx.fillStyle = "rgba(10,20,40,.55)";
+    roundRect(state.goalX-20, 70, 240, 34, 12); ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillText("BOSS", state.goalX, 92);
+    ctx.fillStyle = "#5b2230";
+    roundRect(state.goalX+58, 78, 140, 14, 8); ctx.fill();
+    ctx.fillStyle = "#ff7b8d";
+    roundRect(state.goalX+58, 78, 140 * (state.boss.hp / state.boss.maxHp), 14, 8); ctx.fill();
+  }
+
+  state.projectiles.forEach(p => {
+    ctx.fillStyle = p.kind === "player" ? "#ffe08a" : "#ff8b8b";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.kind === "player" ? 8 : 10, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  state.particles.forEach(p => {
+    ctx.globalAlpha = Math.max(0, p.life / 20);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, 6, 6);
+    ctx.globalAlpha = 1;
+  });
 
   ctx.fillStyle = state.mode === "japan" ? "#6a4452" : "#5e4f6d";
   ctx.fillRect(state.goalX,420,160,190);
@@ -523,8 +616,10 @@ function drawWorld(){
 function updatePlay(){
   const p = state.player;
   p.vx = 0;
-  if(state.keys["ArrowLeft"] || state.keys["a"]) p.vx = -5.8;
-  if(state.keys["ArrowRight"] || state.keys["d"]) p.vx = 5.8;
+  if(state.keys["ArrowLeft"] || state.keys["a"]) { p.vx = -5.8; p.face = -1; }
+  if(state.keys["ArrowRight"] || state.keys["d"]) { p.vx = 5.8; p.face = 1; }
+  if (p.attackTimer > 0) p.attackTimer--;
+  if (p.invincible > 0) p.invincible--;
   p.x += p.vx;
   p.vy += state.gravity;
   p.y += p.vy;
@@ -539,13 +634,70 @@ function updatePlay(){
   }
 
   state.enemies.forEach(e => {
+    if (e.alive === false) return;
     e.x += e.dir * 1.2;
     if(e.x < e.base - 70 || e.x > e.base + 70) e.dir *= -1;
-    if(Math.abs((p.x + p.w/2) - e.x) < 42 && Math.abs((p.y + p.h/2) - e.y) < 54){
-      p.x = Math.max(40, p.x - 80);
+    if(p.invincible <= 0 && Math.abs((p.x + p.w/2) - e.x) < 42 && Math.abs((p.y + p.h/2) - e.y) < 54){
+      p.x = Math.max(40, p.x - 90);
       p.vx = 0;
+      p.invincible = 30;
     }
   });
+
+  if (state.boss && state.boss.alive) {
+    const b = state.boss;
+    b.x += b.dir * 1.4;
+    if (b.x < state.goalX + 20 || b.x > state.goalX + 120) b.dir *= -1;
+    if (p.invincible <= 0 && Math.abs((p.x + p.w/2) - b.x) < 58 && Math.abs((p.y + p.h/2) - b.y) < 70) {
+      p.x = Math.max(40, p.x - 120);
+      p.invincible = 40;
+    }
+    b.cooldown--;
+    if (b.cooldown <= 0) {
+      state.projectiles.push({x:b.x, y:b.y-10, vx:-4.5, vy:0, kind:"boss"});
+      b.cooldown = 80;
+    }
+  }
+
+  for (let i = state.projectiles.length - 1; i >= 0; i--) {
+    const pr = state.projectiles[i];
+    pr.x += pr.vx;
+    pr.y += pr.vy;
+    if (pr.kind === "player") {
+      for (const e of state.enemies) {
+        if (e.alive !== false && Math.abs(pr.x - e.x) < 38 && Math.abs(pr.y - e.y) < 42) {
+          e.hp -= 1;
+          state.projectiles.splice(i, 1);
+          spawnParticles(e.x, e.y, "#ffe08a");
+          if (e.hp <= 0) e.alive = false;
+          break;
+        }
+      }
+      if (state.boss && state.boss.alive && i < state.projectiles.length && Math.abs(pr.x - state.boss.x) < 52 && Math.abs(pr.y - state.boss.y) < 62) {
+        state.boss.hp -= 1;
+        state.projectiles.splice(i, 1);
+        spawnParticles(state.boss.x, state.boss.y, "#ff9fb0");
+        if (state.boss.hp <= 0) state.boss.alive = false;
+        continue;
+      }
+    } else {
+      if (p.invincible <= 0 && Math.abs(pr.x - (p.x + p.w/2)) < 34 && Math.abs(pr.y - (p.y + p.h/2)) < 40) {
+        p.x = Math.max(40, p.x - 90);
+        p.invincible = 35;
+        state.projectiles.splice(i, 1);
+        continue;
+      }
+    }
+    if (pr.x < -100 || pr.x > state.worldWidth + 100) state.projectiles.splice(i, 1);
+  }
+
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const pt = state.particles[i];
+    pt.x += pt.vx;
+    pt.y += pt.vy;
+    pt.life--;
+    if (pt.life <= 0) state.particles.splice(i, 1);
+  }
 
   if(p.y > 760){
     p.x = 120; p.y = 0; p.vy = 0;
@@ -560,7 +712,23 @@ function updatePlay(){
     }
   }
 
-  if(p.x > state.goalX + 70 && state.solvedSpotIds.size === state.currentQuestions.length) onStageClear();
+  if(p.x > state.goalX + 70 && state.solvedSpotIds.size === state.currentQuestions.length && (!state.boss || state.boss.alive === false)) onStageClear();
+}
+
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < 10; i++) {
+    state.particles.push({x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4, life:14 + Math.floor(Math.random()*8), color});
+  }
+}
+
+function attack() {
+  if (state.scene !== "play") return;
+  if (state.player.attackTimer > 0) return;
+  state.player.attackTimer = 16;
+  const startX = state.player.x + state.player.w/2 + state.player.face * 24;
+  const startY = state.player.y + state.player.h/2 - 8;
+  state.projectiles.push({x:startX, y:startY, vx: state.player.face * 8.5, vy:0, kind:"player"});
 }
 
 function openQuestion(id){
@@ -642,12 +810,16 @@ const jumpAction = (ev) => {
   }
 };
 ["pointerdown","touchstart"].forEach(t => btnJump.addEventListener(t, jumpAction, {passive:false}));
+["pointerdown","touchstart"].forEach(t => btnAttack.addEventListener(t, (ev) => { ev.preventDefault(); attack(); }, {passive:false}));
 
 
 window.addEventListener("keydown", e => {
   state.keys[e.key] = true;
   if((e.key === " " || e.key === "ArrowUp" || e.key === "w") && state.scene === "play" && state.player.onGround){
     state.player.vy = -14.5;
+  }
+  if ((e.key === "x" || e.key === "X" || e.key === "Enter") && state.scene === "play") {
+    attack();
   }
 });
 window.addEventListener("keyup", e => { state.keys[e.key] = false; });
