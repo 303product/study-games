@@ -141,7 +141,7 @@
           <ul>
             <li>敵: 地球スライム / ピラミッドミイラ / サボテン / 地球ボス</li>
             <li>ステージごとに世界観が切り替わる</li>
-            <li>総合ボス神殿まで進む</li>
+            <li>鷲・樽・亀をかわしつつ、総合ボス神殿まで進む</li>
           </ul>
           <div class="btnrow"><button id="startWorld">世界の地理ではじめる</button></div>
         </div>
@@ -366,7 +366,7 @@ const state = {
   platforms:[],
   questionSpots:[],
   enemies:[],
-  player:{ x:120, y:0, vx:0, vy:0, w:76, h:76, onGround:false, face:1, attackTimer:0, invincible:0 }, projectiles:[], particles:[], boss:null
+  player:{ x:120, y:0, vx:0, vy:0, w:76, h:76, onGround:false, face:1, attackTimer:0, invincible:0, standOn:null }, projectiles:[], particles:[], boss:null, barrels:[], eagles:[], barrelSpawners:[], eagleCooldown:120
 };
 
 function resize(){
@@ -400,36 +400,57 @@ function buildStage(){
   state.player.y = 0;
   state.player.vx = 0;
   state.player.vy = 0;
+  state.player.standOn = null;
   state.solvedSpotIds = new Set();
   state.currentQuestions = stage.questions;
+  state.worldWidth = 4100;
+  state.goalX = 3820;
+
   state.platforms = [
-    {x:0, y:610, w:560, h:110},
-    {x:620, y:575, w:180, h:28},
-    {x:860, y:535, w:160, h:28},
-    {x:1080, y:495, w:180, h:28},
-    {x:1320, y:610, w:260, h:110},
-    {x:1650, y:560, w:160, h:28},
-    {x:1860, y:510, w:140, h:28},
-    {x:2050, y:460, w:140, h:28},
-    {x:2250, y:610, w:420, h:110},
-    {x:2740, y:560, w:180, h:28},
-    {x:2960, y:510, w:180, h:28},
-    {x:3190, y:460, w:180, h:28},
-    {x:3420, y:610, w:520, h:110},
+    {x:0, y:610, w:420, h:110},
+    {x:450, y:570, w:140, h:28},
+    {x:620, y:525, w:140, h:28},
+    {x:790, y:480, w:140, h:28},
+    {x:960, y:435, w:160, h:28},
+    {x:1150, y:480, w:150, h:28},
+    {x:1330, y:535, w:160, h:28},
+    {x:1520, y:610, w:240, h:110},  // valley
+    {x:1810, y:555, w:120, h:24, moving:true, axis:"y", minY:470, maxY:585, speed:1.2, dir:1, prevY:555},
+    {x:1970, y:495, w:140, h:28},
+    {x:2140, y:430, w:130, h:24, moving:true, axis:"y", minY:360, maxY:520, speed:1.1, dir:-1, prevY:430},
+    {x:2310, y:610, w:250, h:110},
+    {x:2610, y:560, w:150, h:28},
+    {x:2790, y:510, w:150, h:28},
+    {x:2970, y:460, w:150, h:28},
+    {x:3150, y:410, w:160, h:28},
+    {x:3340, y:470, w:160, h:28},
+    {x:3530, y:540, w:150, h:28},
+    {x:3710, y:610, w:420, h:110},
   ];
+
   state.questionSpots = [
-    {id:0,x:500,y:550},{id:1,x:690,y:515},{id:2,x:930,y:475},{id:3,x:1160,y:435},{id:4,x:1490,y:550},
-    {id:5,x:1715,y:500},{id:6,x:1910,y:450},{id:7,x:2460,y:550},{id:8,x:2820,y:500},{id:9,x:3280,y:400},
+    {id:0,x:500,y:545},{id:1,x:685,y:500},{id:2,x:865,y:455},{id:3,x:1035,y:410},{id:4,x:1600,y:550},
+    {id:5,x:1870,y:500},{id:6,x:2205,y:375},{id:7,x:2670,y:505},{id:8,x:3040,y:405},{id:9,x:3570,y:500},
   ];
+
   state.enemies = [
-    {x:470,y:552,type:stage.enemy,dir:1,base:470,hp:2,alive:true},
+    {x:340,y:552,type:"turtle",dir:1,base:340,hp:1,alive:true},
     {x:1450,y:552,type:stage.enemy,dir:-1,base:1450,hp:2,alive:true},
-    {x:2380,y:552,type:stage.enemy,dir:1,base:2380,hp:2,alive:true},
-    {x:3550,y:552,type:stage.enemy,dir:-1,base:3550,hp:2,alive:true}
+    {x:2440,y:552,type:"turtle",dir:1,base:2440,hp:1,alive:true},
+    {x:3470,y:500,type:stage.enemy,dir:-1,base:3470,hp:2,alive:true}
   ];
+
   state.projectiles = [];
   state.particles = [];
-  state.boss = {x:3440,y:520,type:stage.boss,dir:1,hp:8,maxHp:8,alive:true,cooldown:0,minX:3360,maxX:3490};
+  state.barrels = [];
+  state.eagles = [];
+  state.barrelSpawners = [
+    {x:1040, y:365, vx:-2.8, cooldown:70, timer:40},
+    {x:3160, y:340, vx:2.5, cooldown:90, timer:70}
+  ];
+  state.eagleCooldown = 90;
+  state.boss = {x:3640,y:520,type:stage.boss,dir:1,hp:10,maxHp:10,alive:true,cooldown:0,minX:3570,maxX:3720};
+
   state.scene = "play";
   hud.style.display = "grid";
   touchControls.style.display = "block";
@@ -548,6 +569,14 @@ function drawEnemy(e){
       ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(0,6,14,18,0,0,Math.PI*2); ctx.fill();
       ctx.fillStyle = "#ffb347"; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(8,6); ctx.lineTo(0,10); ctx.closePath(); ctx.fill();
       break;
+    case "turtle":
+      ctx.fillStyle = "#5c9d53";
+      ctx.beginPath(); ctx.arc(0,8,22,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#d7f0b6"; ctx.beginPath(); ctx.ellipse(0,12,14,10,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#6f4c2f"; ctx.fillRect(-20,22,10,8); ctx.fillRect(10,22,10,8);
+      ctx.fillStyle = "#7dbb72"; ctx.beginPath(); ctx.arc(18,-2,8,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(20,-4,2,0,Math.PI*2); ctx.fill();
+      break;
     default:
       ctx.fillStyle = "#999"; ctx.fillRect(-20,-20,40,40);
   }
@@ -563,7 +592,22 @@ function drawWorld(){
     ctx.fillStyle = idx % 2 === 0 ? state.theme.ground : state.theme.deco;
     roundRect(p.x,p.y,p.w,p.h,12); ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(p.x,p.y,p.w,8);
+    if (p.moving) {
+      ctx.fillStyle = "rgba(255,255,255,.35)";
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText("↕", p.x + p.w/2 - 8, p.y - 10);
+    }
   });
+
+  // decorative mountain paths
+  ctx.strokeStyle = "rgba(120,80,50,.55)";
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(430, 602); ctx.lineTo(540, 562); ctx.lineTo(690, 517); ctx.lineTo(860, 472); ctx.lineTo(1040, 428);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(2790, 503); ctx.lineTo(3040, 453); ctx.lineTo(3220, 403); ctx.lineTo(3410, 463); ctx.lineTo(3590, 533);
+  ctx.stroke();
 
   state.questionSpots.forEach(s => {
     const solved = state.solvedSpotIds.has(s.id);
@@ -602,6 +646,34 @@ function drawWorld(){
     ctx.fill();
   });
 
+  state.barrels.forEach(b => {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.rot || 0);
+    ctx.fillStyle = "#9b6136";
+    ctx.beginPath();
+    ctx.arc(0,0,14,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = "#603813";
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(10,0); ctx.stroke();
+    ctx.restore();
+  });
+
+  state.eagles.forEach(e => {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.scale(e.dir, 1);
+    ctx.fillStyle = "#5b4737";
+    ctx.beginPath();
+    ctx.moveTo(-22,0); ctx.quadraticCurveTo(-4,-18,10,-6); ctx.quadraticCurveTo(22,0,10,6); ctx.quadraticCurveTo(-4,18,-22,0);
+    ctx.fill();
+    ctx.fillStyle = "#e6c15c";
+    ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(26,4); ctx.lineTo(12,8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  });
+
   state.particles.forEach(p => {
     ctx.globalAlpha = Math.max(0, p.life / 20);
     ctx.fillStyle = p.color;
@@ -631,26 +703,54 @@ function updatePlay(){
   p.vy += state.gravity;
   p.y += p.vy;
   p.onGround = false;
+  p.standOn = null;
 
+  // move platforms
+  state.platforms.forEach(plat => {
+    if (plat.moving && plat.axis === "y") {
+      plat.prevY = plat.y;
+      plat.y += plat.speed * plat.dir;
+      if (plat.y < plat.minY || plat.y > plat.maxY) plat.dir *= -1;
+    }
+  });
+
+  // player collision with platforms
   for(const plat of state.platforms){
     if(p.x + p.w > plat.x && p.x < plat.x + plat.w && p.y + p.h > plat.y && p.y + p.h < plat.y + plat.h + 18 && p.vy >= 0){
       p.y = plat.y - p.h;
       p.vy = 0;
       p.onGround = true;
+      p.standOn = plat;
     }
   }
+  if (p.standOn && p.standOn.moving) {
+    p.y += (p.standOn.y - p.standOn.prevY);
+  }
 
+  // enemy motion and turtle stomp
   state.enemies.forEach(e => {
     if (e.alive === false) return;
-    e.x += e.dir * 1.2;
-    if(e.x < e.base - 70 || e.x > e.base + 70) e.dir *= -1;
-    if(p.invincible <= 0 && Math.abs((p.x + p.w/2) - e.x) < 42 && Math.abs((p.y + p.h/2) - e.y) < 54){
-      p.x = Math.max(40, p.x - 90);
-      p.vx = 0;
-      p.invincible = 30;
+    e.x += e.dir * (e.type === "turtle" ? 1.4 : 1.2);
+    if(e.x < e.base - 80 || e.x > e.base + 80) e.dir *= -1;
+
+    const dx = (p.x + p.w/2) - e.x;
+    const dy = (p.y + p.h/2) - e.y;
+    const overlap = Math.abs(dx) < 42 && Math.abs(dy) < 52;
+    if (overlap) {
+      const stomp = e.type === "turtle" && p.vy > 2 && (p.y + p.h) < (e.y + 8);
+      if (stomp) {
+        e.alive = false;
+        p.vy = -9.5;
+        spawnParticles(e.x, e.y, "#7de08a");
+      } else if (p.invincible <= 0) {
+        p.x = Math.max(40, p.x - 90);
+        p.vx = 0;
+        p.invincible = 30;
+      }
     }
   });
 
+  // boss
   if (state.boss && state.boss.alive) {
     const b = state.boss;
     b.x += b.dir * 1.4;
@@ -661,25 +761,83 @@ function updatePlay(){
     }
     b.cooldown--;
     if (b.cooldown <= 0) {
-      state.projectiles.push({x:b.x, y:b.y-10, vx:-4.5, vy:0, kind:"boss"});
+      state.projectiles.push({x:b.x, y:b.y-10, vx:(p.x < b.x ? -4.5 : 4.5), vy:0, kind:"boss"});
       b.cooldown = 80;
     }
   }
 
+  // barrels from mountain tops
+  state.barrelSpawners.forEach(sp => {
+    sp.timer--;
+    if (sp.timer <= 0) {
+      state.barrels.push({x:sp.x, y:sp.y, vx:sp.vx, vy:0, rot:0});
+      sp.timer = sp.cooldown;
+    }
+  });
+
+  for (let i = state.barrels.length - 1; i >= 0; i--) {
+    const b = state.barrels[i];
+    b.vy += 0.5;
+    b.x += b.vx;
+    b.y += b.vy;
+    b.rot = (b.rot || 0) + b.vx * 0.08;
+    for (const plat of state.platforms) {
+      if (b.x + 14 > plat.x && b.x - 14 < plat.x + plat.w && b.y + 14 > plat.y && b.y + 14 < plat.y + plat.h + 12 && b.vy >= 0) {
+        b.y = plat.y - 14;
+        b.vy = 0;
+      }
+    }
+    if (p.invincible <= 0 && Math.abs((p.x + p.w/2) - b.x) < 34 && Math.abs((p.y + p.h/2) - b.y) < 34) {
+      p.x = Math.max(40, p.x - 80);
+      p.invincible = 30;
+      state.barrels.splice(i,1);
+      continue;
+    }
+    if (b.x < -80 || b.x > state.worldWidth + 80 || b.y > 780) state.barrels.splice(i,1);
+  }
+
+  // random eagles
+  state.eagleCooldown--;
+  if (state.eagleCooldown <= 0) {
+    const fromLeft = Math.random() < 0.5;
+    state.eagles.push({
+      x: fromLeft ? -80 : state.worldWidth + 80,
+      y: 110 + Math.random() * 110,
+      vx: fromLeft ? 3.8 : -3.8,
+      dir: fromLeft ? 1 : -1
+    });
+    state.eagleCooldown = 120 + Math.floor(Math.random() * 90);
+  }
+  for (let i = state.eagles.length - 1; i >= 0; i--) {
+    const e = state.eagles[i];
+    e.x += e.vx;
+    if (p.invincible <= 0 && Math.abs((p.x + p.w/2) - e.x) < 44 && Math.abs((p.y + p.h/2) - e.y) < 30) {
+      p.x = Math.max(40, p.x - 90);
+      p.invincible = 28;
+      state.eagles.splice(i,1);
+      continue;
+    }
+    if (e.x < -120 || e.x > state.worldWidth + 120) state.eagles.splice(i,1);
+  }
+
+  // projectiles
   for (let i = state.projectiles.length - 1; i >= 0; i--) {
     const pr = state.projectiles[i];
     pr.x += pr.vx;
     pr.y += pr.vy;
     if (pr.kind === "player") {
+      let removed = false
       for (const e of state.enemies) {
         if (e.alive !== false && Math.abs(pr.x - e.x) < 38 && Math.abs(pr.y - e.y) < 42) {
           e.hp -= 1;
           state.projectiles.splice(i, 1);
           spawnParticles(e.x, e.y, "#ffe08a");
           if (e.hp <= 0) e.alive = false;
+          removed = true;
           break;
         }
       }
+      if (removed) continue;
       if (state.boss && state.boss.alive && i < state.projectiles.length && Math.abs(pr.x - state.boss.x) < 52 && Math.abs(pr.y - state.boss.y) < 62) {
         state.boss.hp -= 1;
         state.projectiles.splice(i, 1);
