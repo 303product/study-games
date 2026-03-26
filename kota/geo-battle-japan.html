@@ -3932,9 +3932,13 @@ function showQuestion(){
     if(isPerfect) {
       state.enemyHp = 0;
       document.getElementById("bFlag").classList.add("dead");
+      renderBattleHp();
+      setTimeout(() => endBattle(true), 1200);
+      return;
     }
     renderBattleHp();
-    endBattle(isPerfect);return;
+    endBattle(false);
+    return;
   }
   const q=state.questions[state.qIdx];
   state.answered=false;
