@@ -8283,13 +8283,11 @@ function endBattle(won){
     if(state.isBoss){
       state.bossClears++; bonuses.push({label:"🌸 完全勝利",val:"達成"});
     }
-    
-    addPtsHistory((state.isBoss?"ボス撃破":c.name+"征服"),earned);
   }
-  saveState(); showResult(won,c,earned,bonuses,perfect);
+  saveState(); showResult(won,c,bonuses,perfect);
 }
 
-function showResult(won,country,earned,bonuses,perfect){
+function showResult(won,country,bonuses,perfect){
   showScreen("resultScreen");
   const isBoss=state.isBoss;
   document.getElementById("rIcon").textContent=won?(isBoss?"👾":(perfect?"🏆":"✅")):"💀";
@@ -8301,9 +8299,8 @@ function showResult(won,country,earned,bonuses,perfect){
   document.getElementById("rStats").innerHTML=`
     <div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div>
     <div class="rs-row"><span>最大コンボ</span><span class="rs-val">${state.combo}連続</span></div>
-    <div class="rs-row"><span>獲得ポイント</span><span class="rs-val gold">+${earned}pt</span></div>
     ${bonuses.map(b=>`<div class="rs-row"><span>${b.label}</span><span class="rs-val gold">${b.val}</span></div>`).join("")}
-    <div class="rs-row"><span>累計ポイント</span><span class="rs-val gold">${state.points}pt</span></div>`;
+    `;
 
   const btns=document.getElementById("rBtns"); btns.innerHTML="";
   const addBtn=(text,fn,cls="btn-primary")=>{

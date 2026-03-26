@@ -4060,12 +4060,11 @@ function endBattle(won){
     if(state.isBoss){
       state.bossClears++; bonuses.push({label:"🐎 ボス撃破",val:"達成"});
     }
-    
   }
-  saveState(); showResult(won,c,earned,bonuses,perfect);
+  saveState(); showResult(won,c,bonuses,perfect);
 }
 
-function showResult(won,country,earned,bonuses,perfect){
+function showResult(won,country,bonuses,perfect){
   showScreen("resultScreen"); const isBoss=state.isBoss;
   document.getElementById("rIcon").textContent=won?(isBoss?"🐴":(perfect?"🌸":"✅")):"💀";
   const rTitle=document.getElementById("rTitle");
@@ -4076,7 +4075,6 @@ function showResult(won,country,earned,bonuses,perfect){
   document.getElementById("rStats").innerHTML=`
     <div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div>
     <div class="rs-row"><span>最大連撃</span><span class="rs-val">${state.combo}連続</span></div>
-    
     ${bonuses.map(b=>`<div class="rs-row"><span>${b.label}</span><span class="rs-val gold">${b.val}</span></div>`).join("")}
     `;
 
