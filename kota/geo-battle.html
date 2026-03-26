@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>地理バトル — 世界征服</title>
+<style>
+:root {
+  --bg:#060c1a; --surface:#0d1a2e; --surface2:#132240;
+  --border:#1e3a5c; --accent:#00c9ff; --accent2:#ff4d6d;
+  --gold:#ffd700; --green:#00e676; --red:#ff4444;
+  --text:#e8f4ff; --muted:#5a7fa0;
+  --hp-enemy:#ff4d6d; --hp-player:#00c9ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'Hiragino Sans','Yu Gothic UI',sans-serif;}
+#app{width:100vw;height:100vh;position:relative;overflow:hidden;}
+
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.screen.active{display:flex;}
+
+#titleScreen{background:radial-gradient(ellipse at 50% 30%,#0a2040 0%,#060c1a 70%);}
+.title-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle 3s infinite;}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1);}50%{opacity:1;transform:scale(1.5);}}
+.title-logo{text-align:center;z-index:1;}
+.title-main{font-size:clamp(2rem,7vw,4.5rem);font-weight:900;letter-spacing:.05em;
+  background:linear-gradient(135deg,#00c9ff,#fff,#ffd700);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:none;filter:drop-shadow(0 0 30px rgba(0,201,255,.5));}
+.title-sub{font-size:clamp(.9rem,2.5vw,1.3rem);color:var(--muted);margin-top:.4em;letter-spacing:.15em;}
+.title-btns{margin-top:2.5rem;display:flex;flex-direction:column;gap:.8rem;width:min(320px,80vw);}
+.btn{padding:1rem 1.5rem;border:none;border-radius:12px;font-size:1.05rem;font-weight:700;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;letter-spacing:.05em;touch-action:manipulation;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:linear-gradient(135deg,#0090cc,#00c9ff);color:#000;
+  box-shadow:0 0 20px rgba(0,201,255,.4);}
+.btn-primary:hover{box-shadow:0 0 30px rgba(0,201,255,.7);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-gold{background:linear-gradient(135deg,#b8860b,#ffd700);color:#000;
+  box-shadow:0 0 20px rgba(255,215,0,.4);}
+
+#mapScreen{background:var(--bg);flex-direction:column;justify-content:flex-start;overflow:hidden;}
+.map-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:.6rem 1rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;z-index:5;}
+.stat-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:.3rem .7rem;font-size:.8rem;display:flex;align-items:center;gap:.4rem;}
+.stat-badge span{color:var(--accent);font-weight:700;}
+.map-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;}
+.map-title{text-align:center;font-size:1.3rem;font-weight:800;color:var(--accent);margin-bottom:.8rem;}
+.country-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.7rem;
+  max-width:900px;margin:0 auto;}
+.country-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;
+  padding:.8rem;cursor:pointer;transition:all .2s;touch-action:manipulation;position:relative;overflow:hidden;}
+.country-card:hover,.country-card:active{transform:translateY(-2px);border-color:var(--accent);
+  box-shadow:0 4px 20px rgba(0,201,255,.2);}
+.country-card.cleared{border-color:var(--green);background:linear-gradient(135deg,var(--surface),#0d2a1a);}
+.country-card.boss-target{border-color:var(--gold);animation:bossGlow .8s infinite alternate;}
+@keyframes bossGlow{from{box-shadow:0 0 8px rgba(255,215,0,.3);}to{box-shadow:0 0 20px rgba(255,215,0,.8);}}
+.country-card.locked{opacity:.4;cursor:default;pointer-events:none;}
+.cc-flag{font-size:2rem;text-align:center;}
+.cc-name{font-size:.9rem;font-weight:700;text-align:center;margin-top:.3rem;}
+.cc-region{font-size:.7rem;color:var(--muted);text-align:center;}
+.cc-status{position:absolute;top:.4rem;right:.4rem;font-size:.8rem;}
+.cc-hp-bar{margin-top:.4rem;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.cc-hp-fill{height:100%;background:var(--hp-enemy);border-radius:2px;transition:width .3s;}
+.boss-card{grid-column:1/-1;background:linear-gradient(135deg,#1a1000,#2a1800);
+  border:2px solid var(--gold);border-radius:16px;padding:1rem;text-align:center;cursor:pointer;
+  touch-action:manipulation;}
+.boss-card-title{font-size:1.2rem;font-weight:900;color:var(--gold);}
+.boss-card-sub{font-size:.8rem;color:var(--muted);margin-top:.2rem;}
+.progress-bar-wrap{width:100%;max-width:900px;margin:.5rem auto .2rem;}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .5s;}
+.progress-label{font-size:.75rem;color:var(--muted);text-align:right;margin-top:.2rem;}
+
+#battleScreen{background:radial-gradient(ellipse at 50% 0%,#0a1e3a 0%,var(--bg) 60%);
+  flex-direction:column;justify-content:flex-start;overflow:hidden;}
+.battle-header{width:100%;padding:.6rem 1rem;display:flex;justify-content:space-between;align-items:center;
+  background:var(--surface);border-bottom:1px solid var(--border);}
+.battle-title{font-size:1rem;font-weight:700;color:var(--accent);}
+.battle-pts{font-size:.85rem;color:var(--gold);}
+.battle-arena{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:1rem;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.enemy-area{text-align:center;margin-bottom:.8rem;}
+.enemy-flag{font-size:clamp(3rem,10vw,5rem);filter:drop-shadow(0 0 20px rgba(255,77,109,.5));
+  animation:enemyFloat 2s ease-in-out infinite;transition:filter .2s;}
+@keyframes enemyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.enemy-flag.hit{animation:enemyHit .5s ease!important;filter:brightness(3) drop-shadow(0 0 30px #fff)!important;}
+@keyframes enemyHit{
+  0%{transform:translateY(0) scale(1);}
+  15%{transform:translateY(-12px) scale(1.15);filter:brightness(3);}
+  30%{transform:translateX(-8px) scale(.95);}
+  45%{transform:translateX(8px) scale(.95);}
+  60%{transform:translateX(-4px) scale(1);}
+  80%{transform:translateY(0) scale(1);}
+  100%{transform:translateY(0) scale(1);}}
+.enemy-flag.miss-shake{animation:enemyTaunt .4s ease!important;}
+@keyframes enemyTaunt{
+  0%,100%{transform:translateY(0) rotate(0);}
+  25%{transform:translateY(-3px) rotate(-5deg);}
+  75%{transform:translateY(-3px) rotate(5deg);}
+}
+.attack-effect{position:absolute;pointer-events:none;z-index:10;}
+.attack-effect.slash{width:120px;height:120px;animation:slashAnim .5s ease forwards;}
+@keyframes slashAnim{
+  0%{opacity:0;transform:scale(.3) rotate(-30deg);}
+  30%{opacity:1;transform:scale(1.2) rotate(10deg);}
+  100%{opacity:0;transform:scale(1.5) rotate(20deg);}
+}
+.attack-effect.boom{width:100px;height:100px;animation:boomAnim .6s ease forwards;}
+@keyframes boomAnim{
+  0%{opacity:0;transform:scale(.2);}
+  40%{opacity:1;transform:scale(1.3);}
+  100%{opacity:0;transform:scale(2);}
+}
+.enemy-name.hidden-for-flag{color:transparent;text-shadow:none;background:var(--border);
+  border-radius:8px;display:inline-block;padding:.1em .8em;}
+.enemy-name{font-size:clamp(1.2rem,4vw,2rem);font-weight:900;margin:.3rem 0;}
+.hp-row{display:flex;align-items:center;gap:.5rem;width:min(400px,90vw);}
+.hp-label{font-size:.75rem;color:var(--muted);width:30px;text-align:right;}
+.hp-bar{flex:1;height:12px;background:var(--border);border-radius:6px;overflow:hidden;}
+.hp-fill{height:100%;border-radius:6px;transition:width .4s;}
+.hp-enemy-fill{background:linear-gradient(90deg,#ff4d6d,#ff8fab);}
+.hp-val{font-size:.75rem;font-weight:700;width:45px;}
+.combo-badge{background:linear-gradient(135deg,#ff4d6d,#ffa040);color:#fff;
+  border-radius:999px;padding:.2rem .7rem;font-size:.8rem;font-weight:700;margin:.4rem 0;
+  opacity:0;transition:opacity .2s;}
+.combo-badge.show{opacity:1;}
+.question-box{width:min(600px,95vw);background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:1rem 1.2rem;margin:.5rem 0;}
+.q-meta{font-size:.72rem;color:var(--muted);margin-bottom:.4rem;display:flex;justify-content:space-between;}
+.q-text{font-size:clamp(.95rem,2.5vw,1.15rem);font-weight:700;line-height:1.5;}
+.q-flag-display{font-size:3.5rem;text-align:center;margin:.6rem 0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5));}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.8rem;}
+.choice-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;
+  padding:.7rem .6rem;font-size:clamp(.82rem,2vw,.95rem);cursor:pointer;transition:all .15s;
+  text-align:center;touch-action:manipulation;color:var(--text);font-weight:600;}
+.choice-btn:hover{border-color:var(--accent);background:#0d2040;}
+.choice-btn:active{transform:scale(.97);}
+.choice-btn.correct{background:#0d2a1a;border-color:var(--green);color:var(--green);}
+.choice-btn.wrong{background:#2a0d0d;border-color:var(--red);color:var(--red);}
+.choice-btn.reveal{background:#0d2a1a;border-color:var(--green);color:var(--green);}
+.choice-btn.flag-choice{font-size:2rem;padding:.5rem;line-height:1.2;}
+.q-feedback{text-align:center;font-size:.9rem;margin-top:.5rem;min-height:1.2em;font-weight:700;}
+.q-feedback.ok{color:var(--green);}
+.q-feedback.ng{color:var(--red);}
+.timer-bar{width:min(600px,95vw);height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:.4rem;}
+.timer-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .1s linear;}
+.battle-footer{width:100%;padding:.5rem 1rem;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;}
+.q-counter{font-size:.8rem;color:var(--muted);}
+
+#resultScreen{background:radial-gradient(ellipse at 50% 30%,#0a2040,var(--bg));}
+.result-box{text-align:center;padding:2rem;max-width:420px;width:90%;}
+.result-icon{font-size:4rem;margin-bottom:.5rem;}
+.result-title{font-size:1.8rem;font-weight:900;margin-bottom:.3rem;}
+.result-title.win{color:var(--green);}
+.result-title.lose{color:var(--red);}
+.result-title.boss{color:var(--gold);}
+.result-stats{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:1rem;margin:1rem 0;text-align:left;display:flex;flex-direction:column;gap:.4rem;}
+.rs-row{display:flex;justify-content:space-between;font-size:.9rem;}
+.rs-val{font-weight:700;color:var(--accent);}
+.rs-val.gold{color:var(--gold);}
+.result-btns{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem;}
+
+#reviewScreen{flex-direction:column;overflow:hidden;}
+.review-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:.7rem 1rem;font-size:1.1rem;font-weight:800;color:var(--gold);}
+.review-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;
+  display:flex;flex-direction:column;gap:.6rem;max-width:600px;align-self:center;}
+.review-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:.8rem 1rem;}
+.ri-country{font-size:.75rem;color:var(--muted);margin-bottom:.2rem;}
+.ri-q{font-size:.9rem;font-weight:700;margin-bottom:.4rem;}
+.ri-ans{font-size:.85rem;color:var(--green);}
+.ri-wrong{font-size:.8rem;color:var(--red);}
+
+#pointsScreen{flex-direction:column;overflow:hidden;}
+.points-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:.7rem 1rem;font-size:1.1rem;font-weight:800;color:var(--gold);}
+.points-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;
+  max-width:500px;align-self:center;}
+.points-big{text-align:center;padding:1.5rem;background:var(--surface);
+  border:2px solid var(--gold);border-radius:16px;margin-bottom:1rem;}
+.pb-val{font-size:3rem;font-weight:900;color:var(--gold);}
+.pb-label{font-size:.9rem;color:var(--muted);}
+.rewards-grid{display:flex;flex-direction:column;gap:.5rem;}
+.reward-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+.ri-name{font-size:.95rem;font-weight:700;}
+.ri-cost{font-size:.85rem;color:var(--gold);font-weight:700;}
+.ri-exchange{background:var(--gold);color:#000;border:none;border-radius:8px;
+  padding:.4rem .8rem;font-size:.8rem;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.ri-exchange:disabled{opacity:.3;cursor:default;}
+.points-history{margin-top:1rem;}
+.ph-title{font-size:.85rem;color:var(--muted);margin-bottom:.4rem;}
+.ph-item{font-size:.8rem;padding:.3rem 0;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;}
+.ph-pts{color:var(--gold);font-weight:700;}
+.parent-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:.8rem;margin-top:1rem;}
+.ps-title{font-size:.85rem;color:var(--muted);margin-bottom:.5rem;}
+.ps-btns{display:flex;gap:.5rem;}
+.ps-btn{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:.5rem;font-size:.8rem;cursor:pointer;touch-action:manipulation;}
+
+.damage-text{position:absolute;font-size:1.5rem;font-weight:900;pointer-events:none;
+  animation:dmgFloat 1s forwards;}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
+.screen-flash{position:absolute;inset:0;pointer-events:none;opacity:0;border-radius:inherit;}
+.screen-flash.hit{animation:flashHit .3s forwards;}
+.screen-flash.miss{animation:flashMiss .3s forwards;}
+@keyframes flashHit{0%,100%{opacity:0;}30%{opacity:.25;background:var(--green);}}
+@keyframes flashMiss{0%,100%{opacity:0;}30%{opacity:.25;background:var(--red);}}
+
+.back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);
+  padding:.4rem .8rem;font-size:.8rem;cursor:pointer;touch-action:manipulation;}
+.empty-msg{text-align:center;color:var(--muted);padding:2rem;font-size:.9rem;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="titleScreen" class="screen active">
+  <div class="title-stars" id="stars"></div>
+  <div class="title-logo">
+    <div class="title-main">🌍 地理バトル</div>
+    <div class="title-sub">WORLD CONQUEST</div>
+  </div>
+  <div class="title-btns">
+    <button class="btn btn-primary" id="btnStart">▶ 世界征服を始める</button>
+    <button class="btn btn-secondary" id="btnReview">📚 復習モード</button>
+    <button class="btn btn-gold" id="btnPoints">⭐ ポイント確認</button>
+  </div>
+</div>
+
+<div id="mapScreen" class="screen">
+  <div class="map-header">
+    <div class="stat-badge">🌍 制覇 <span id="hClear">0</span>/20</div>
+    <div class="stat-badge">⭐ <span id="hPoints">0</span>pt</div>
+    <div class="stat-badge">❌ 苦手 <span id="hWrong">0</span></div>
+    <button class="back-btn" id="btnMapBack">← タイトル</button>
+  </div>
+  <div class="map-area">
+    <div class="map-title">🗺️ 世界地図 — 次の国を選べ</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-label" id="progressLabel">0% 征服済み</div>
+    </div>
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+</div>
+
+<div id="battleScreen" class="screen">
+  <div class="screen-flash" id="battleFlash"></div>
+  <div class="battle-header">
+    <div class="battle-title" id="bTitle">vs フランス</div>
+    <div class="battle-pts" id="bPts">⭐ 0pt</div>
+  </div>
+  <div class="battle-arena">
+    <div class="enemy-area" style="position:relative;">
+      <canvas id="attackCanvas" width="300" height="200" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10;"></canvas>
+      <div class="enemy-flag" id="bFlag">🐉</div>
+      <div class="enemy-name" id="bName">フランス</div>
+      <div class="hp-row">
+        <div class="hp-label">敵</div>
+        <div class="hp-bar"><div class="hp-fill hp-enemy-fill" id="bEnemyHp" style="width:100%"></div></div>
+        <div class="hp-val" id="bEnemyHpVal">100/100</div>
+      </div>
+    </div>
+    <div class="combo-badge" id="comboBadge">🔥 3連続！×1.2</div>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    <div class="question-box">
+      <div class="q-meta">
+        <span id="qType">首都</span>
+        <span id="qDiff">通常問題 +10pt</span>
+      </div>
+      <div class="q-text" id="qText">フランスの首都は？</div>
+      <div class="q-flag-display" id="qFlagDisplay" style="display:none;"></div>
+      <div class="choices" id="choices"></div>
+      <div class="q-feedback" id="qFeedback"></div>
+    </div>
+  </div>
+  <div class="battle-footer">
+    <div class="q-counter" id="qCounter">問1 / 6</div>
+    <button class="btn btn-secondary" style="padding:.4rem .8rem;font-size:.8rem;" id="btnBattleQuit">逃げる</button>
+  </div>
+</div>
+
+<div id="resultScreen" class="screen">
+  <div class="result-box">
+    <div class="result-icon" id="rIcon">🏆</div>
+    <div class="result-title" id="rTitle">撃破!</div>
+    <div id="rSubtitle" style="color:var(--muted);margin-bottom:.5rem;font-size:.9rem;"></div>
+    <div class="result-stats" id="rStats"></div>
+    <div class="result-btns" id="rBtns"></div>
+  </div>
+</div>
+
+<div id="reviewScreen" class="screen">
+  <div class="review-header">📚 復習リスト
+    <button class="back-btn" style="float:right;margin-top:-.2rem;" id="btnReviewBack">← 戻る</button>
+  </div>
+  <div class="review-list" id="reviewList"></div>
+</div>
+
+<div id="pointsScreen" class="screen">
+  <div class="points-header">⭐ ポイント管理
+    <button class="back-btn" style="float:right;margin-top:-.2rem;" id="btnPointsBack">← 戻る</button>
+  </div>
+  <div class="points-body">
+    <div class="points-big">
+      <div class="pb-val" id="ptsBig">0</div>
+      <div class="pb-label">保有ポイント</div>
+    </div>
+    <div class="rewards-grid" id="rewardsGrid"></div>
+    <div class="parent-section">
+      <div class="ps-title">👨‍👩‍👧 親用メニュー</div>
+      <div class="ps-btns">
+        <button class="ps-btn" id="btnAddPts">+10pt 追加</button>
+        <button class="ps-btn" id="btnSubPts">-10pt 減算</button>
+        <button class="ps-btn" id="btnResetPts">リセット</button>
+      </div>
+    </div>
+    <div class="points-history">
+      <div class="ph-title">履歴</div>
+      <div id="ptsHistory"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// =====================================================================
+// DATA — 20 countries with flag quiz questions added
+// =====================================================================
+const COUNTRIES = [
+  { id:"usa", name:"アメリカ", flag:"🇺🇸", region:"北アメリカ", capital:"ワシントンD.C.", pop:"約3.3億人", area:"約983万km²", products:["大豆","トウモロコシ","IT"],
+    questions:[
+      {type:"首都",text:"アメリカの首都は？",choices:["ニューヨーク","ワシントンD.C.","ロサンゼルス","シカゴ"],ans:1,hard:false},
+      {type:"人口",text:"アメリカの人口は約何億人？",choices:["約1億人","約2億人","約3.3億人","約5億人"],ans:2,hard:false},
+      {type:"特産",text:"アメリカの主要輸出品は？",choices:["コーヒー","大豆・トウモロコシ","バナナ","カカオ"],ans:1,hard:false},
+      {type:"位置",text:"アメリカがある大陸は？",choices:["ヨーロッパ","アジア","北アメリカ","南アメリカ"],ans:2,hard:false},
+      {type:"面積",text:"アメリカの国土面積は約何万km²？",choices:["約500万","約983万","約100万","約1700万"],ans:1,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇺🇸",choices:["アメリカ","イギリス","オーストラリア","フランス"],ans:0,hard:false,isFlag:true},
+    ]},
+  { id:"china", name:"中国", flag:"🇨🇳", region:"アジア", capital:"北京", pop:"約14億人", area:"約960万km²", products:["米","工業製品","IT"],
+    questions:[
+      {type:"首都",text:"中国の首都は？",choices:["上海","北京","広州","深圳"],ans:1,hard:false},
+      {type:"人口",text:"中国の人口は約何億人？",choices:["約8億人","約10億人","約14億人","約20億人"],ans:2,hard:false},
+      {type:"特産",text:"中国の主要農産物は？",choices:["小麦と米","コーヒーとカカオ","バナナとパイン","大豆のみ"],ans:0,hard:false},
+      {type:"地形",text:"中国最大の川は？",choices:["ガンジス川","長江（揚子江）","黄河","メコン川"],ans:1,hard:true},
+      {type:"位置",text:"中国がある大陸は？",choices:["ヨーロッパ","アフリカ","アジア","南アメリカ"],ans:2,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇨🇳",choices:["ベトナム","中国","韓国","日本"],ans:1,hard:false,isFlag:true},
+    ]},
+  { id:"russia", name:"ロシア", flag:"🇷🇺", region:"ユーラシア", capital:"モスクワ", pop:"約1.4億人", area:"約1710万km²", products:["天然ガス","石油","小麦"],
+    questions:[
+      {type:"首都",text:"ロシアの首都は？",choices:["サンクトペテルブルク","モスクワ","キエフ","ワルシャワ"],ans:1,hard:false},
+      {type:"面積",text:"ロシアは世界で何番目に大きい国？",choices:["1番","2番","3番","5番"],ans:0,hard:false},
+      {type:"特産",text:"ロシアの主要輸出資源は？",choices:["コーヒー","天然ガス・石油","バナナ","綿花"],ans:1,hard:false},
+      {type:"気候",text:"ロシアの多くの地域の気候は？",choices:["熱帯","砂漠","亜寒帯・寒帯","地中海性"],ans:2,hard:true},
+      {type:"地形",text:"ロシア最大の山脈は？",choices:["アルプス山脈","ウラル山脈","ヒマラヤ山脈","アンデス山脈"],ans:1,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇷🇺",choices:["オランダ","フランス","ロシア","ルクセンブルク"],ans:2,hard:true,isFlag:true},
+    ]},
+  { id:"australia", name:"オーストラリア", flag:"🇦🇺", region:"オセアニア", capital:"キャンベラ", pop:"約2600万人", area:"約769万km²", products:["羊毛","石炭","牛肉"],
+    questions:[
+      {type:"首都",text:"オーストラリアの首都は？",choices:["シドニー","メルボルン","キャンベラ","ブリスベン"],ans:2,hard:false},
+      {type:"特産",text:"オーストラリアの主要輸出品は？",choices:["石油","羊毛・石炭","コーヒー","バナナ"],ans:1,hard:false},
+      {type:"位置",text:"オーストラリアがある大陸・地域は？",choices:["ヨーロッパ","南アメリカ","アフリカ","オセアニア"],ans:3,hard:false},
+      {type:"地形",text:"オーストラリアにある世界最大の岩は？",choices:["富士山","ウルル（エアーズロック）","モンブラン","グランドキャニオン"],ans:1,hard:true},
+      {type:"人口",text:"オーストラリアの人口は約何万人？",choices:["約1億人","約5000万人","約2600万人","約500万人"],ans:2,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇦🇺",choices:["ニュージーランド","イギリス","オーストラリア","フィジー"],ans:2,hard:true,isFlag:true},
+    ]},
+  { id:"brazil", name:"ブラジル", flag:"🇧🇷", region:"南アメリカ", capital:"ブラジリア", pop:"約2.1億人", area:"約851万km²", products:["コーヒー","大豆","砂糖"],
+    questions:[
+      {type:"首都",text:"ブラジルの首都は？",choices:["リオデジャネイロ","サンパウロ","ブラジリア","ブエノスアイレス"],ans:2,hard:false},
+      {type:"地形",text:"ブラジルにある世界最大の熱帯雨林は？",choices:["コンゴ盆地","アマゾン熱帯雨林","ボルネオ島","タイガ"],ans:1,hard:false},
+      {type:"特産",text:"ブラジルの最大輸出農産物は？",choices:["バナナ","コーヒー・大豆","米","小麦"],ans:1,hard:false},
+      {type:"位置",text:"ブラジルがある大陸は？",choices:["北アメリカ","アフリカ","南アメリカ","アジア"],ans:2,hard:false},
+      {type:"言語",text:"ブラジルの公用語は？",choices:["スペイン語","英語","ポルトガル語","フランス語"],ans:2,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇧🇷",choices:["コロンビア","ブラジル","アルゼンチン","ボリビア"],ans:1,hard:false,isFlag:true},
+    ]},
+  { id:"india", name:"インド", flag:"🇮🇳", region:"アジア", capital:"ニューデリー", pop:"約14.2億人", area:"約329万km²", products:["綿花","茶","IT"],
+    questions:[
+      {type:"首都",text:"インドの首都は？",choices:["ムンバイ","コルカタ","チェンナイ","ニューデリー"],ans:3,hard:false},
+      {type:"人口",text:"インドは人口世界何位？（2023年時点）",choices:["1位","2位","3位","4位"],ans:0,hard:true},
+      {type:"特産",text:"インドの主要輸出農産物は？",choices:["コーヒー","綿花・茶","バナナ","大豆"],ans:1,hard:false},
+      {type:"宗教",text:"インドで最も多い宗教は？",choices:["イスラム教","キリスト教","ヒンドゥー教","仏教"],ans:2,hard:false},
+      {type:"地形",text:"インド北部にある世界最高峰の山脈は？",choices:["アルプス山脈","ウラル山脈","ヒマラヤ山脈","ロッキー山脈"],ans:2,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇮🇳",choices:["アイルランド","インド","コートジボワール","イタリア"],ans:1,hard:true,isFlag:true},
+    ]},
+  { id:"germany", name:"ドイツ", flag:"🇩🇪", region:"ヨーロッパ", capital:"ベルリン", pop:"約8300万人", area:"約36万km²", products:["自動車","機械","化学品"],
+    questions:[
+      {type:"首都",text:"ドイツの首都は？",choices:["ミュンヘン","フランクフルト","ハンブルク","ベルリン"],ans:3,hard:false},
+      {type:"特産",text:"ドイツの主要輸出工業品は？",choices:["IT製品","自動車・機械","繊維","農産物"],ans:1,hard:false},
+      {type:"位置",text:"ドイツがある地域は？",choices:["東アジア","アフリカ","西ヨーロッパ","南アメリカ"],ans:2,hard:false},
+      {type:"川",text:"ドイツ・オランダを流れる主要な川は？",choices:["テムズ川","ライン川","セーヌ川","ドナウ川"],ans:1,hard:true},
+      {type:"人口",text:"ドイツはEUで人口何位？",choices:["1位（最大）","2位","3位","5位"],ans:0,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇩🇪",choices:["ベルギー","ドイツ","オーストリア","スイス"],ans:1,hard:true,isFlag:true},
+    ]},
+  { id:"france", name:"フランス", flag:"🇫🇷", region:"ヨーロッパ", capital:"パリ", pop:"約6800万人", area:"約55万km²", products:["ワイン","小麦","航空機"],
+    questions:[
+      {type:"首都",text:"フランスの首都は？",choices:["リヨン","マルセイユ","ニース","パリ"],ans:3,hard:false},
+      {type:"特産",text:"フランスの有名輸出品は？",choices:["コーヒー","ワイン・小麦","石油","綿花"],ans:1,hard:false},
+      {type:"地形",text:"フランスとイタリアの国境にある山脈は？",choices:["ピレネー山脈","ウラル山脈","アルプス山脈","ヴォージュ山脈"],ans:2,hard:true},
+      {type:"有名",text:"フランスの有名な塔は？",choices:["ビッグベン","コロッセオ","エッフェル塔","サグラダファミリア"],ans:2,hard:false},
+      {type:"言語",text:"フランスの公用語は？",choices:["英語","ドイツ語","スペイン語","フランス語"],ans:3,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇫🇷",choices:["フランス","オランダ","ロシア","イタリア"],ans:0,hard:true,isFlag:true},
+    ]},
+  { id:"uk", name:"イギリス", flag:"🇬🇧", region:"ヨーロッパ", capital:"ロンドン", pop:"約6700万人", area:"約24万km²", products:["金融","製薬","航空機"],
+    questions:[
+      {type:"首都",text:"イギリスの首都は？",choices:["マンチェスター","バーミンガム","ロンドン","エジンバラ"],ans:2,hard:false},
+      {type:"有名",text:"イギリスの有名な時計塔は？",choices:["エッフェル塔","ビッグベン","コロッセオ","ブランデンブルク門"],ans:1,hard:false},
+      {type:"位置",text:"イギリスはどこにある？",choices:["北アフリカ","西ヨーロッパの島国","東アジア","北アメリカ"],ans:1,hard:false},
+      {type:"産業",text:"イギリスが強い産業は？",choices:["農業","林業","金融・製薬","鉱業"],ans:2,hard:true},
+      {type:"川",text:"ロンドンを流れる川は？",choices:["ライン川","セーヌ川","テムズ川","ドナウ川"],ans:2,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇬🇧",choices:["オーストラリア","イギリス","ニュージーランド","アイスランド"],ans:1,hard:false,isFlag:true},
+    ]},
+  { id:"korea", name:"韓国", flag:"🇰🇷", region:"アジア", capital:"ソウル", pop:"約5200万人", area:"約10万km²", products:["半導体","自動車","鉄鋼"],
+    questions:[
+      {type:"首都",text:"韓国の首都は？",choices:["釜山","インチョン","ソウル","大邱"],ans:2,hard:false},
+      {type:"特産",text:"韓国の主要輸出工業品は？",choices:["農産物","半導体・自動車","繊維のみ","コーヒー"],ans:1,hard:false},
+      {type:"位置",text:"韓国が隣接する国は？",choices:["インドとパキスタン","中国と北朝鮮","日本とフィリピン","ロシアとモンゴル"],ans:1,hard:false},
+      {type:"人口",text:"韓国の人口は約何万人？",choices:["約1億人","約5200万人","約2000万人","約3億人"],ans:1,hard:false},
+      {type:"宗教",text:"韓国で多い宗教は？（複数）",choices:["イスラム教","ヒンドゥー教","仏教・キリスト教","ユダヤ教"],ans:2,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇰🇷",choices:["北朝鮮","日本","韓国","台湾"],ans:2,hard:false,isFlag:true},
+    ]},
+  { id:"italy", name:"イタリア", flag:"🇮🇹", region:"ヨーロッパ", capital:"ローマ", pop:"約6000万人", area:"約30万km²", products:["自動車","ファッション","ワイン"],
+    questions:[
+      {type:"首都",text:"イタリアの首都は？",choices:["ミラノ","フィレンツェ","ナポリ","ローマ"],ans:3,hard:false},
+      {type:"有名",text:"イタリアにある古代の円形競技場は？",choices:["コロッセオ","パルテノン神殿","エッフェル塔","ビッグベン"],ans:0,hard:false},
+      {type:"特産",text:"イタリアの有名輸出品は？",choices:["石油","ワイン・ファッション","綿花","コーヒー"],ans:1,hard:false},
+      {type:"地形",text:"イタリアとフランスの国境にある山脈は？",choices:["ウラル山脈","アルプス山脈","ピレネー山脈","アペニン山脈"],ans:1,hard:true},
+      {type:"位置",text:"イタリアの形の特徴は？",choices:["四角形","ブーツ型","三角形","円形"],ans:1,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇮🇹",choices:["アイルランド","メキシコ","ハンガリー","イタリア"],ans:3,hard:true,isFlag:true},
+    ]},
+  { id:"canada", name:"カナダ", flag:"🇨🇦", region:"北アメリカ", capital:"オタワ", pop:"約3800万人", area:"約999万km²", products:["木材","小麦","石油"],
+    questions:[
+      {type:"首都",text:"カナダの首都は？",choices:["トロント","バンクーバー","モントリオール","オタワ"],ans:3,hard:false},
+      {type:"面積",text:"カナダは国土面積世界何位？",choices:["1位","2位","3位","5位"],ans:1,hard:true},
+      {type:"特産",text:"カナダの主要輸出品は？",choices:["コーヒー","木材・小麦・石油","バナナ","綿花"],ans:1,hard:false},
+      {type:"位置",text:"カナダと国境を接する国は？",choices:["メキシコのみ","アメリカのみ","アメリカとデンマーク（グリーンランド）","ロシアのみ"],ans:1,hard:true},
+      {type:"言語",text:"カナダの公用語は？",choices:["英語のみ","英語とフランス語","英語とスペイン語","フランス語のみ"],ans:1,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇨🇦",choices:["カナダ","アメリカ","イギリス","オーストラリア"],ans:0,hard:false,isFlag:true},
+    ]},
+  { id:"spain", name:"スペイン", flag:"🇪🇸", region:"ヨーロッパ", capital:"マドリード", pop:"約4700万人", area:"約50万km²", products:["オリーブオイル","ワイン","観光"],
+    questions:[
+      {type:"首都",text:"スペインの首都は？",choices:["バルセロナ","バレンシア","セビリア","マドリード"],ans:3,hard:false},
+      {type:"特産",text:"スペインの主要輸出品は？",choices:["石油","オリーブオイル・ワイン","綿花","木材"],ans:1,hard:false},
+      {type:"地形",text:"スペインとフランスの国境にある山脈は？",choices:["アルプス山脈","ピレネー山脈","ウラル山脈","アトラス山脈"],ans:1,hard:true},
+      {type:"位置",text:"スペインはどこにある？",choices:["東ヨーロッパ","アフリカ北部","イベリア半島","バルカン半島"],ans:2,hard:false},
+      {type:"有名",text:"スペインにある有名な教会は？",choices:["サン・ピエトロ大聖堂","ノートルダム大聖堂","サグラダ・ファミリア","ケルン大聖堂"],ans:2,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇪🇸",choices:["ポルトガル","スペイン","アンドラ","モナコ"],ans:1,hard:false,isFlag:true},
+    ]},
+  { id:"mexico", name:"メキシコ", flag:"🇲🇽", region:"北アメリカ", capital:"メキシコシティ", pop:"約1.3億人", area:"約196万km²", products:["石油","トウモロコシ","自動車"],
+    questions:[
+      {type:"首都",text:"メキシコの首都は？",choices:["グアダラハラ","モンテレイ","メキシコシティ","カンクン"],ans:2,hard:false},
+      {type:"特産",text:"メキシコの主要輸出品は？",choices:["コーヒーのみ","石油・自動車","バナナ","綿花"],ans:1,hard:false},
+      {type:"言語",text:"メキシコの公用語は？",choices:["英語","ポルトガル語","フランス語","スペイン語"],ans:3,hard:false},
+      {type:"位置",text:"メキシコが隣接する北の国は？",choices:["カナダ","ブラジル","アメリカ","コロンビア"],ans:2,hard:false},
+      {type:"人口",text:"メキシコの人口は約何億人？",choices:["約5000万人","約1.3億人","約2億人","約3億人"],ans:1,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇲🇽",choices:["イタリア","アイルランド","メキシコ","ハンガリー"],ans:2,hard:true,isFlag:true},
+    ]},
+  { id:"egypt", name:"エジプト", flag:"🇪🇬", region:"アフリカ・中東", capital:"カイロ", pop:"約1.1億人", area:"約100万km²", products:["石油","綿花","観光"],
+    questions:[
+      {type:"首都",text:"エジプトの首都は？",choices:["アレクサンドリア","カイロ","ルクソール","アスワン"],ans:1,hard:false},
+      {type:"有名",text:"エジプトの有名な遺跡は？",choices:["コロッセオ","ピラミッド","エッフェル塔","タージ・マハル"],ans:1,hard:false},
+      {type:"地形",text:"エジプトを流れる世界最長の川は？",choices:["アマゾン川","長江","ナイル川","コンゴ川"],ans:2,hard:false},
+      {type:"位置",text:"エジプトがある地域は？",choices:["西アフリカ","東アフリカ・中東","南アジア","東南アジア"],ans:1,hard:false},
+      {type:"特産",text:"エジプトの主要輸出品は？",choices:["木材","石油・綿花","バナナ","コーヒー"],ans:1,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇪🇬",choices:["イラク","シリア","エジプト","イエメン"],ans:2,hard:true,isFlag:true},
+    ]},
+  { id:"southafrica", name:"南アフリカ", flag:"🇿🇦", region:"アフリカ", capital:"プレトリア", pop:"約6000万人", area:"約122万km²", products:["金","ダイヤモンド","白金"],
+    questions:[
+      {type:"首都",text:"南アフリカの行政首都は？",choices:["ヨハネスブルク","ケープタウン","プレトリア","ダーバン"],ans:2,hard:true},
+      {type:"特産",text:"南アフリカの主要輸出資源は？",choices:["石油","コーヒー","金・ダイヤモンド","綿花"],ans:2,hard:false},
+      {type:"位置",text:"南アフリカはアフリカのどこにある？",choices:["北部","西部","東部","南端"],ans:3,hard:false},
+      {type:"有名",text:"南アフリカに関係する有名な人物は？",choices:["マハトマ・ガンジー","ネルソン・マンデラ","チェ・ゲバラ","マルコムX"],ans:1,hard:false},
+      {type:"気候",text:"南アフリカ南部の気候は？",choices:["熱帯","砂漠","地中海性","亜寒帯"],ans:2,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇿🇦",choices:["ナイジェリア","ケニア","ガーナ","南アフリカ"],ans:3,hard:false,isFlag:true},
+    ]},
+  { id:"argentina", name:"アルゼンチン", flag:"🇦🇷", region:"南アメリカ", capital:"ブエノスアイレス", pop:"約4600万人", area:"約278万km²", products:["牛肉","大豆","ワイン"],
+    questions:[
+      {type:"首都",text:"アルゼンチンの首都は？",choices:["リマ","ボゴタ","サンティアゴ","ブエノスアイレス"],ans:3,hard:false},
+      {type:"特産",text:"アルゼンチンの主要輸出品は？",choices:["石油","牛肉・大豆","コーヒー","バナナ"],ans:1,hard:false},
+      {type:"地形",text:"アルゼンチン西部にある山脈は？",choices:["ロッキー山脈","アルプス山脈","アンデス山脈","ウラル山脈"],ans:2,hard:false},
+      {type:"位置",text:"アルゼンチンがある大陸は？",choices:["北アメリカ","ヨーロッパ","アフリカ","南アメリカ"],ans:3,hard:false},
+      {type:"有名",text:"アルゼンチン出身の有名サッカー選手は？",choices:["ロナウド","メッシ","ネイマール","エムバペ"],ans:1,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇦🇷",choices:["ウルグアイ","アルゼンチン","グアテマラ","ホンジュラス"],ans:1,hard:true,isFlag:true},
+    ]},
+  { id:"turkey", name:"トルコ", flag:"🇹🇷", region:"中東・ヨーロッパ", capital:"アンカラ", pop:"約8500万人", area:"約78万km²", products:["綿花","果物","観光"],
+    questions:[
+      {type:"首都",text:"トルコの首都は？",choices:["イスタンブール","イズミル","アンタルヤ","アンカラ"],ans:3,hard:false},
+      {type:"有名",text:"トルコにある有名なモスクは？",choices:["青のモスク","サン・ピエトロ大聖堂","コルドバのモスク","ウマイヤ・モスク"],ans:0,hard:true},
+      {type:"位置",text:"トルコはアジアとどこにまたがる？",choices:["アフリカ","ヨーロッパ","南アメリカ","オセアニア"],ans:1,hard:false},
+      {type:"特産",text:"トルコの主要輸出品は？",choices:["石油","綿花・果物・繊維","木材","ダイヤモンド"],ans:1,hard:false},
+      {type:"宗教",text:"トルコで最も多い宗教は？",choices:["キリスト教","ヒンドゥー教","イスラム教","仏教"],ans:2,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇹🇷",choices:["チュニジア","トルコ","パキスタン","アゼルバイジャン"],ans:1,hard:true,isFlag:true},
+    ]},
+  { id:"nigeria", name:"ナイジェリア", flag:"🇳🇬", region:"アフリカ", capital:"アブジャ", pop:"約2.2億人", area:"約92万km²", products:["石油","天然ガス","カカオ"],
+    questions:[
+      {type:"首都",text:"ナイジェリアの首都は？",choices:["ラゴス","カノ","イバダン","アブジャ"],ans:3,hard:true},
+      {type:"特産",text:"ナイジェリアの主要輸出品は？",choices:["コーヒー","石油・天然ガス","バナナ","木材"],ans:1,hard:false},
+      {type:"位置",text:"ナイジェリアがある地域は？",choices:["東アフリカ","南アフリカ","西アフリカ","北アフリカ"],ans:2,hard:false},
+      {type:"人口",text:"ナイジェリアはアフリカで人口何位？",choices:["1位（最大）","2位","3位","5位"],ans:0,hard:true},
+      {type:"気候",text:"ナイジェリアの南部の気候は？",choices:["砂漠","寒帯","熱帯","地中海性"],ans:2,hard:true},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇳🇬",choices:["アイルランド","ナイジェリア","コートジボワール","イタリア"],ans:1,hard:true,isFlag:true},
+    ]},
+  { id:"indonesia", name:"インドネシア", flag:"🇮🇩", region:"東南アジア", capital:"ジャカルタ", pop:"約2.7億人", area:"約191万km²", products:["石油","パーム油","天然ゴム"],
+    questions:[
+      {type:"首都",text:"インドネシアの首都は？（現在の行政首都）",choices:["スラバヤ","バリ","ジャカルタ","メダン"],ans:2,hard:false},
+      {type:"地形",text:"インドネシアはどんな地形？",choices:["内陸国","山岳国","島嶼国（多数の島）","半島国"],ans:2,hard:false},
+      {type:"特産",text:"インドネシアの主要輸出品は？",choices:["綿花","石油・パーム油","小麦","ダイヤモンド"],ans:1,hard:false},
+      {type:"宗教",text:"インドネシアで最も多い宗教は？",choices:["キリスト教","ヒンドゥー教","仏教","イスラム教"],ans:3,hard:false},
+      {type:"位置",text:"インドネシアがある地域は？",choices:["南アジア","東南アジア","東アジア","中央アジア"],ans:1,hard:false},
+      {type:"国旗",text:"この国旗はどの国？",flagShow:"🇮🇩",choices:["ポーランド","モナコ","インドネシア","シンガポール"],ans:2,hard:true,isFlag:true},
+    ]},
+];
+
+const REWARDS = [
+  {id:"snack",name:"🍩 おやつ",cost:10},
+  {id:"gametime",name:"🎮 ゲーム時間+30分",cost:30},
+  {id:"small",name:"🎁 小さなプレゼント",cost:50},
+  {id:"special",name:"⭐ 特別報酬",cost:100},
+];
+
+// =====================================================================
+// STATE
+// =====================================================================
+let state = {
+  cleared: [], wrongQ: [], points: 0, ptsHistory: [], bossClears: 0,
+  currentCountry: null, questions: [], qIdx: 0,
+  enemyHp: 100, enemyMaxHp: 100, combo: 0, battlePts: 0,
+  correctCount: 0, timerInterval: null, timerLeft: 0,
+  answered: false, isBoss: false,
+};
+
+function saveState(){ try{ localStorage.setItem("geoBattle", JSON.stringify(state)); }catch(e){} }
+function loadState(){
+  try{ const d=localStorage.getItem("geoBattle"); if(d){const s=JSON.parse(d);Object.assign(state,s);} }catch(e){}
+}
+
+// =====================================================================
+// SCREEN
+// =====================================================================
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// =====================================================================
+// TITLE
+// =====================================================================
+function initStars(){
+  const el=document.getElementById("stars");
+  for(let i=0;i<60;i++){
+    const s=document.createElement("div");s.className="star";
+    const sz=Math.random()*2+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*2}s;`;
+    el.appendChild(s);
+  }
+}
+
+// =====================================================================
+// MAP
+// =====================================================================
+function openMap(){
+  showScreen("mapScreen"); renderMap();
+}
+
+function renderMap(){
+  document.getElementById("hClear").textContent=state.cleared.length;
+  document.getElementById("hPoints").textContent=state.points;
+  document.getElementById("hWrong").textContent=state.wrongQ.length;
+  const pct=Math.round(state.cleared.length/COUNTRIES.length*100);
+  document.getElementById("progressFill").style.width=pct+"%";
+  document.getElementById("progressLabel").textContent=pct+"% 征服済み";
+
+  const grid=document.getElementById("countryGrid");
+  grid.innerHTML="";
+
+  const bossReady=state.cleared.length>0&&state.cleared.length%5===0&&state.cleared.length>(state.bossClears*5);
+
+  if(bossReady){
+    const bc=document.createElement("div"); bc.className="boss-card";
+    bc.innerHTML=`<div class="boss-card-title">⚠️ 復習ボス出現！</div><div class="boss-card-sub">${state.cleared.length}か国征服記念 — 今まで学んだ国をまとめて復習</div>`;
+    bc.addEventListener("click",()=>startBoss());
+    bc.addEventListener("touchend",(e)=>{e.preventDefault();startBoss();});
+    grid.appendChild(bc);
+  }
+
+  COUNTRIES.forEach((c)=>{
+    const cleared=state.cleared.includes(c.id);
+    const card=document.createElement("div");
+    card.className="country-card"+(cleared?" cleared":"");
+    card.innerHTML=`<div class="cc-flag">${c.flag}</div><div class="cc-name">${c.name}</div><div class="cc-region">${c.region}</div><div class="cc-status">${cleared?"✅":""}</div><div class="cc-hp-bar"><div class="cc-hp-fill" style="width:${cleared?0:100}%"></div></div>`;
+    if(!cleared){
+      card.addEventListener("click",()=>startBattle(c));
+      card.addEventListener("touchend",(e)=>{e.preventDefault();startBattle(c);});
+    }
+    grid.appendChild(card);
+  });
+}
+
+// =====================================================================
+// BATTLE
+// =====================================================================
+function buildQuestions(country, isBoss){
+  if(isBoss){
+    const pool=[];
+    state.wrongQ.slice(-20).forEach(w=>{
+      const cc=COUNTRIES.find(c=>c.id===w.country);
+      if(cc){const q=cc.questions.find(q=>q.text===w.qText);if(q)pool.push({...q,countryName:cc.name});}
+    });
+    COUNTRIES.filter(c=>state.cleared.includes(c.id)).forEach(cc=>{
+      cc.questions.forEach(q=>pool.push({...q,countryName:cc.name}));
+    });
+    return shuffle(pool).slice(0,8).map(q=>({...q,text:(q.countryName?`[${q.countryName}] `:"")+q.text}));
+  }
+  return shuffle([...country.questions]).slice(0,6);
+}
+
+function shuffle(arr){return[...arr].sort(()=>Math.random()-.5);}
+
+// Monster emojis for each region
+const MONSTERS = {
+  "北アメリカ":"🦅","南アメリカ":"🐊","アジア":"🐉","ヨーロッパ":"🐺",
+  "オセアニア":"🦈","アフリカ":"🦁","アフリカ・中東":"🦂","中東・ヨーロッパ":"🐍",
+  "東南アジア":"🐅","ユーラシア":"🐻",
+};
+function getMonster(country){ return MONSTERS[country.region]||"👾"; }
+
+function startBattle(country){
+  state.currentCountry=country; state.isBoss=false;
+  state.questions=buildQuestions(country,false);
+  state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
+  state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
+  document.getElementById("bFlag").textContent=getMonster(country);
+  document.getElementById("bName").textContent=country.name;
+  document.getElementById("bName").classList.remove("hidden-for-flag");
+  document.getElementById("bTitle").textContent=`⚔️ vs ${country.name}`;
+  showScreen("battleScreen"); renderBattleHp(); showQuestion();
+}
+
+function startBoss(){
+  state.isBoss=true; state.currentCountry={name:"復習ボス",flag:"👾",id:"boss"};
+  state.questions=buildQuestions(null,true);
+  if(state.questions.length===0){alert("復習問題がありません！");return;}
+  state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
+  state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
+  document.getElementById("bFlag").textContent="👾";
+  document.getElementById("bName").textContent="記憶の守護者";
+  document.getElementById("bTitle").textContent="⚔️ ボス戦！";
+  showScreen("battleScreen"); renderBattleHp(); showQuestion();
+}
+
+function renderBattleHp(){
+  const pct=Math.max(0,state.enemyHp/state.enemyMaxHp*100);
+  document.getElementById("bEnemyHp").style.width=pct+"%";
+  document.getElementById("bEnemyHpVal").textContent=`${state.enemyHp}/${state.enemyMaxHp}`;
+  document.getElementById("bPts").textContent=`⭐ ${state.points}pt`;
+}
+
+function showQuestion(){
+  clearTimer();
+  if(state.qIdx>=state.questions.length){endBattle(true);return;}
+  const q=state.questions[state.qIdx];
+  state.answered=false;
+
+  document.getElementById("qCounter").textContent=`問${state.qIdx+1} / ${state.questions.length}`;
+  document.getElementById("qType").textContent=q.type||"";
+  const isHard=q.hard;
+  const dmg=isHard?20:10;
+  document.getElementById("qDiff").textContent=isHard?`難問 +${dmg}pt`:`通常 +${dmg}pt`;
+  document.getElementById("qText").textContent=q.text;
+  document.getElementById("qFeedback").textContent="";
+  document.getElementById("qFeedback").className="q-feedback";
+
+  // Flag display for flag questions — hide enemy name to prevent hint
+  const flagDisp=document.getElementById("qFlagDisplay");
+  const nameEl=document.getElementById("bName");
+  if(q.isFlag && q.flagShow){
+    flagDisp.textContent=q.flagShow;
+    flagDisp.style.display="block";
+    nameEl.classList.add("hidden-for-flag");
+  } else {
+    flagDisp.style.display="none";
+    nameEl.classList.remove("hidden-for-flag");
+  }
+
+  const cb=document.getElementById("comboBadge");
+  if(state.combo>=5){cb.textContent=`🔥 ${state.combo}連続！×1.5`;cb.classList.add("show");}
+  else if(state.combo>=3){cb.textContent=`🔥 ${state.combo}連続！×1.2`;cb.classList.add("show");}
+  else cb.classList.remove("show");
+
+  const wrap=document.getElementById("choices");
+  wrap.innerHTML="";
+  const shuffled=shuffle(q.choices.map((c,i)=>({text:c,idx:i})));
+  shuffled.forEach(ch=>{
+    const btn=document.createElement("button");
+    btn.className="choice-btn";
+    btn.textContent=ch.text;
+    function doAnswer(e){if(e)e.preventDefault();if(!state.answered)answer(ch.idx,q,btn,wrap);}
+    btn.addEventListener("touchend",doAnswer,{passive:false});
+    btn.addEventListener("click",doAnswer);
+    wrap.appendChild(btn);
+  });
+
+  startTimer(15);
+}
+
+function startTimer(sec){
+  state.timerLeft=sec*10;
+  const fill=document.getElementById("timerFill");
+  fill.style.width="100%";
+  fill.style.background="linear-gradient(90deg,var(--accent),var(--green))";
+  state.timerInterval=setInterval(()=>{
+    state.timerLeft--;
+    const pct=state.timerLeft/(sec*10)*100;
+    fill.style.width=pct+"%";
+    if(pct<30)fill.style.background="linear-gradient(90deg,#ff4d6d,#ff8080)";
+    if(state.timerLeft<=0){clearTimer();if(!state.answered)timeOut();}
+  },100);
+}
+function clearTimer(){clearInterval(state.timerInterval);}
+
+function timeOut(){
+  if(state.answered)return;
+  state.answered=true; state.combo=0;
+  const q=state.questions[state.qIdx];
+  const wrap=document.getElementById("choices");
+  wrap.querySelectorAll(".choice-btn").forEach(btn=>{
+    if(btn.textContent===q.choices[q.ans])btn.classList.add("reveal");
+  });
+  document.getElementById("qFeedback").textContent=`⏰ 時間切れ！正解: ${q.choices[q.ans]}`;
+  document.getElementById("qFeedback").className="q-feedback ng";
+  recordWrong(q,-1); flash("miss"); playMissAnimation();
+  setTimeout(()=>{state.qIdx++;showQuestion();},1800);
+}
+
+function answer(idx,q,btn,wrap){
+  if(state.answered)return;
+  state.answered=true; clearTimer();
+  const correct=idx===q.ans;
+  const isHard=q.hard;
+
+  if(correct){
+    btn.classList.add("correct"); state.combo++;
+    let mult=state.combo>=5?1.5:state.combo>=3?1.2:1;
+    const dmg=Math.round((isHard?20:10)*mult);
+    state.enemyHp=Math.max(0,state.enemyHp-dmg);
+    state.battlePts+=Math.round((isHard?20:10)*mult);
+    state.correctCount++; renderBattleHp();
+    spawnDamageText("-"+dmg,"#00e676"); flash("hit");
+    playHitAnimation();
+    document.getElementById("qFeedback").textContent=`✅ 正解！ ${mult>1?"コンボ×"+mult+" ":""}-${dmg}ダメージ`;
+    document.getElementById("qFeedback").className="q-feedback ok";
+  } else {
+    btn.classList.add("wrong");
+    wrap.querySelectorAll(".choice-btn").forEach(b=>{
+      if(b.textContent===q.choices[q.ans])b.classList.add("reveal");
+    });
+    state.combo=0; recordWrong(q,idx); flash("miss");
+    playMissAnimation();
+    document.getElementById("qFeedback").textContent=`❌ 不正解。正解: ${q.choices[q.ans]}`;
+    document.getElementById("qFeedback").className="q-feedback ng";
+  }
+  renderBattleHp();
+  setTimeout(()=>{state.qIdx++;showQuestion();},1800);
+}
+
+function recordWrong(q,yourAnsIdx){
+  const c=state.currentCountry;
+  state.wrongQ.push({
+    country:c.id, countryName:c.name, qText:q.text, type:q.type,
+    ans:q.choices[q.ans],
+    yourAns:yourAnsIdx>=0?q.choices[yourAnsIdx]:"時間切れ",
+    date:new Date().toLocaleDateString("ja")
+  });
+  if(state.wrongQ.length>50)state.wrongQ=state.wrongQ.slice(-50);
+}
+
+function endBattle(won){
+  clearTimer();
+  const c=state.currentCountry;
+  let earned=state.battlePts; let bonuses=[];
+  const perfect=state.correctCount===state.questions.length;
+
+  if(won){
+    if(!state.isBoss&&!state.cleared.includes(c.id)){
+      state.cleared.push(c.id); earned+=15;
+      bonuses.push({label:"🗺️ 初回征服ボーナス",val:"+15pt"});
+    }
+    if(perfect){earned+=20;bonuses.push({label:"✨ ノーミスボーナス",val:"+20pt"});}
+    if(state.isBoss){
+      state.bossClears++; earned+=30;
+      bonuses.push({label:"👾 ボス撃破ボーナス",val:"+30pt"});
+    }
+    state.points+=earned;
+    addPtsHistory((state.isBoss?"ボス撃破":c.name+"征服"),earned);
+  }
+  saveState(); showResult(won,c,earned,bonuses,perfect);
+}
+
+function showResult(won,country,earned,bonuses,perfect){
+  showScreen("resultScreen");
+  const isBoss=state.isBoss;
+  document.getElementById("rIcon").textContent=won?(isBoss?"👾":(perfect?"🏆":"✅")):"💀";
+  const rTitle=document.getElementById("rTitle");
+  rTitle.className="result-title "+(won?(isBoss?"boss":"win"):"lose");
+  rTitle.textContent=won?(isBoss?"ボス撃破！":(perfect?"完全制覇！":"征服成功！")):"撃退された…";
+  document.getElementById("rSubtitle").textContent=won?`${country.name} を征服した！`:"また挑戦しよう！";
+
+  document.getElementById("rStats").innerHTML=`
+    <div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div>
+    <div class="rs-row"><span>最大コンボ</span><span class="rs-val">${state.combo}連続</span></div>
+    <div class="rs-row"><span>獲得ポイント</span><span class="rs-val gold">+${earned}pt</span></div>
+    ${bonuses.map(b=>`<div class="rs-row"><span>${b.label}</span><span class="rs-val gold">${b.val}</span></div>`).join("")}
+    <div class="rs-row"><span>累計ポイント</span><span class="rs-val gold">${state.points}pt</span></div>`;
+
+  const btns=document.getElementById("rBtns"); btns.innerHTML="";
+  const addBtn=(text,fn,cls="btn-primary")=>{
+    const b=document.createElement("button"); b.className=`btn ${cls}`; b.textContent=text;
+    function doClick(e){if(e)e.preventDefault();fn();}
+    b.addEventListener("touchend",doClick,{passive:false});
+    b.addEventListener("click",doClick);
+    btns.appendChild(b);
+  };
+  if(won){
+    addBtn("🗺️ 地図に戻る",openMap);
+    if(!state.isBoss)addBtn("🔄 もう一度",()=>startBattle(country),"btn-secondary");
+  } else {
+    addBtn("🔄 再挑戦",()=>startBattle(country));
+    addBtn("🗺️ 地図に戻る",openMap,"btn-secondary");
+  }
+}
+
+// =====================================================================
+// EFFECTS
+// =====================================================================
+function spawnDamageText(text,color){
+  const el=document.createElement("div"); el.className="damage-text"; el.textContent=text;
+  el.style.cssText=`color:${color};left:${40+Math.random()*20}%;top:30%;`;
+  document.getElementById("battleScreen").appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+function flash(type){
+  const el=document.getElementById("battleFlash");
+  el.className="screen-flash "+type;
+  setTimeout(()=>el.className="screen-flash",350);
+}
+
+// === MONSTER HIT ANIMATION ===
+function playHitAnimation(){
+  const flag=document.getElementById("bFlag");
+  flag.classList.remove("hit");
+  void flag.offsetWidth; // reflow
+  flag.classList.add("hit");
+  setTimeout(()=>flag.classList.remove("hit"),600);
+
+  // Canvas particle explosion
+  const canvas=document.getElementById("attackCanvas");
+  if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2, cy=H/2;
+
+  const particles=[];
+  // Slash lines
+  for(let i=0;i<6;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=3+Math.random()*5;
+    particles.push({
+      type:'slash',x:cx,y:cy,
+      vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+      life:1, decay:0.03+Math.random()*0.02,
+      size:2+Math.random()*3,
+      color:`hsl(${40+Math.random()*30},100%,${60+Math.random()*30}%)`,
+    });
+  }
+  // Sparks
+  for(let i=0;i<15;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=2+Math.random()*6;
+    particles.push({
+      type:'spark',x:cx+Math.random()*20-10,y:cy+Math.random()*20-10,
+      vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed-2,
+      life:1, decay:0.025+Math.random()*0.02,
+      size:1+Math.random()*2,
+      color:`hsl(${Math.random()>0.5?50:0},100%,${60+Math.random()*30}%)`,
+    });
+  }
+  // Impact ring
+  particles.push({
+    type:'ring',x:cx,y:cy,radius:5,life:1,decay:0.04,
+    color:'rgba(255,200,50,',maxRadius:60
+  });
+
+  let frameId;
+  function drawParticles(){
+    ctx.clearRect(0,0,W,H);
+    let alive=false;
+    particles.forEach(p=>{
+      if(p.life<=0)return;
+      alive=true;
+      p.life-=p.decay;
+      if(p.type==='ring'){
+        p.radius+=(p.maxRadius-p.radius)*0.15;
+        ctx.strokeStyle=p.color+(p.life*0.8).toFixed(2)+')';
+        ctx.lineWidth=2*p.life;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2); ctx.stroke();
+      } else if(p.type==='slash'){
+        p.x+=p.vx; p.y+=p.vy;
+        ctx.globalAlpha=p.life;
+        ctx.strokeStyle=p.color;
+        ctx.lineWidth=p.size;
+        ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(p.x-p.vx*3,p.y-p.vy*3);
+        ctx.lineTo(p.x,p.y);
+        ctx.stroke();
+        ctx.globalAlpha=1;
+      } else {
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.15;
+        ctx.globalAlpha=p.life;
+        ctx.fillStyle=p.color;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    });
+    if(alive) frameId=requestAnimationFrame(drawParticles);
+    else ctx.clearRect(0,0,W,H);
+  }
+  frameId=requestAnimationFrame(drawParticles);
+}
+
+function playMissAnimation(){
+  const flag=document.getElementById("bFlag");
+  flag.classList.remove("miss-shake");
+  void flag.offsetWidth;
+  flag.classList.add("miss-shake");
+  setTimeout(()=>flag.classList.remove("miss-shake"),500);
+}
+
+// =====================================================================
+// REVIEW
+// =====================================================================
+function openReview(){
+  showScreen("reviewScreen");
+  const list=document.getElementById("reviewList"); list.innerHTML="";
+  if(state.wrongQ.length===0){
+    list.innerHTML=`<div class="empty-msg">間違えた問題はまだありません！<br>国を征服して学習しよう。</div>`;
+    return;
+  }
+  [...state.wrongQ].reverse().slice(0,30).forEach(w=>{
+    const div=document.createElement("div"); div.className="review-item";
+    div.innerHTML=`<div class="ri-country">${w.countryName||w.country} — ${w.type||""}</div>
+      <div class="ri-q">${w.qText}</div>
+      <div class="ri-ans">✅ 正解: ${w.ans}</div>
+      <div class="ri-wrong">❌ あなたの答え: ${w.yourAns}</div>`;
+    list.appendChild(div);
+  });
+}
+
+// =====================================================================
+// POINTS
+// =====================================================================
+function openPoints(){
+  showScreen("pointsScreen");
+  document.getElementById("ptsBig").textContent=state.points;
+  renderRewards(); renderHistory();
+}
+function renderRewards(){
+  const grid=document.getElementById("rewardsGrid"); grid.innerHTML="";
+  REWARDS.forEach(r=>{
+    const div=document.createElement("div"); div.className="reward-item";
+    const btn=document.createElement("button"); btn.className="ri-exchange";
+    btn.textContent="交換"; btn.disabled=state.points<r.cost;
+    function doExchange(e){if(e)e.preventDefault();exchangeReward(r);}
+    btn.addEventListener("touchend",doExchange,{passive:false});
+    btn.addEventListener("click",doExchange);
+    div.innerHTML=`<div><div class="ri-name">${r.name}</div><div class="ri-cost">${r.cost}pt</div></div>`;
+    div.appendChild(btn); grid.appendChild(div);
+  });
+}
+function exchangeReward(r){
+  if(state.points<r.cost){alert("ポイントが足りません！");return;}
+  if(!confirm(`「${r.name}」に${r.cost}ptを使いますか？`))return;
+  state.points-=r.cost; addPtsHistory(`${r.name}と交換`,-r.cost); saveState(); openPoints();
+}
+function addPtsHistory(label,val){
+  state.ptsHistory.unshift({label,val,date:new Date().toLocaleString("ja")});
+  if(state.ptsHistory.length>30)state.ptsHistory=state.ptsHistory.slice(0,30);
+}
+function renderHistory(){
+  const el=document.getElementById("ptsHistory"); el.innerHTML="";
+  if(state.ptsHistory.length===0){el.innerHTML=`<div class="ph-item" style="color:var(--muted)">履歴なし</div>`;return;}
+  state.ptsHistory.slice(0,15).forEach(h=>{
+    const d=document.createElement("div"); d.className="ph-item";
+    d.innerHTML=`<span>${h.label}</span><span class="ph-pts">${h.val>0?"+":""}${h.val}pt</span>`;
+    el.appendChild(d);
+  });
+}
+
+// =====================================================================
+// EVENTS
+// =====================================================================
+function bindBtn(id,fn){
+  const el=document.getElementById(id); if(!el)return;
+  el.addEventListener("touchend",(e)=>{e.preventDefault();fn();},{passive:false});
+  el.addEventListener("click",fn);
+}
+
+bindBtn("btnStart",openMap);
+bindBtn("btnReview",openReview);
+bindBtn("btnPoints",openPoints);
+bindBtn("btnMapBack",()=>showScreen("titleScreen"));
+bindBtn("btnReviewBack",()=>showScreen("titleScreen"));
+bindBtn("btnPointsBack",()=>showScreen("titleScreen"));
+bindBtn("btnBattleQuit",()=>{clearTimer();openMap();});
+bindBtn("btnAddPts",()=>{state.points+=10;addPtsHistory("親が追加",10);saveState();openPoints();});
+bindBtn("btnSubPts",()=>{state.points=Math.max(0,state.points-10);addPtsHistory("親が減算",-10);saveState();openPoints();});
+bindBtn("btnResetPts",()=>{if(confirm("ポイントをリセットしますか？")){state.points=0;state.ptsHistory=[];saveState();openPoints();}});
+
+// =====================================================================
+// INIT
+// =====================================================================
+loadState();
+initStars();
+</script>
+</body>
+</html>
