@@ -167,7 +167,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 .back-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);
   padding:.4rem .8rem;font-size:.8rem;cursor:pointer;font-family:inherit;}
+
+#zaScreen{background:radial-gradient(ellipse at 50% 50%,#fff9c4,var(--bg));flex-direction:column;justify-content:center;align-items:center;}
+.za-ticket{background:linear-gradient(135deg,#ffcc00,#ff6600);border:4px solid #fff;border-radius:16px;padding:2rem;text-align:center;box-shadow:0 10px 40px rgba(255,102,0,.6),inset 0 0 20px rgba(255,255,255,.5);animation:ticketFloat 3s infinite ease-in-out;transform-style:preserve-3d;max-width:90%;}
+@keyframes ticketFloat{0%,100%{transform:translateY(0) rotateX(0) rotateY(0);}50%{transform:translateY(-15px) rotateX(5deg) rotateY(-5deg);}}
+.za-title{font-size:clamp(1.5rem,5vw,2.5rem);font-weight:900;color:#fff;text-shadow:2px 2px 0 #d35400,-2px -2px 0 #d35400,2px -2px 0 #d35400,-2px 2px 0 #d35400;margin-bottom:1rem;font-family:sans-serif;}
+.za-sub{font-size:1.2rem;color:#fff;font-weight:700;margin-bottom:2rem;background:#d35400;padding:.4rem;border-radius:8px;}
+.za-desc{font-size:1rem;color:#000;font-weight:bold;margin-bottom:1.5rem;}
 </style>
+
 </head>
 <body>
 <div id="app">
@@ -186,7 +194,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <div id="mapScreen" class="screen">
   <div class="map-header">
     <div class="stat-badge">🗾 平定 <span id="hClear">0</span>/47</div>
-    <div class="stat-badge">⭐ <span id="hPoints">0</span>両</div>
+    <div class="stat-badge" id="zaTicketBtn" style="display:none;background:linear-gradient(45deg,#ffd700,#ff8c00);color:#000;cursor:pointer;animation:bossGlow 1s infinite alternate;font-weight:bold;" onclick="showScreen('zaScreen')">🎁 Z-Aチケットを表示</div>
     <button class="back-btn" id="btnMapBack">← タイトル</button>
   </div>
   <div class="map-area">
@@ -203,7 +211,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="screen-flash" id="battleFlash"></div>
   <div class="battle-header">
     <div class="battle-title" id="bTitle">vs 〇〇</div>
-    <div class="battle-pts" id="bPts">⭐ 0両</div>
+    
   </div>
   <div class="battle-arena">
     <div class="enemy-area" style="position:relative;">
@@ -220,7 +228,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="question-box">
       <div class="q-meta">
         <span id="qType">県庁所在地</span>
-        <span id="qDiff">通常 +10両</span>
+        <span id="qDiff">通常 達成</span>
       </div>
       <div class="q-text" id="qText">問題文</div>
       <div class="q-flag-display" id="qFlagDisplay" style="display:none;"></div>
@@ -244,6 +252,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
+
+<div id="zaScreen" class="screen">
+  <div class="za-ticket">
+    <div class="za-title">✨ Pokémon LEGENDS Z-A ✨<br>ごほうびGETチケット</div>
+    <div class="za-sub">世界＆日本 完全制覇おめでとう！</div>
+    <div class="za-desc">キミは世界のすべての国と、日本のすべての都道府県を完璧に平定した！<br><br>この画面をパパに見せて、<br>「Pokémon LEGENDS Z-A」をゲットしてもらおう！</div>
+    <button class="btn btn-gold" onclick="openMap()" style="font-size:1.2rem;padding:1rem 2rem;">🗺️ 地図に戻る</button>
+  </div>
+</div>
 </div>
 
 <script>
@@ -3846,13 +3863,25 @@ function openMap(){ showScreen("mapScreen"); renderMap(); }
 
 function renderMap(){
   document.getElementById("hClear").textContent=state.cleared.length;
-  document.getElementById("hPoints").textContent=state.points;
+  
   const pct=Math.round(state.cleared.length/COUNTRIES.length*100);
   document.getElementById("progressFill").style.width=pct+"%";
   document.getElementById("progressLabel").textContent=pct+"% 平定済み";
 
   const grid=document.getElementById("countryGrid");
   grid.innerHTML="";
+  // Check Z-A condition
+  const wState = JSON.parse(localStorage.getItem("geoBattleState")||"{}");
+  const jState = JSON.parse(localStorage.getItem("geoBattleJapan")||"{}");
+  const wClear = (wState.cleared||[]).length;
+  const jClear = (jState.cleared||[]).length;
+  // World has 130, Japan has 47
+  if(wClear >= 130 && jClear >= 47) {
+    document.getElementById("zaTicketBtn").style.display = "flex";
+  } else {
+    document.getElementById("zaTicketBtn").style.display = "none";
+  }
+
 
   const bossReady=state.cleared.length>0&&state.cleared.length%10===0&&state.cleared.length>(state.bossClears*10);
   if(bossReady){
@@ -3922,7 +3951,7 @@ function renderBattleHp(){
   const pct=Math.max(0,state.enemyHp/state.enemyMaxHp*100);
   document.getElementById("bEnemyHp").style.width=pct+"%";
   document.getElementById("bEnemyHpVal").textContent=`${state.enemyHp}/${state.enemyMaxHp}`;
-  document.getElementById("bPts").textContent=`⭐ ${state.points}両`;
+  
 }
 
 function showQuestion(){
@@ -3945,7 +3974,7 @@ function showQuestion(){
   document.getElementById("qCounter").textContent=`問${state.qIdx+1} / ${state.questions.length}`;
   document.getElementById("qType").textContent=q.type||"";
   const isHard=q.hard;
-  document.getElementById("qDiff").textContent=isHard?`難問 +20両`:`通常 +10両`;
+  document.getElementById("qDiff").textContent=isHard?`難問 達成`:`通常 達成`;
   document.getElementById("qText").textContent=q.text;
   document.getElementById("qFeedback").textContent="";
   document.getElementById("qFeedback").className="q-feedback";
@@ -4002,7 +4031,7 @@ function answer(idx,q,btn,wrap){
     let mult=state.combo>=5?1.5:state.combo>=3?1.2:1;
     const dmg=Math.round((isHard?20:10)*mult);
     state.enemyHp=Math.max(0,state.enemyHp-dmg);
-    state.battlePts+=Math.round((isHard?20:10)*mult);
+    
     state.correctCount++; renderBattleHp();
     spawnDamageText("-"+dmg,"#e6b422"); flash("hit");
     document.getElementById("qFeedback").textContent=`🌸 正解！ ${mult>1?"連撃×"+mult+" ":""}-${dmg}ダメージ`;
@@ -4021,17 +4050,17 @@ function answer(idx,q,btn,wrap){
 
 function endBattle(won){
   clearTimer(); const c=state.currentCountry;
-  let earned=state.battlePts; let bonuses=[];
+  let bonuses=[];
   const perfect=state.correctCount===state.questions.length;
   if(won){
     if(!state.isBoss&&!state.cleared.includes(c.id)){
-      state.cleared.push(c.id); earned+=20; bonuses.push({label:"🏯 初回平定ボーナス",val:"+20両"});
+      state.cleared.push(c.id); bonuses.push({label:"🏯 初回制覇",val:"達成"});
     }
-    if(perfect){earned+=30;bonuses.push({label:"🌸 完全勝利ボーナス",val:"+30両"});}
+    if(perfect){bonuses.push({label:"🌸 完全勝利",val:"達成"});}
     if(state.isBoss){
-      state.bossClears++; earned+=50; bonuses.push({label:"🐎 幕府軍撃破ボーナス",val:"+50両"});
+      state.bossClears++; bonuses.push({label:"🐎 ボス撃破",val:"達成"});
     }
-    state.points+=earned;
+    
   }
   saveState(); showResult(won,c,earned,bonuses,perfect);
 }
@@ -4047,9 +4076,9 @@ function showResult(won,country,earned,bonuses,perfect){
   document.getElementById("rStats").innerHTML=`
     <div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div>
     <div class="rs-row"><span>最大連撃</span><span class="rs-val">${state.combo}連続</span></div>
-    <div class="rs-row"><span>獲得金額</span><span class="rs-val gold">+${earned}両</span></div>
+    
     ${bonuses.map(b=>`<div class="rs-row"><span>${b.label}</span><span class="rs-val gold">${b.val}</span></div>`).join("")}
-    <div class="rs-row"><span>累計金額</span><span class="rs-val gold">${state.points}両</span></div>`;
+    `;
 
   const btns=document.getElementById("rBtns"); btns.innerHTML="";
   const addBtn=(text,fn,cls="btn-primary")=>{

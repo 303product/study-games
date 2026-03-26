@@ -224,7 +224,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);
   padding:.4rem .8rem;font-size:.8rem;cursor:pointer;touch-action:manipulation;}
 .empty-msg{text-align:center;color:var(--muted);padding:2rem;font-size:.9rem;}
+
+#zaScreen{background:radial-gradient(ellipse at 50% 50%,#fff9c4,var(--bg));flex-direction:column;justify-content:center;align-items:center;}
+.za-ticket{background:linear-gradient(135deg,#ffcc00,#ff6600);border:4px solid #fff;border-radius:16px;padding:2rem;text-align:center;box-shadow:0 10px 40px rgba(255,102,0,.6),inset 0 0 20px rgba(255,255,255,.5);animation:ticketFloat 3s infinite ease-in-out;transform-style:preserve-3d;max-width:90%;}
+@keyframes ticketFloat{0%,100%{transform:translateY(0) rotateX(0) rotateY(0);}50%{transform:translateY(-15px) rotateX(5deg) rotateY(-5deg);}}
+.za-title{font-size:clamp(1.5rem,5vw,2.5rem);font-weight:900;color:#fff;text-shadow:2px 2px 0 #d35400,-2px -2px 0 #d35400,2px -2px 0 #d35400,-2px 2px 0 #d35400;margin-bottom:1rem;font-family:sans-serif;}
+.za-sub{font-size:1.2rem;color:#fff;font-weight:700;margin-bottom:2rem;background:#d35400;padding:.4rem;border-radius:8px;}
+.za-desc{font-size:1rem;color:#000;font-weight:bold;margin-bottom:1.5rem;}
 </style>
+
 </head>
 <body>
 <div id="app">
@@ -245,7 +253,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <div id="mapScreen" class="screen">
   <div class="map-header">
     <div class="stat-badge">🌍 制覇 <span id="hClear">0</span>/20</div>
-    <div class="stat-badge">⭐ <span id="hPoints">0</span>pt</div>
+    <div class="stat-badge" id="zaTicketBtn" style="display:none;background:linear-gradient(45deg,#ffd700,#ff8c00);color:#000;cursor:pointer;animation:bossGlow 1s infinite alternate;font-weight:bold;" onclick="showScreen('zaScreen')">🎁 Z-Aチケットを表示</div>
     <div class="stat-badge">❌ 苦手 <span id="hWrong">0</span></div>
     <button class="back-btn" id="btnMapBack">← タイトル</button>
   </div>
@@ -263,7 +271,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="screen-flash" id="battleFlash"></div>
   <div class="battle-header">
     <div class="battle-title" id="bTitle">vs フランス</div>
-    <div class="battle-pts" id="bPts">⭐ 0pt</div>
+    
   </div>
   <div class="battle-arena">
     <div class="enemy-area" style="position:relative;">
@@ -281,7 +289,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="question-box">
       <div class="q-meta">
         <span id="qType">首都</span>
-        <span id="qDiff">通常問題 +10pt</span>
+        <span id="qDiff">通常問題 達成</span>
       </div>
       <div class="q-text" id="qText">フランスの首都は？</div>
       <div class="q-flag-display" id="qFlagDisplay" style="display:none;"></div>
@@ -325,8 +333,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="parent-section">
       <div class="ps-title">👨‍👩‍👧 親用メニュー</div>
       <div class="ps-btns">
-        <button class="ps-btn" id="btnAddPts">+10pt 追加</button>
-        <button class="ps-btn" id="btnSubPts">-10pt 減算</button>
+        <button class="ps-btn" id="btnAddPts">達成 追加</button>
+        <button class="ps-btn" id="btnSubPts">-達成 減算</button>
         <button class="ps-btn" id="btnResetPts">リセット</button>
       </div>
     </div>
@@ -337,6 +345,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
+
+<div id="zaScreen" class="screen">
+  <div class="za-ticket">
+    <div class="za-title">✨ Pokémon LEGENDS Z-A ✨<br>ごほうびGETチケット</div>
+    <div class="za-sub">世界＆日本 完全制覇おめでとう！</div>
+    <div class="za-desc">キミは世界のすべての国と、日本のすべての都道府県を完璧に平定した！<br><br>この画面をパパに見せて、<br>「Pokémon LEGENDS Z-A」をゲットしてもらおう！</div>
+    <button class="btn btn-gold" onclick="openMap()" style="font-size:1.2rem;padding:1rem 2rem;">🗺️ 地図に戻る</button>
+  </div>
+</div>
 </div>
 
 <script>
@@ -8015,7 +8032,7 @@ function openMap(){
 
 function renderMap(){
   document.getElementById("hClear").textContent=state.cleared.length;
-  document.getElementById("hPoints").textContent=state.points;
+  
   document.getElementById("hWrong").textContent=state.wrongQ.length;
   const pct=Math.round(state.cleared.length/COUNTRIES.length*100);
   document.getElementById("progressFill").style.width=pct+"%";
@@ -8023,6 +8040,18 @@ function renderMap(){
 
   const grid=document.getElementById("countryGrid");
   grid.innerHTML="";
+  // Check Z-A condition
+  const wState = JSON.parse(localStorage.getItem("geoBattleState")||"{}");
+  const jState = JSON.parse(localStorage.getItem("geoBattleJapan")||"{}");
+  const wClear = (wState.cleared||[]).length;
+  const jClear = (jState.cleared||[]).length;
+  // World has 130, Japan has 47
+  if(wClear >= 130 && jClear >= 47) {
+    document.getElementById("zaTicketBtn").style.display = "flex";
+  } else {
+    document.getElementById("zaTicketBtn").style.display = "none";
+  }
+
 
   const bossReady=state.cleared.length>0&&state.cleared.length%5===0&&state.cleared.length>(state.bossClears*5);
 
@@ -8109,7 +8138,7 @@ function renderBattleHp(){
   const pct=Math.max(0,state.enemyHp/state.enemyMaxHp*100);
   document.getElementById("bEnemyHp").style.width=pct+"%";
   document.getElementById("bEnemyHpVal").textContent=`${state.enemyHp}/${state.enemyMaxHp}`;
-  document.getElementById("bPts").textContent=`⭐ ${state.points}pt`;
+  
 }
 
 function showQuestion(){
@@ -8204,7 +8233,7 @@ function answer(idx,q,btn,wrap){
     let mult=state.combo>=5?1.5:state.combo>=3?1.2:1;
     const dmg=Math.round((isHard?20:10)*mult);
     state.enemyHp=Math.max(0,state.enemyHp-dmg);
-    state.battlePts+=Math.round((isHard?20:10)*mult);
+    
     state.correctCount++; 
     if(state.correctCount === state.questions.length) {
       state.enemyHp = 0;
@@ -8243,20 +8272,18 @@ function recordWrong(q,yourAnsIdx){
 function endBattle(won){
   clearTimer();
   const c=state.currentCountry;
-  let earned=state.battlePts; let bonuses=[];
+  let bonuses=[];
   const perfect=state.correctCount===state.questions.length;
 
   if(won){
     if(!state.isBoss&&!state.cleared.includes(c.id)){
-      state.cleared.push(c.id); earned+=15;
-      bonuses.push({label:"🗺️ 初回征服ボーナス",val:"+15pt"});
+      state.cleared.push(c.id); 
     }
-    if(perfect){earned+=20;bonuses.push({label:"✨ ノーミスボーナス",val:"+20pt"});}
+    if(perfect){bonuses.push({label:"🏯 初回制覇",val:"達成"});}
     if(state.isBoss){
-      state.bossClears++; earned+=30;
-      bonuses.push({label:"👾 ボス撃破ボーナス",val:"+30pt"});
+      state.bossClears++; bonuses.push({label:"🌸 完全勝利",val:"達成"});
     }
-    state.points+=earned;
+    
     addPtsHistory((state.isBoss?"ボス撃破":c.name+"征服"),earned);
   }
   saveState(); showResult(won,c,earned,bonuses,perfect);
@@ -8432,6 +8459,18 @@ function openPoints(){
 }
 function renderRewards(){
   const grid=document.getElementById("rewardsGrid"); grid.innerHTML="";
+  // Check Z-A condition
+  const wState = JSON.parse(localStorage.getItem("geoBattleState")||"{}");
+  const jState = JSON.parse(localStorage.getItem("geoBattleJapan")||"{}");
+  const wClear = (wState.cleared||[]).length;
+  const jClear = (jState.cleared||[]).length;
+  // World has 130, Japan has 47
+  if(wClear >= 130 && jClear >= 47) {
+    document.getElementById("zaTicketBtn").style.display = "flex";
+  } else {
+    document.getElementById("zaTicketBtn").style.display = "none";
+  }
+
   REWARDS.forEach(r=>{
     const div=document.createElement("div"); div.className="reward-item";
     const btn=document.createElement("button"); btn.className="ri-exchange";
