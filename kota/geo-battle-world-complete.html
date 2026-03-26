@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>地理バトル — 世界征服</title>
+<style>
+:root {
+  --bg:#060c1a; --surface:#0d1a2e; --surface2:#132240;
+  --border:#1e3a5c; --accent:#00c9ff; --accent2:#ff4d6d;
+  --gold:#ffd700; --green:#00e676; --red:#ff4444;
+  --text:#e8f4ff; --muted:#5a7fa0;
+  --hp-enemy:#ff4d6d;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Hiragino Sans','Yu Gothic UI',sans-serif;}
+#app{width:100vw;height:100vh;position:relative;overflow:hidden;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.screen.active{display:flex;}
+#titleScreen{background:radial-gradient(ellipse at 50% 30%,#0a2040 0%,#060c1a 70%);}
+.title-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle 3s infinite;}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1);}50%{opacity:1;transform:scale(1.5);}}
+.title-logo{text-align:center;z-index:1;}
+.title-main{font-size:clamp(2rem,7vw,4.5rem);font-weight:900;letter-spacing:.05em;background:linear-gradient(135deg,#00c9ff,#fff,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(0,201,255,.5));}
+.title-sub{font-size:clamp(.9rem,2.5vw,1.3rem);color:var(--muted);margin-top:.4em;letter-spacing:.15em;}
+.title-btns{margin-top:2.5rem;display:flex;flex-direction:column;gap:.8rem;width:min(320px,80vw);}
+.btn{padding:1rem 1.5rem;border:none;border-radius:12px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s;letter-spacing:.05em;touch-action:manipulation;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:linear-gradient(135deg,#0090cc,#00c9ff);color:#000;box-shadow:0 0 20px rgba(0,201,255,.4);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-gold{background:linear-gradient(135deg,#b8860b,#ffd700);color:#000;box-shadow:0 0 20px rgba(255,215,0,.4);}
+#mapScreen{background:var(--bg);flex-direction:column;justify-content:flex-start;overflow:hidden;}
+.map-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.6rem 1rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;z-index:5;}
+.stat-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.3rem .7rem;font-size:.8rem;display:flex;align-items:center;gap:.4rem;}
+.stat-badge span{color:var(--accent);font-weight:700;}
+.map-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;}
+.map-title{text-align:center;font-size:1.3rem;font-weight:800;color:var(--accent);margin-bottom:.8rem;}
+.country-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.7rem;max-width:900px;margin:0 auto;}
+.country-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:.8rem;cursor:pointer;transition:all .2s;touch-action:manipulation;position:relative;overflow:hidden;}
+.country-card:hover,.country-card:active{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 4px 20px rgba(0,201,255,.2);}
+.country-card.cleared{border-color:var(--green);background:linear-gradient(135deg,var(--surface),#0d2a1a);}
+.cc-flag{font-size:2rem;text-align:center;}
+.cc-name{font-size:.9rem;font-weight:700;text-align:center;margin-top:.3rem;}
+.cc-region{font-size:.7rem;color:var(--muted);text-align:center;}
+.cc-status{position:absolute;top:.4rem;right:.4rem;font-size:.8rem;}
+.cc-hp-bar{margin-top:.4rem;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.cc-hp-fill{height:100%;background:var(--hp-enemy);border-radius:2px;transition:width .3s;}
+.boss-card{grid-column:1/-1;background:linear-gradient(135deg,#1a1000,#2a1800);border:2px solid var(--gold);border-radius:16px;padding:1rem;text-align:center;cursor:pointer;touch-action:manipulation;}
+.boss-card-title{font-size:1.2rem;font-weight:900;color:var(--gold);}
+.boss-card-sub{font-size:.8rem;color:var(--muted);margin-top:.2rem;}
+.progress-bar-wrap{width:100%;max-width:900px;margin:.5rem auto .2rem;}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .5s;}
+.progress-label{font-size:.75rem;color:var(--muted);text-align:right;margin-top:.2rem;}
+#battleScreen{background:radial-gradient(ellipse at 50% 0%,#0a1e3a 0%,var(--bg) 60%);flex-direction:column;justify-content:flex-start;overflow:hidden;}
+.battle-header{width:100%;padding:.6rem 1rem;display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-bottom:1px solid var(--border);}
+.battle-title{font-size:1rem;font-weight:700;color:var(--accent);}
+.battle-pts{font-size:.85rem;color:var(--gold);}
+.battle-arena{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:1rem;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.enemy-area{text-align:center;margin-bottom:.8rem;}
+.enemy-flag{font-size:clamp(3rem,10vw,5rem);filter:drop-shadow(0 0 20px rgba(255,77,109,.5));animation:enemyFloat 2s ease-in-out infinite;}
+@keyframes enemyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.enemy-name{font-size:clamp(1.2rem,4vw,2rem);font-weight:900;margin:.3rem 0;}
+.hp-row{display:flex;align-items:center;gap:.5rem;width:min(400px,90vw);}
+.hp-label{font-size:.75rem;color:var(--muted);width:30px;text-align:right;}
+.hp-bar{flex:1;height:12px;background:var(--border);border-radius:6px;overflow:hidden;}
+.hp-fill{height:100%;border-radius:6px;transition:width .4s;}
+.hp-enemy-fill{background:linear-gradient(90deg,#ff4d6d,#ff8fab);}
+.hp-val{font-size:.75rem;font-weight:700;width:60px;}
+.combo-badge{background:linear-gradient(135deg,#ff4d6d,#ffa040);color:#fff;border-radius:999px;padding:.2rem .7rem;font-size:.8rem;font-weight:700;margin:.4rem 0;opacity:0;transition:opacity .2s;}
+.combo-badge.show{opacity:1;}
+.question-box{width:min(600px,95vw);background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1rem 1.2rem;margin:.5rem 0;}
+.q-meta{font-size:.72rem;color:var(--muted);margin-bottom:.4rem;display:flex;justify-content:space-between;}
+.q-text{font-size:clamp(.95rem,2.5vw,1.15rem);font-weight:700;line-height:1.5;}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.8rem;}
+.choice-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:.7rem .6rem;font-size:clamp(.82rem,2vw,.95rem);cursor:pointer;transition:all .15s;text-align:center;touch-action:manipulation;color:var(--text);font-weight:600;}
+.choice-btn:hover{border-color:var(--accent);background:#0d2040;}
+.choice-btn:active{transform:scale(.97);}
+.choice-btn.correct{background:#0d2a1a;border-color:var(--green);color:var(--green);}
+.choice-btn.wrong{background:#2a0d0d;border-color:var(--red);color:var(--red);}
+.choice-btn.reveal{background:#0d2a1a;border-color:var(--green);color:var(--green);}
+.q-feedback{text-align:center;font-size:.9rem;margin-top:.5rem;min-height:1.2em;font-weight:700;}
+.q-feedback.ok{color:var(--green);}
+.q-feedback.ng{color:var(--red);}
+.timer-bar{width:min(600px,95vw);height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:.4rem;}
+.timer-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .1s linear;}
+.battle-footer{width:100%;padding:.5rem 1rem;background:var(--surface);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.q-counter{font-size:.8rem;color:var(--muted);}
+#resultScreen{background:radial-gradient(ellipse at 50% 30%,#0a2040,var(--bg));}
+.result-box{text-align:center;padding:2rem;max-width:420px;width:90%;}
+.result-icon{font-size:4rem;margin-bottom:.5rem;}
+.result-title{font-size:1.8rem;font-weight:900;margin-bottom:.3rem;}
+.result-title.win{color:var(--green);} .result-title.lose{color:var(--red);} .result-title.boss{color:var(--gold);}
+.result-stats{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;margin:1rem 0;text-align:left;display:flex;flex-direction:column;gap:.4rem;}
+.rs-row{display:flex;justify-content:space-between;font-size:.9rem;}
+.rs-val{font-weight:700;color:var(--accent);} .rs-val.gold{color:var(--gold);}
+.result-btns{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem;}
+#reviewScreen{flex-direction:column;overflow:hidden;}
+.review-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.7rem 1rem;font-size:1.1rem;font-weight:800;color:var(--gold);}
+.review-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;display:flex;flex-direction:column;gap:.6rem;max-width:600px;align-self:center;}
+.review-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;}
+.ri-country{font-size:.75rem;color:var(--muted);margin-bottom:.2rem;}
+.ri-q{font-size:.9rem;font-weight:700;margin-bottom:.4rem;}
+.ri-ans{font-size:.85rem;color:var(--green);}
+.ri-wrong{font-size:.8rem;color:var(--red);}
+#pointsScreen{flex-direction:column;overflow:hidden;}
+.points-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.7rem 1rem;font-size:1.1rem;font-weight:800;color:var(--gold);}
+.points-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;max-width:500px;align-self:center;}
+.points-big{text-align:center;padding:1.5rem;background:var(--surface);border:2px solid var(--gold);border-radius:16px;margin-bottom:1rem;}
+.pb-val{font-size:3rem;font-weight:900;color:var(--gold);} .pb-label{font-size:.9rem;color:var(--muted);}
+.rewards-grid{display:flex;flex-direction:column;gap:.5rem;}
+.reward-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+.ri-name{font-size:.95rem;font-weight:700;} .ri-cost{font-size:.85rem;color:var(--gold);font-weight:700;}
+.ri-exchange{background:var(--gold);color:#000;border:none;border-radius:8px;padding:.4rem .8rem;font-size:.8rem;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.ri-exchange:disabled{opacity:.3;cursor:default;}
+.points-history{margin-top:1rem;}
+.ph-title{font-size:.85rem;color:var(--muted);margin-bottom:.4rem;}
+.ph-item{font-size:.8rem;padding:.3rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;}
+.ph-pts{color:var(--gold);font-weight:700;}
+.parent-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.8rem;margin-top:1rem;}
+.ps-title{font-size:.85rem;color:var(--muted);margin-bottom:.5rem;}
+.ps-btns{display:flex;gap:.5rem;}
+.ps-btn{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:.5rem;font-size:.8rem;cursor:pointer;touch-action:manipulation;}
+.damage-text{position:absolute;font-size:1.5rem;font-weight:900;pointer-events:none;animation:dmgFloat 1s forwards;}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
+.screen-flash{position:absolute;inset:0;pointer-events:none;opacity:0;border-radius:inherit;}
+.screen-flash.hit{animation:flashHit .3s forwards;} .screen-flash.miss{animation:flashMiss .3s forwards;}
+@keyframes flashHit{0%,100%{opacity:0;}30%{opacity:.25;background:var(--green);}}
+@keyframes flashMiss{0%,100%{opacity:0;}30%{opacity:.25;background:var(--red);}}
+.back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:.4rem .8rem;font-size:.8rem;cursor:pointer;touch-action:manipulation;}
+.empty-msg{text-align:center;color:var(--muted);padding:2rem;font-size:.9rem;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="titleScreen" class="screen active">
+  <div class="title-stars" id="stars"></div>
+  <div class="title-logo">
+    <div class="title-main">🌍 地理バトル</div>
+    <div class="title-sub">WORLD CONQUEST</div>
+  </div>
+  <div class="title-btns">
+    <button class="btn btn-primary" id="btnStart">▶ 世界征服を始める</button>
+    <button class="btn btn-secondary" id="btnReview">📚 復習モード</button>
+    <button class="btn btn-gold" id="btnPoints">⭐ ポイント確認</button>
+  </div>
+</div>
+<div id="mapScreen" class="screen">
+  <div class="map-header">
+    <div class="stat-badge">🌍 制覇 <span id="hClear">0</span>/<span id="hTotal">0</span></div>
+    <div class="stat-badge">⭐ <span id="hPoints">0</span>pt</div>
+    <div class="stat-badge">❌ 苦手 <span id="hWrong">0</span></div>
+    <button class="back-btn" id="btnMapBack">← タイトル</button>
+  </div>
+  <div class="map-area">
+    <div class="map-title">🗺️ 世界地図 — 次の国を選べ</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-label" id="progressLabel">0% 征服済み</div>
+    </div>
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+</div>
+<div id="battleScreen" class="screen">
+  <div class="screen-flash" id="battleFlash"></div>
+  <div class="battle-header">
+    <div class="battle-title" id="bTitle">vs フランス</div>
+    <div class="battle-pts" id="bPts">⭐ 0pt</div>
+  </div>
+  <div class="battle-arena">
+    <div class="enemy-area">
+      <div class="enemy-flag" id="bFlag">🇫🇷</div>
+      <div class="enemy-name" id="bName">フランス</div>
+      <div class="hp-row">
+        <div class="hp-label">敵</div>
+        <div class="hp-bar"><div class="hp-fill hp-enemy-fill" id="bEnemyHp" style="width:100%"></div></div>
+        <div class="hp-val" id="bEnemyHpVal">100/100</div>
+      </div>
+    </div>
+    <div class="combo-badge" id="comboBadge">🔥 3連続！×1.2</div>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    <div class="question-box">
+      <div class="q-meta">
+        <span id="qType">首都</span>
+        <span id="qDiff">通常問題 +10pt</span>
+      </div>
+      <div class="q-text" id="qText">フランスの首都は？</div>
+      <div class="choices" id="choices"></div>
+      <div class="q-feedback" id="qFeedback"></div>
+    </div>
+  </div>
+  <div class="battle-footer">
+    <div class="q-counter" id="qCounter">問1 / 6</div>
+    <button class="btn btn-secondary" style="padding:.4rem .8rem;font-size:.8rem;" id="btnBattleQuit">逃げる</button>
+  </div>
+</div>
+<div id="resultScreen" class="screen">
+  <div class="result-box">
+    <div class="result-icon" id="rIcon">🏆</div>
+    <div class="result-title" id="rTitle">撃破!</div>
+    <div id="rSubtitle" style="color:var(--muted);margin-bottom:.5rem;font-size:.9rem;"></div>
+    <div class="result-stats" id="rStats"></div>
+    <div class="result-btns" id="rBtns"></div>
+  </div>
+</div>
+<div id="reviewScreen" class="screen">
+  <div class="review-header">📚 復習リスト
+    <button class="back-btn" style="float:right;margin-top:-.2rem;" id="btnReviewBack">← 戻る</button>
+  </div>
+  <div class="review-list" id="reviewList"></div>
+</div>
+<div id="pointsScreen" class="screen">
+  <div class="points-header">⭐ ポイント管理
+    <button class="back-btn" style="float:right;margin-top:-.2rem;" id="btnPointsBack">← 戻る</button>
+  </div>
+  <div class="points-body">
+    <div class="points-big">
+      <div class="pb-val" id="ptsBig">0</div>
+      <div class="pb-label">保有ポイント</div>
+    </div>
+    <div class="rewards-grid" id="rewardsGrid"></div>
+    <div class="parent-section">
+      <div class="ps-title">👨‍👩‍👧 親用メニュー</div>
+      <div class="ps-btns">
+        <button class="ps-btn" id="btnAddPts">+10pt 追加</button>
+        <button class="ps-btn" id="btnSubPts">-10pt 減算</button>
+        <button class="ps-btn" id="btnResetPts">リセット</button>
+      </div>
+    </div>
+    <div class="points-history">
+      <div class="ph-title">履歴</div>
+      <div id="ptsHistory"></div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+let state = {
+  cleared: [], wrongQ: [], points: 0, ptsHistory: [], bossClears: 0,
+  currentCountry: null, questions: [], qIdx: 0, enemyHp: 100, enemyMaxHp: 100,
+  combo: 0, maxCombo: 0, battlePts: 0, correctCount: 0,
+  timerInterval: null, timerLeft: 0, answered: false, isBoss: false,
+};
+function saveState(){ try{ const safe={...state,timerInterval:null}; localStorage.setItem('geoBattleWorldComplete', JSON.stringify(safe)); }catch(e){} }
+function loadState(){ try{ const d=localStorage.getItem('geoBattleWorldComplete'); if(d){ const s=JSON.parse(d); Object.assign(state,s); state.timerInterval=null; } }catch(e){} }
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function initStars(){ const el=document.getElementById('stars'); for(let i=0;i<60;i++){ const s=document.createElement('div'); s.className='star'; const sz=Math.random()*2+1; s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*2}s;`; el.appendChild(s);} }
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+function openMap(){ showScreen('mapScreen'); renderMap(); }
+function renderMap(){ document.getElementById('hClear').textContent=state.cleared.length; document.getElementById('hTotal').textContent=COUNTRIES.length; document.getElementById('hPoints').textContent=state.points; document.getElementById('hWrong').textContent=state.wrongQ.length; const pct=Math.round(state.cleared.length/COUNTRIES.length*100); document.getElementById('progressFill').style.width=pct+'%'; document.getElementById('progressLabel').textContent=pct+'% 征服済み'; const grid=document.getElementById('countryGrid'); grid.innerHTML=''; const bossReady=state.cleared.length>0&&state.cleared.length%5===0&&state.cleared.length>(state.bossClears*5); if(bossReady){ const bc=document.createElement('div'); bc.className='boss-card'; bc.innerHTML=`<div class="boss-card-title">⚠️ 復習ボス出現！</div><div class="boss-card-sub">${state.cleared.length}か国征服記念 — 今まで学んだ国をまとめて復習</div>`; bc.addEventListener('click',()=>startBoss()); bc.addEventListener('touchend',(e)=>{e.preventDefault();startBoss();},{passive:false}); grid.appendChild(bc);} COUNTRIES.forEach(c=>{ const cleared=state.cleared.includes(c.id); const card=document.createElement('div'); card.className='country-card'+(cleared?' cleared':''); card.innerHTML=`<div class="cc-flag">${c.flag}</div><div class="cc-name">${c.name}</div><div class="cc-region">${c.region}</div><div class="cc-status">${cleared?'✅':''}</div><div class="cc-hp-bar"><div class="cc-hp-fill" style="width:${cleared?0:100}%"></div></div>`; if(!cleared){ card.addEventListener('click',()=>startBattle(c)); card.addEventListener('touchend',(e)=>{e.preventDefault();startBattle(c);},{passive:false}); } grid.appendChild(card); }); }
+function buildQuestions(country,isBoss){ if(isBoss){ const pool=[]; state.wrongQ.slice(-20).forEach(w=>{ const cc=COUNTRIES.find(c=>c.id===w.country); if(cc){ const q=cc.questions.find(q=>q.text===w.qText); if(q) pool.push({...q,countryName:cc.name}); }}); const cleared=COUNTRIES.filter(c=>state.cleared.includes(c.id)); cleared.forEach(cc=>cc.questions.forEach(q=>pool.push({...q,countryName:cc.name}))); return shuffle(pool).slice(0,8).map(q=>({...q,text:`[${q.countryName}] ${q.text}`})); } return shuffle([...country.questions]).slice(0,6); }
+function startBattle(country){ state.currentCountry=country; state.isBoss=false; state.questions=buildQuestions(country,false); state.qIdx=0; state.enemyMaxHp=state.questions.length*20; state.enemyHp=state.enemyMaxHp; state.combo=0; state.maxCombo=0; state.battlePts=0; state.correctCount=0; document.getElementById('bFlag').textContent=country.flag; document.getElementById('bName').textContent=country.name; document.getElementById('bTitle').textContent=`⚔️ vs ${country.name}`; showScreen('battleScreen'); renderBattleHp(); showQuestion(); }
+function startBoss(){ state.isBoss=true; state.currentCountry={name:'復習ボス',flag:'👾',id:'boss'}; state.questions=buildQuestions(null,true); if(state.questions.length===0){ alert('復習問題がありません！もっと国を征服してね。'); return; } state.qIdx=0; state.enemyMaxHp=state.questions.length*20; state.enemyHp=state.enemyMaxHp; state.combo=0; state.maxCombo=0; state.battlePts=0; state.correctCount=0; document.getElementById('bFlag').textContent='👾'; document.getElementById('bName').textContent='記憶の守護者'; document.getElementById('bTitle').textContent='⚔️ ボス戦！'; showScreen('battleScreen'); renderBattleHp(); showQuestion(); }
+function renderBattleHp(){ const pct=Math.max(0,state.enemyHp/state.enemyMaxHp*100); document.getElementById('bEnemyHp').style.width=pct+'%'; document.getElementById('bEnemyHpVal').textContent=`${state.enemyHp}/${state.enemyMaxHp}`; document.getElementById('bPts').textContent=`⭐ ${state.points}pt`; }
+function showQuestion(){ clearTimer(); if(state.qIdx>=state.questions.length){ endBattle(state.enemyHp<=0||state.correctCount>=Math.ceil(state.questions.length*0.8)); return; } const q=state.questions[state.qIdx]; state.answered=false; document.getElementById('qCounter').textContent=`問${state.qIdx+1} / ${state.questions.length}`; document.getElementById('qType').textContent=q.type||''; const isHard=q.hard; const dmg=isHard?20:10; document.getElementById('qDiff').textContent=isHard?`難問 +${dmg}pt`:`通常 +${dmg}pt`; document.getElementById('qText').textContent=q.text; document.getElementById('qFeedback').textContent=''; document.getElementById('qFeedback').className='q-feedback'; const cb=document.getElementById('comboBadge'); if(state.combo>=5){ cb.textContent=`🔥 ${state.combo}連続！×1.5`; cb.classList.add('show'); } else if(state.combo>=3){ cb.textContent=`🔥 ${state.combo}連続！×1.2`; cb.classList.add('show'); } else cb.classList.remove('show'); const wrap=document.getElementById('choices'); wrap.innerHTML=''; const shuffled=shuffle(q.choices.map((c,i)=>({text:c,idx:i}))); shuffled.forEach(ch=>{ const btn=document.createElement('button'); btn.className='choice-btn'; btn.textContent=ch.text; function doAnswer(e){ if(e)e.preventDefault(); if(!state.answered) answer(ch.idx,q,btn,wrap); } btn.addEventListener('touchend',doAnswer,{passive:false}); btn.addEventListener('click',doAnswer); wrap.appendChild(btn); }); startTimer(15); }
+function startTimer(sec){ state.timerLeft=sec*10; const fill=document.getElementById('timerFill'); fill.style.width='100%'; fill.style.background='linear-gradient(90deg,var(--accent),var(--green))'; state.timerInterval=setInterval(()=>{ state.timerLeft--; const pct=state.timerLeft/(sec*10)*100; fill.style.width=pct+'%'; if(pct<30) fill.style.background='linear-gradient(90deg,#ff4d6d,#ff8080)'; if(state.timerLeft<=0){ clearTimer(); if(!state.answered) timeOut(); } },100); }
+function clearTimer(){ if(state.timerInterval){ clearInterval(state.timerInterval); state.timerInterval=null; } }
+function timeOut(){ if(state.answered) return; state.answered=true; state.combo=0; const q=state.questions[state.qIdx]; const wrap=document.getElementById('choices'); wrap.querySelectorAll('.choice-btn').forEach(btn=>{ if(btn.textContent===q.choices[q.ans]) btn.classList.add('reveal'); }); document.getElementById('qFeedback').textContent=`⏰ 時間切れ！正解: ${q.choices[q.ans]}`; document.getElementById('qFeedback').className='q-feedback ng'; recordWrong(q,-1); flash('miss'); setTimeout(()=>{ state.qIdx++; showQuestion(); },1800); }
+function answer(idx,q,btn,wrap){ if(state.answered) return; state.answered=true; clearTimer(); const correct=idx===q.ans; const isHard=q.hard; if(correct){ btn.classList.add('correct'); state.combo++; state.maxCombo=Math.max(state.maxCombo,state.combo); let mult=state.combo>=5?1.5:state.combo>=3?1.2:1; const dmg=Math.round((isHard?20:10)*mult); state.enemyHp=Math.max(0,state.enemyHp-dmg); const earned=Math.round((isHard?20:10)*mult); state.battlePts+=earned; state.correctCount++; renderBattleHp(); spawnDamageText('-'+dmg,'#00e676'); flash('hit'); document.getElementById('qFeedback').textContent=`✅ 正解！ ${mult>1?'コンボ×'+mult+' ':''}-${dmg}ダメージ`; document.getElementById('qFeedback').className='q-feedback ok'; } else { btn.classList.add('wrong'); wrap.querySelectorAll('.choice-btn').forEach(b=>{ if(b.textContent===q.choices[q.ans]) b.classList.add('reveal'); }); state.combo=0; recordWrong(q,idx); flash('miss'); document.getElementById('qFeedback').textContent=`❌ 不正解。正解: ${q.choices[q.ans]}`; document.getElementById('qFeedback').className='q-feedback ng'; } renderBattleHp(); setTimeout(()=>{ state.qIdx++; showQuestion(); },1800); }
+function recordWrong(q,yourAnsIdx){ const c=state.currentCountry; state.wrongQ.push({country:c.id,countryName:c.name,qText:q.text,type:q.type,ans:q.choices[q.ans],yourAns:yourAnsIdx>=0?q.choices[yourAnsIdx]:'時間切れ',date:new Date().toLocaleDateString('ja')}); if(state.wrongQ.length>80) state.wrongQ=state.wrongQ.slice(-80); }
+function endBattle(won){ clearTimer(); const c=state.currentCountry; let earned=state.battlePts; let bonuses=[]; const perfect=state.correctCount===state.questions.length; if(won){ if(!state.isBoss&&!state.cleared.includes(c.id)){ state.cleared.push(c.id); earned+=15; bonuses.push({label:'🗺️ 初回征服ボーナス',val:'+15pt'}); } if(perfect){ earned+=20; bonuses.push({label:'✨ ノーミスボーナス',val:'+20pt'}); } if(state.isBoss){ state.bossClears++; earned+=30; bonuses.push({label:'👾 ボス撃破ボーナス',val:'+30pt'}); } state.points+=earned; addPtsHistory((state.isBoss?'ボス撃破':c.name+'征服'),earned); } saveState(); showResult(won,c,earned,bonuses,perfect); }
+function showResult(won,country,earned,bonuses,perfect){ showScreen('resultScreen'); const isBoss=state.isBoss; document.getElementById('rIcon').textContent=won?(isBoss?'👾':(perfect?'🏆':'✅')):'💀'; const rTitle=document.getElementById('rTitle'); rTitle.className='result-title '+(won?(isBoss?'boss':'win'):'lose'); rTitle.textContent=won?(isBoss?'ボス撃破！':(perfect?'完全制覇！':'征服成功！')):'撃退された…'; document.getElementById('rSubtitle').textContent=won?`${country.name} を征服した！`:'また挑戦しよう！'; const stats=document.getElementById('rStats'); stats.innerHTML=`<div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div><div class="rs-row"><span>最大コンボ</span><span class="rs-val">${state.maxCombo}連続</span></div><div class="rs-row"><span>獲得ポイント</span><span class="rs-val gold">+${earned}pt</span></div>${bonuses.map(b=>`<div class="rs-row"><span>${b.label}</span><span class="rs-val gold">${b.val}</span></div>`).join('')}<div class="rs-row"><span>累計ポイント</span><span class="rs-val gold">${state.points}pt</span></div>`; const btns=document.getElementById('rBtns'); btns.innerHTML=''; const addBtn=(text,fn,cls='btn-primary')=>{ const b=document.createElement('button'); b.className=`btn ${cls}`; b.textContent=text; function doClick(e){ if(e)e.preventDefault(); fn(); } b.addEventListener('touchend',doClick,{passive:false}); b.addEventListener('click',doClick); btns.appendChild(b); }; if(won){ addBtn('🗺️ 地図に戻る',openMap); if(!state.isBoss) addBtn('🔄 もう一度',()=>startBattle(country),'btn-secondary'); } else { addBtn('🔄 再挑戦',()=>startBattle(country)); addBtn('🗺️ 地図に戻る',openMap,'btn-secondary'); } }
+function spawnDamageText(text,color){ const el=document.createElement('div'); el.className='damage-text'; el.textContent=text; el.style.cssText=`color:${color};left:${40+Math.random()*20}%;top:30%;`; document.getElementById('battleScreen').appendChild(el); setTimeout(()=>el.remove(),1000); }
+function flash(type){ const el=document.getElementById('battleFlash'); el.className='screen-flash '+type; setTimeout(()=>el.className='screen-flash',350); }
+function openReview(){ showScreen('reviewScreen'); const list=document.getElementById('reviewList'); list.innerHTML=''; if(state.wrongQ.length===0){ list.innerHTML=`<div class="empty-msg">間違えた問題はまだありません！<br>国を征服して学習しよう。</div>`; return; } const recent=[...state.wrongQ].reverse().slice(0,40); recent.forEach(w=>{ const div=document.createElement('div'); div.className='review-item'; div.innerHTML=`<div class="ri-country">${w.countryName||w.country} — ${w.type||''}</div><div class="ri-q">${w.qText}</div><div class="ri-ans">✅ 正解: ${w.ans}</div><div class="ri-wrong">❌ あなたの答え: ${w.yourAns}</div>`; list.appendChild(div); }); }
+function openPoints(){ showScreen('pointsScreen'); document.getElementById('ptsBig').textContent=state.points; renderRewards(); renderHistory(); }
+function renderRewards(){ const grid=document.getElementById('rewardsGrid'); grid.innerHTML=''; REWARDS.forEach(r=>{ const div=document.createElement('div'); div.className='reward-item'; const btn=document.createElement('button'); btn.className='ri-exchange'; btn.textContent='交換'; btn.disabled=state.points<r.cost; function doExchange(e){ if(e)e.preventDefault(); exchangeReward(r); } btn.addEventListener('touchend',doExchange,{passive:false}); btn.addEventListener('click',doExchange); div.innerHTML=`<div><div class="ri-name">${r.name}</div><div class="ri-cost">${r.cost}pt</div></div>`; div.appendChild(btn); grid.appendChild(div); }); }
+function exchangeReward(r){ if(state.points<r.cost){alert('ポイントが足りません！');return;} if(!confirm(`「${r.name}」に${r.cost}ptを使いますか？`))return; state.points-=r.cost; addPtsHistory(`${r.name}と交換`,-r.cost); saveState(); openPoints(); }
+function addPtsHistory(label,val){ state.ptsHistory.unshift({label,val,date:new Date().toLocaleString('ja')}); if(state.ptsHistory.length>30) state.ptsHistory=state.ptsHistory.slice(0,30); }
+function renderHistory(){ const el=document.getElementById('ptsHistory'); el.innerHTML=''; if(state.ptsHistory.length===0){ el.innerHTML=`<div class="ph-item" style="color:var(--muted)">履歴なし</div>`; return; } state.ptsHistory.slice(0,15).forEach(h=>{ const d=document.createElement('div'); d.className='ph-item'; d.innerHTML=`<span>${h.label}</span><span class="ph-pts">${h.val>0?'+':''}${h.val}pt</span>`; el.appendChild(d); }); }
+function bindBtn(id,fn){ const el=document.getElementById(id); if(!el)return; el.addEventListener('touchend',(e)=>{e.preventDefault();fn();},{passive:false}); el.addEventListener('click',fn); }
+bindBtn('btnStart',openMap); bindBtn('btnReview',openReview); bindBtn('btnPoints',openPoints); bindBtn('btnMapBack',()=>showScreen('titleScreen')); bindBtn('btnReviewBack',()=>showScreen('titleScreen')); bindBtn('btnPointsBack',()=>showScreen('titleScreen')); bindBtn('btnBattleQuit',()=>{ clearTimer(); openMap(); }); bindBtn('btnAddPts',()=>{ state.points+=10; addPtsHistory('親が追加',10); saveState(); openPoints(); }); bindBtn('btnSubPts',()=>{ state.points=Math.max(0,state.points-10); addPtsHistory('親が減算',-10); saveState(); openPoints(); }); bindBtn('btnResetPts',()=>{ if(confirm('ポイントをリセットしますか？')){ state.points=0; state.ptsHistory=[]; saveState(); openPoints(); } });
+loadState(); initStars();
+</script>
+</body>
+</html>
