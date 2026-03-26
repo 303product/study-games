@@ -8053,11 +8053,13 @@ function renderMap(){
 function buildQuestions(country, isBoss){
   if(isBoss){
     const pool=[];
-    state.wrongQ.slice(-20).forEach(w=>{
+    const wrongs = state.wrongQ || [];
+    wrongs.slice(-20).forEach(w=>{
       const cc=COUNTRIES.find(c=>c.id===w.country);
       if(cc){const q=cc.questions.find(q=>q.text===w.qText);if(q)pool.push({...q,countryName:cc.name});}
     });
-    COUNTRIES.filter(c=>state.cleared.includes(c.id)).forEach(cc=>{
+    const clearedIds = state.cleared || [];
+    COUNTRIES.filter(c=>clearedIds.includes(c.id)).forEach(cc=>{
       cc.questions.forEach(q=>pool.push({...q,countryName:cc.name}));
     });
     return shuffle(pool).slice(0,8).map(q=>({...q,text:(q.countryName?`[${q.countryName}] `:"")+q.text}));
