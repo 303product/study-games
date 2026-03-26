@@ -667,7 +667,11 @@ function renderBattleHp(){
 
 function showQuestion(){
   clearTimer();
-  if(state.qIdx>=state.questions.length){endBattle(true);return;}
+  if(state.qIdx>=state.questions.length){
+    const isPerfect = state.correctCount === state.questions.length;
+    endBattle(isPerfect);
+    return;
+  }
   const q=state.questions[state.qIdx];
   state.answered=false;
 
