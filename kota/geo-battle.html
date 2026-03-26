@@ -8086,11 +8086,12 @@ function renderMap(){
   }
 
 
-  const bossReady=state.cleared.length>0&&state.cleared.length%5===0&&state.cleared.length>(state.bossClears*5);
+  const bossThreshold = (state.bossClears + 1) * 5;
+  const bossReady = state.cleared.length >= bossThreshold;
 
   if(bossReady){
     const bc=document.createElement("div"); bc.className="boss-card";
-    bc.innerHTML=`<div class="boss-card-title">⚠️ 復習ボス出現！</div><div class="boss-card-sub">${state.cleared.length}か国征服記念 — 今まで学んだ国をまとめて復習</div>`;
+    bc.innerHTML=`<div class="boss-card-title">⚠️ 復習ボス出現！</div><div class="boss-card-sub">${bossThreshold}か国征服記念 — 今まで学んだ国をまとめて復習</div>`;
     bc.addEventListener("click",()=>startBoss());
     bc.addEventListener("touchend",(e)=>{e.preventDefault();startBoss();});
     grid.appendChild(bc);

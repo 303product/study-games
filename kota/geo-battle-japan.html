@@ -3917,10 +3917,12 @@ function renderMap(){
   }
 
 
-  const bossReady=state.cleared.length>0&&state.cleared.length%10===0&&state.cleared.length>(state.bossClears*10);
+  const bossThreshold = (state.bossClears + 1) * 10;
+  const bossReady = state.cleared.length >= bossThreshold;
+
   if(bossReady){
     const bc=document.createElement("div"); bc.className="boss-card";
-    bc.innerHTML=`<div class="boss-card-title">⚠️ 幕府軍出現！</div><div class="boss-card-sub">${state.cleared.length}か国平定記念 — 幕府軍による一斉テスト</div>`;
+    bc.innerHTML=`<div class="boss-card-title">⚠️ 幕府軍出現！</div><div class="boss-card-sub">${bossThreshold}か国平定記念 — 幕府軍による一斉テスト</div>`;
     bc.addEventListener("click",()=>startBoss());
     grid.appendChild(bc);
   }
