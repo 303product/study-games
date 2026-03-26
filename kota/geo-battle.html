@@ -88,6 +88,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   animation:enemyFloat 2s ease-in-out infinite;transition:filter .2s;}
 @keyframes enemyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
 .enemy-flag.hit{animation:enemyHit .5s ease!important;filter:brightness(3) drop-shadow(0 0 30px #fff)!important;}
+.enemy-flag.dead{animation:enemyDie .8s forwards!important;pointer-events:none;}
+@keyframes enemyDie{
+  0%{transform:scale(1);filter:brightness(2) drop-shadow(0 0 30px #f00);}
+  100%{transform:scale(0) rotate(180deg);opacity:0;}
+}
 @keyframes enemyHit{
   0%{transform:translateY(0) scale(1);}
   15%{transform:translateY(-12px) scale(1.15);filter:brightness(3);}
@@ -639,7 +644,9 @@ function startBattle(country){
   state.questions=buildQuestions(country,false);
   state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
   state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
-  document.getElementById("bFlag").textContent=getMonster(country);
+  const flagEl = document.getElementById("bFlag");
+  flagEl.textContent=getMonster(country);
+  flagEl.classList.remove("dead");
   document.getElementById("bName").textContent=country.name;
   document.getElementById("bName").classList.remove("hidden-for-flag");
   document.getElementById("bTitle").textContent=`⚔️ vs ${country.name}`;
@@ -652,7 +659,9 @@ function startBoss(){
   if(state.questions.length===0){alert("復習問題がありません！");return;}
   state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
   state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
-  document.getElementById("bFlag").textContent="👾";
+  const flagEl = document.getElementById("bFlag");
+  flagEl.textContent="👾";
+  flagEl.classList.remove("dead");
   document.getElementById("bName").textContent="記憶の守護者";
   document.getElementById("bTitle").textContent="⚔️ ボス戦！";
   showScreen("battleScreen"); renderBattleHp(); showQuestion();
@@ -758,7 +767,12 @@ function answer(idx,q,btn,wrap){
     const dmg=Math.round((isHard?20:10)*mult);
     state.enemyHp=Math.max(0,state.enemyHp-dmg);
     state.battlePts+=Math.round((isHard?20:10)*mult);
-    state.correctCount++; renderBattleHp();
+    state.correctCount++; 
+    if(state.correctCount === state.questions.length) {
+      state.enemyHp = 0;
+      document.getElementById("bFlag").classList.add("dead");
+    }
+    renderBattleHp();
     spawnDamageText("-"+dmg,"#00e676"); flash("hit");
     playHitAnimation();
     document.getElementById("qFeedback").textContent=`✅ 正解！ ${mult>1?"コンボ×"+mult+" ":""}-${dmg}ダメージ`;
