@@ -254,7 +254,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="title-btns">
     <button class="btn btn-primary" id="btnStart">▶ 世界征服を始める</button>
     <button class="btn btn-secondary" id="btnReview">📚 復習モード</button>
-    <button class="btn btn-gold" id="btnPoints">⭐ ポイント確認</button>
   </div>
 </div>
 
@@ -332,29 +331,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="review-list" id="reviewList"></div>
 </div>
 
-<div id="pointsScreen" class="screen">
-  <div class="points-header">⭐ ポイント管理
-    <button class="back-btn" style="float:right;margin-top:-.2rem;" id="btnPointsBack">← 戻る</button>
-  </div>
-  <div class="points-body">
-    <div class="points-big">
-      <div class="pb-val" id="ptsBig">0</div>
-      <div class="pb-label">保有ポイント</div>
-    </div>
-    <div class="rewards-grid" id="rewardsGrid"></div>
-    <div class="parent-section">
-      <div class="ps-title">👨‍👩‍👧 親用メニュー</div>
-      <div class="ps-btns">
-        <button class="ps-btn" id="btnAddPts">達成 追加</button>
-        <button class="ps-btn" id="btnSubPts">-達成 減算</button>
-        <button class="ps-btn" id="btnResetPts">リセット</button>
-      </div>
-    </div>
-    <div class="points-history">
-      <div class="ph-title">履歴</div>
-      <div id="ptsHistory"></div>
-    </div>
-  </div>
 </div>
 
 
@@ -8009,12 +7985,7 @@ const COUNTRIES = [
 
 ];
 
-const REWARDS = [
-  {id:"snack",name:"🍩 おやつ",cost:10},
-  {id:"gametime",name:"🎮 ゲーム時間+30分",cost:30},
-  {id:"small",name:"🎁 小さなプレゼント",cost:50},
-  {id:"special",name:"⭐ 特別報酬",cost:100},
-];
+const REWARDS = [];
 
 // =====================================================================
 // STATE
@@ -8488,60 +8459,8 @@ function openReview(){
 }
 
 // =====================================================================
-// POINTS
+// EVENTS
 // =====================================================================
-function openPoints(){
-  showScreen("pointsScreen");
-  document.getElementById("ptsBig").textContent=state.points;
-  renderRewards(); renderHistory();
-}
-function renderRewards(){
-  const grid=document.getElementById("rewardsGrid"); grid.innerHTML="";
-  
-  document.querySelectorAll(".hPointsDisplay").forEach(el => el.textContent = state.points);
-  // Check Z-A condition
-
-  const wState = JSON.parse(localStorage.getItem("geoBattleState")||"{}");
-  const jState = JSON.parse(localStorage.getItem("geoBattleJapan")||"{}");
-  const wClear = (wState.cleared||[]).length;
-  const jClear = (jState.cleared||[]).length;
-  // World has 130, Japan has 47
-  if(wClear >= 130 && jClear >= 47) {
-    document.getElementById("zaTicketBtn").style.display = "flex";
-  } else {
-    document.getElementById("zaTicketBtn").style.display = "none";
-  }
-
-  REWARDS.forEach(r=>{
-    const div=document.createElement("div"); div.className="reward-item";
-    const btn=document.createElement("button"); btn.className="ri-exchange";
-    btn.textContent="交換"; btn.disabled=state.points<r.cost;
-    function doExchange(e){if(e)e.preventDefault();exchangeReward(r);}
-    btn.addEventListener("touchend",doExchange,{passive:false});
-    btn.addEventListener("click",doExchange);
-    div.innerHTML=`<div><div class="ri-name">${r.name}</div><div class="ri-cost">${r.cost}pt</div></div>`;
-    div.appendChild(btn); grid.appendChild(div);
-  });
-}
-function exchangeReward(r){
-  if(state.points<r.cost){alert("ポイントが足りません！");return;}
-  if(!confirm(`「${r.name}」に${r.cost}ptを使いますか？`))return;
-  state.points-=r.cost; addPtsHistory(`${r.name}と交換`,-r.cost); saveState(); openPoints();
-}
-function addPtsHistory(label,val){
-  state.ptsHistory.unshift({label,val,date:new Date().toLocaleString("ja")});
-  if(state.ptsHistory.length>30)state.ptsHistory=state.ptsHistory.slice(0,30);
-}
-function renderHistory(){
-  const el=document.getElementById("ptsHistory"); el.innerHTML="";
-  if(state.ptsHistory.length===0){el.innerHTML=`<div class="ph-item" style="color:var(--muted)">履歴なし</div>`;return;}
-  state.ptsHistory.slice(0,15).forEach(h=>{
-    const d=document.createElement("div"); d.className="ph-item";
-    d.innerHTML=`<span>${h.label}</span><span class="ph-pts">${h.val>0?"+":""}${h.val}pt</span>`;
-    el.appendChild(d);
-  });
-}
-
 // =====================================================================
 // EVENTS
 // =====================================================================
@@ -8553,14 +8472,9 @@ function bindBtn(id,fn){
 
 bindBtn("btnStart",openMap);
 bindBtn("btnReview",openReview);
-bindBtn("btnPoints",openPoints);
 bindBtn("btnMapBack",()=>showScreen("titleScreen"));
 bindBtn("btnReviewBack",()=>showScreen("titleScreen"));
-bindBtn("btnPointsBack",()=>showScreen("titleScreen"));
 bindBtn("btnBattleQuit",()=>{clearTimer();openMap();});
-bindBtn("btnAddPts",()=>{state.points+=10;addPtsHistory("親が追加",10);saveState();openPoints();});
-bindBtn("btnSubPts",()=>{state.points=Math.max(0,state.points-10);addPtsHistory("親が減算",-10);saveState();openPoints();});
-bindBtn("btnResetPts",()=>{if(confirm("ポイントをリセットしますか？")){state.points=0;state.ptsHistory=[];saveState();openPoints();}});
 
 // =====================================================================
 // INIT
