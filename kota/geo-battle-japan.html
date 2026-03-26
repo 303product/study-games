@@ -1,0 +1,4738 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>都道府県バトル — 天下統一</title>
+<style>
+:root {
+  --bg:#1a1510; --surface:#2b2018; --surface2:#3d2f25;
+  --border:#8c7853; --accent:#ffd1d1; --accent2:#b33e5c;
+  --gold:#e6b422; --green:#3a7a40; --red:#c0392b;
+  --text:#fdfbf7; --muted:#a6998a;
+  --hp-enemy:#c0392b; --hp-player:#3a7a40;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:"Yu Mincho","Hiragino Mincho ProN",serif;}
+#app{width:100vw;height:100vh;position:relative;overflow:hidden;}
+
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.screen.active{display:flex;}
+
+#titleScreen{background:radial-gradient(ellipse at 50% 30%,#2b2018 0%,#1a1510 70%);}
+.title-bg-pattern{position:absolute;inset:0;opacity:0.05;background-image:radial-gradient(var(--border) 1px, transparent 1px);background-size:20px 20px;pointer-events:none;}
+.title-logo{text-align:center;z-index:1;}
+.title-main{font-size:clamp(2rem,7vw,3.5rem);font-weight:900;letter-spacing:.05em;
+  background:linear-gradient(135deg,#ffd1d1,#fff,#e6b422);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:none;filter:drop-shadow(0 0 30px rgba(255,209,209,.5));}
+.title-sub{font-size:clamp(1rem,2.5vw,1.5rem);color:var(--muted);margin-top:.4em;letter-spacing:.25em;}
+.title-btns{margin-top:2.5rem;display:flex;flex-direction:column;gap:.8rem;width:min(320px,80vw);z-index:1;}
+.btn{padding:1rem 1.5rem;border:none;border-radius:8px;font-size:1.05rem;font-weight:700;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;letter-spacing:.05em;touch-action:manipulation;font-family:inherit;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:linear-gradient(135deg,#b33e5c,#c0392b);color:#fff;
+  box-shadow:0 0 20px rgba(192,57,43,.4);border:1px solid #ffd1d1;}
+.btn-primary:hover{box-shadow:0 0 30px rgba(192,57,43,.7);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-gold{background:linear-gradient(135deg,#b8860b,#e6b422);color:#000;
+  box-shadow:0 0 20px rgba(230,180,34,.4);}
+
+#mapScreen{background:var(--bg);flex-direction:column;justify-content:flex-start;overflow:hidden;}
+.map-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:.6rem 1rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;z-index:5;}
+.stat-badge{background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+  padding:.3rem .7rem;font-size:.8rem;display:flex;align-items:center;gap:.4rem;}
+.stat-badge span{color:var(--accent);font-weight:700;}
+.map-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:1rem;}
+.map-title{text-align:center;font-size:1.3rem;font-weight:800;color:var(--accent);margin-bottom:.8rem;}
+.country-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.7rem;
+  max-width:900px;margin:0 auto;}
+.country-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:.8rem;cursor:pointer;transition:all .2s;touch-action:manipulation;position:relative;overflow:hidden;}
+.country-card:hover,.country-card:active{transform:translateY(-2px);border-color:var(--accent);
+  box-shadow:0 4px 20px rgba(255,209,209,.2);}
+.country-card.cleared{border-color:var(--gold);background:linear-gradient(135deg,var(--surface),#3d2f25);}
+.country-card.boss-target{border-color:var(--gold);animation:bossGlow .8s infinite alternate;}
+@keyframes bossGlow{from{box-shadow:0 0 8px rgba(230,180,34,.3);}to{box-shadow:0 0 20px rgba(230,180,34,.8);}}
+.cc-flag{font-size:1.8rem;text-align:center;}
+.cc-name{font-size:1rem;font-weight:700;text-align:center;margin-top:.3rem;}
+.cc-region{font-size:.7rem;color:var(--muted);text-align:center;}
+.cc-status{position:absolute;top:.4rem;right:.4rem;font-size:.8rem;}
+.cc-hp-bar{margin-top:.4rem;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.cc-hp-fill{height:100%;background:var(--hp-enemy);border-radius:2px;transition:width .3s;}
+.boss-card{grid-column:1/-1;background:linear-gradient(135deg,#3a1010,#2a0808);
+  border:2px solid var(--gold);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;}
+.boss-card-title{font-size:1.2rem;font-weight:900;color:var(--gold);}
+.boss-card-sub{font-size:.8rem;color:var(--muted);margin-top:.2rem;}
+.progress-bar-wrap{width:100%;max-width:900px;margin:.5rem auto .2rem;}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--gold));transition:width .5s;}
+.progress-label{font-size:.75rem;color:var(--muted);text-align:right;margin-top:.2rem;}
+
+#battleScreen{background:radial-gradient(ellipse at 50% 0%,#2b2018 0%,var(--bg) 60%);
+  flex-direction:column;justify-content:flex-start;overflow:hidden;}
+.battle-header{width:100%;padding:.6rem 1rem;display:flex;justify-content:space-between;align-items:center;
+  background:var(--surface);border-bottom:1px solid var(--border);}
+.battle-title{font-size:1.1rem;font-weight:700;color:var(--accent);}
+.battle-pts{font-size:.9rem;color:var(--gold);}
+.battle-arena{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:1rem;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.enemy-area{text-align:center;margin-bottom:.8rem;}
+.enemy-flag{font-size:clamp(3rem,8vw,4.5rem);filter:drop-shadow(0 0 20px rgba(192,57,43,.5));
+  animation:enemyFloat 2s ease-in-out infinite;transition:all .3s;}
+@keyframes enemyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.enemy-flag.hit{animation:enemyHit .5s ease!important;filter:brightness(2) drop-shadow(0 0 30px #fff)!important;}
+.enemy-flag.dead{animation:enemyDie .8s forwards!important;pointer-events:none;}
+@keyframes enemyDie{
+  0%{transform:scale(1);filter:brightness(2) drop-shadow(0 0 30px #f00);}
+  100%{transform:scale(0) rotate(180deg);opacity:0;}
+}
+@keyframes enemyHit{
+  0%{transform:translateY(0) scale(1);}
+  15%{transform:translateY(-12px) scale(1.15);filter:brightness(2);}
+  30%{transform:translateX(-8px) scale(.95);}
+  45%{transform:translateX(8px) scale(.95);}
+  60%{transform:translateX(-4px) scale(1);}
+  80%{transform:translateY(0) scale(1);}
+  100%{transform:translateY(0) scale(1);}
+}
+.enemy-flag.miss-shake{animation:enemyTaunt .4s ease!important;}
+@keyframes enemyTaunt{
+  0%,100%{transform:translateY(0) rotate(0);}
+  25%{transform:translateY(-3px) rotate(-5deg);}
+  75%{transform:translateY(-3px) rotate(5deg);}
+}
+.enemy-name.hidden-for-flag{color:transparent;text-shadow:none;background:var(--border);
+  border-radius:4px;display:inline-block;padding:.1em .8em;}
+.enemy-name{font-size:clamp(1.2rem,4vw,2rem);font-weight:900;margin:.3rem 0;color:var(--gold);}
+.hp-row{display:flex;align-items:center;gap:.5rem;width:min(400px,90vw);}
+.hp-label{font-size:.75rem;color:var(--muted);width:30px;text-align:right;}
+.hp-bar{flex:1;height:10px;background:var(--surface2);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.hp-fill{height:100%;transition:width .4s;}
+.hp-enemy-fill{background:linear-gradient(90deg,#900,#c0392b);}
+.hp-val{font-size:.75rem;font-weight:700;width:45px;}
+.combo-badge{background:linear-gradient(135deg,#c0392b,#e6b422);color:#fff;
+  border-radius:4px;padding:.2rem .7rem;font-size:.8rem;font-weight:700;margin:.4rem 0;
+  opacity:0;transition:opacity .2s;border:1px solid #fff;}
+.combo-badge.show{opacity:1;}
+.question-box{width:min(600px,95vw);background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:1rem 1.2rem;margin:.5rem 0;}
+.q-meta{font-size:.72rem;color:var(--muted);margin-bottom:.6rem;display:flex;justify-content:space-between;
+  border-bottom:1px solid var(--border);padding-bottom:.3rem;}
+.q-text{font-size:clamp(1rem,2.5vw,1.2rem);font-weight:700;line-height:1.6;}
+.q-flag-display{font-size:3.5rem;text-align:center;margin:.6rem 0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5));}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.8rem;}
+.choice-btn{background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+  padding:.8rem .6rem;font-size:clamp(.85rem,2vw,.95rem);cursor:pointer;transition:all .15s;
+  text-align:center;touch-action:manipulation;color:var(--text);font-weight:600;font-family:inherit;}
+.choice-btn:hover{border-color:var(--accent);background:#4a3b30;}
+.choice-btn:active{transform:scale(.97);}
+.choice-btn.correct{background:#3a7a40;border-color:#fff;color:#fff;}
+.choice-btn.wrong{background:#5a1a1a;border-color:var(--red);color:var(--accent);}
+.choice-btn.reveal{background:#3a7a40;border-color:#fff;color:#fff;}
+.choice-btn.flag-choice{font-size:1.8rem;padding:.5rem;line-height:1.2;}
+.q-feedback{text-align:center;font-size:1rem;margin-top:.6rem;min-height:1.2em;font-weight:900;}
+.q-feedback.ok{color:var(--gold);}
+.q-feedback.ng{color:var(--red);}
+.timer-bar{width:min(600px,95vw);height:4px;background:var(--surface2);overflow:hidden;margin-bottom:.4rem;}
+.timer-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--gold));transition:width .1s linear;}
+.battle-footer{width:100%;padding:.5rem 1rem;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;}
+.q-counter{font-size:.9rem;color:var(--muted);}
+
+#resultScreen{background:radial-gradient(ellipse at 50% 30%,#2b2018,var(--bg));}
+.result-box{text-align:center;padding:2rem;max-width:420px;width:90%;background:var(--surface);border:2px solid var(--border);border-radius:8px;}
+.result-icon{font-size:4rem;margin-bottom:.5rem;}
+.result-title{font-size:2rem;font-weight:900;margin-bottom:.3rem;}
+.result-title.win{color:var(--gold);}
+.result-title.lose{color:var(--red);}
+.result-title.boss{color:var(--accent);}
+.result-stats{background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+  padding:1rem;margin:1rem 0;text-align:left;display:flex;flex-direction:column;gap:.6rem;}
+.rs-row{display:flex;justify-content:space-between;font-size:1rem;}
+.rs-val{font-weight:700;color:var(--accent);}
+.rs-val.gold{color:var(--gold);}
+.result-btns{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem;}
+
+.damage-text{position:absolute;font-size:1.5rem;font-weight:900;pointer-events:none;
+  animation:dmgFloat 1s forwards;}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
+.screen-flash{position:absolute;inset:0;pointer-events:none;opacity:0;border-radius:inherit;}
+.screen-flash.hit{animation:flashHit .3s forwards;}
+.screen-flash.miss{animation:flashMiss .3s forwards;}
+@keyframes flashHit{0%,100%{opacity:0;}30%{opacity:.25;background:var(--gold);}}
+@keyframes flashMiss{0%,100%{opacity:0;}30%{opacity:.25;background:var(--red);}}
+
+.back-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);
+  padding:.4rem .8rem;font-size:.8rem;cursor:pointer;font-family:inherit;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="titleScreen" class="screen active">
+  <div class="title-bg-pattern"></div>
+  <div class="title-logo">
+    <div class="title-main">🗾 都道府県バトル</div>
+    <div class="title-sub">〜 天下統一 〜</div>
+  </div>
+  <div class="title-btns">
+    <button class="btn btn-primary" id="btnStart">⚔️ 天下統一を始める</button>
+  </div>
+</div>
+
+<div id="mapScreen" class="screen">
+  <div class="map-header">
+    <div class="stat-badge">🗾 平定 <span id="hClear">0</span>/47</div>
+    <div class="stat-badge">⭐ <span id="hPoints">0</span>両</div>
+    <button class="back-btn" id="btnMapBack">← タイトル</button>
+  </div>
+  <div class="map-area">
+    <div class="map-title">🗾 日本地図 — 次の攻略先を選べ</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-label" id="progressLabel">0% 平定済み</div>
+    </div>
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+</div>
+
+<div id="battleScreen" class="screen">
+  <div class="screen-flash" id="battleFlash"></div>
+  <div class="battle-header">
+    <div class="battle-title" id="bTitle">vs 〇〇</div>
+    <div class="battle-pts" id="bPts">⭐ 0両</div>
+  </div>
+  <div class="battle-arena">
+    <div class="enemy-area" style="position:relative;">
+      <div class="enemy-flag" id="bFlag">🏯</div>
+      <div class="enemy-name" id="bName">〇〇県</div>
+      <div class="hp-row">
+        <div class="hp-label">敵陣</div>
+        <div class="hp-bar"><div class="hp-fill hp-enemy-fill" id="bEnemyHp" style="width:100%"></div></div>
+        <div class="hp-val" id="bEnemyHpVal">100/100</div>
+      </div>
+    </div>
+    <div class="combo-badge" id="comboBadge">🔥 3連続！×1.2</div>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    <div class="question-box">
+      <div class="q-meta">
+        <span id="qType">県庁所在地</span>
+        <span id="qDiff">通常 +10両</span>
+      </div>
+      <div class="q-text" id="qText">問題文</div>
+      <div class="q-flag-display" id="qFlagDisplay" style="display:none;"></div>
+      <div class="choices" id="choices"></div>
+      <div class="q-feedback" id="qFeedback"></div>
+    </div>
+  </div>
+  <div class="battle-footer">
+    <div class="q-counter" id="qCounter">問1 / 6</div>
+    <button class="btn btn-secondary" style="padding:.4rem .8rem;font-size:.8rem;" id="btnBattleQuit">撤退する</button>
+  </div>
+</div>
+
+<div id="resultScreen" class="screen">
+  <div class="result-box">
+    <div class="result-icon" id="rIcon">🏆</div>
+    <div class="result-title" id="rTitle">勝利!</div>
+    <div id="rSubtitle" style="color:var(--muted);margin-bottom:.5rem;font-size:1rem;"></div>
+    <div class="result-stats" id="rStats"></div>
+    <div class="result-btns" id="rBtns"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const COUNTRIES = [
+  {
+    "id": "hokkaido",
+    "name": "北海道",
+    "flag": "🐻",
+    "region": "北海道地方",
+    "capital": "札幌市",
+    "pop": "約510万人",
+    "area": "約8.3万km²",
+    "products": [
+      "じゃがいも",
+      "海鮮",
+      "乳製品"
+    ],
+    "landmark": "時計台・五稜郭",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "北海道の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "札幌市",
+          "秋田市",
+          "甲府市",
+          "新宿区"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "北海道がある地方は？",
+        "choices": [
+          "中国地方",
+          "北海道地方",
+          "関東地方",
+          "東北地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "北海道の有名な特産品・名産は？",
+        "choices": [
+          "じゃがいも",
+          "醤油",
+          "パイナップル",
+          "ふぐ"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "北海道にある有名な場所（名所）は？",
+        "choices": [
+          "時計台",
+          "姫路城",
+          "白川郷",
+          "富士山"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🐻",
+        "choices": [
+          "福岡県",
+          "北海道",
+          "岡山県",
+          "新潟県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、北海道に含まれる特徴は？",
+        "choices": [
+          "札幌市",
+          "大分市",
+          "ねぎ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "aomori",
+    "name": "青森県",
+    "flag": "🍎",
+    "region": "東北地方",
+    "capital": "青森市",
+    "pop": "約120万人",
+    "area": "約9600km²",
+    "products": [
+      "りんご",
+      "にんにく"
+    ],
+    "landmark": "白神山地・ねぶた祭",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "青森県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "盛岡市",
+          "青森市",
+          "和歌山市",
+          "大津市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "青森県がある地方は？",
+        "choices": [
+          "東北地方",
+          "中部地方",
+          "関東地方",
+          "近畿地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "青森県の有名な特産品・名産は？",
+        "choices": [
+          "レタス",
+          "もみじ饅頭",
+          "りんご",
+          "有田焼"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "青森県にある有名な場所（名所）は？",
+        "choices": [
+          "白神山地",
+          "東大寺",
+          "別府温泉",
+          "姫路城"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍎",
+        "choices": [
+          "徳島県",
+          "山形県",
+          "長野県",
+          "青森県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、青森県に含まれる特徴は？",
+        "choices": [
+          "青森市",
+          "秋田市",
+          "マスカット",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "iwate",
+    "name": "岩手県",
+    "flag": "🌾",
+    "region": "東北地方",
+    "capital": "盛岡市",
+    "pop": "約110万人",
+    "area": "約1.5万km²",
+    "products": [
+      "わかめ",
+      "南部鉄器"
+    ],
+    "landmark": "中尊寺金色堂",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "岩手県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "前橋市",
+          "大分市",
+          "熊本市",
+          "盛岡市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "岩手県がある地方は？",
+        "choices": [
+          "九州地方",
+          "四国地方",
+          "東北地方",
+          "北海道地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "岩手県の有名な特産品・名産は？",
+        "choices": [
+          "さつまいも",
+          "あまおう",
+          "わかめ",
+          "白桃"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "岩手県にある有名な場所（名所）は？",
+        "choices": [
+          "白川郷",
+          "中尊寺金色堂",
+          "首里城",
+          "東尋坊"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🌾",
+        "choices": [
+          "長崎県",
+          "鳥取県",
+          "岩手県",
+          "高知県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、岩手県に含まれる特徴は？",
+        "choices": [
+          "盛岡市",
+          "和歌山市",
+          "しじみ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "miyagi",
+    "name": "宮城県",
+    "flag": "🍜",
+    "region": "東北地方",
+    "capital": "仙台市",
+    "pop": "約220万人",
+    "area": "約7200km²",
+    "products": [
+      "牛タン",
+      "ササニシキ"
+    ],
+    "landmark": "松島・伊達政宗",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "宮城県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "仙台市",
+          "新宿区",
+          "神戸市",
+          "岡山市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "宮城県がある地方は？",
+        "choices": [
+          "中国地方",
+          "九州地方",
+          "関東地方",
+          "東北地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "宮城県の有名な特産品・名産は？",
+        "choices": [
+          "真珠",
+          "牛タン",
+          "明太子",
+          "赤べこ"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "宮城県にある有名な場所（名所）は？",
+        "choices": [
+          "熊本城",
+          "松島",
+          "富士山",
+          "厳島神社"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍜",
+        "choices": [
+          "石川県",
+          "三重県",
+          "秋田県",
+          "宮城県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、宮城県に含まれる特徴は？",
+        "choices": [
+          "仙台市",
+          "新潟市",
+          "コシヒカリ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "akita",
+    "name": "秋田県",
+    "flag": "👹",
+    "region": "東北地方",
+    "capital": "秋田市",
+    "pop": "約90万人",
+    "area": "約1.1万km²",
+    "products": [
+      "あきたこまち",
+      "きりたんぽ"
+    ],
+    "landmark": "なまはげ・田沢湖",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "秋田県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "長野市",
+          "広島市",
+          "秋田市",
+          "金沢市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "秋田県がある地方は？",
+        "choices": [
+          "近畿地方",
+          "四国地方",
+          "九州地方",
+          "東北地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "秋田県の有名な特産品・名産は？",
+        "choices": [
+          "あきたこまち",
+          "メガネフレーム",
+          "八ツ橋",
+          "赤べこ"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "秋田県にある有名な場所（名所）は？",
+        "choices": [
+          "時計台",
+          "富士山",
+          "なまはげ",
+          "名古屋城"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "👹",
+        "choices": [
+          "山形県",
+          "秋田県",
+          "岐阜県",
+          "宮城県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、秋田県に含まれる特徴は？",
+        "choices": [
+          "秋田市",
+          "甲府市",
+          "明太子",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "yamagata",
+    "name": "山形県",
+    "flag": "🍒",
+    "region": "東北地方",
+    "capital": "山形市",
+    "pop": "約100万人",
+    "area": "約9300km²",
+    "products": [
+      "さくらんぼ",
+      "ラフランス"
+    ],
+    "landmark": "蔵王・銀山温泉",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "山形県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "高知市",
+          "金沢市",
+          "富山市",
+          "山形市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "山形県がある地方は？",
+        "choices": [
+          "中国地方",
+          "東北地方",
+          "北海道地方",
+          "中部地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "山形県の有名な特産品・名産は？",
+        "choices": [
+          "さくらんぼ",
+          "墨",
+          "小松菜",
+          "かまぼこ"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "山形県にある有名な場所（名所）は？",
+        "choices": [
+          "蔵王",
+          "熊本城",
+          "偕楽園",
+          "時計台"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍒",
+        "choices": [
+          "長崎県",
+          "熊本県",
+          "愛媛県",
+          "山形県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、山形県に含まれる特徴は？",
+        "choices": [
+          "山形市",
+          "鳥取市",
+          "お好み焼き",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "fukushima",
+    "name": "福島県",
+    "flag": "👅",
+    "region": "東北地方",
+    "capital": "福島市",
+    "pop": "約180万人",
+    "area": "約1.3万km²",
+    "products": [
+      "桃",
+      "赤べこ"
+    ],
+    "landmark": "猪苗代湖・磐梯山",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "福島県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "福島市",
+          "甲府市",
+          "宮崎市",
+          "名古屋市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "福島県がある地方は？",
+        "choices": [
+          "関東地方",
+          "九州地方",
+          "中国地方",
+          "東北地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "福島県の有名な特産品・名産は？",
+        "choices": [
+          "桃",
+          "もみじ饅頭",
+          "ラフランス",
+          "牡蠣"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "福島県にある有名な場所（名所）は？",
+        "choices": [
+          "草津温泉",
+          "猪苗代湖",
+          "草津温泉",
+          "ディズニーランド"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "👅",
+        "choices": [
+          "三重県",
+          "長野県",
+          "愛媛県",
+          "福島県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、福島県に含まれる特徴は？",
+        "choices": [
+          "福島市",
+          "京都市",
+          "飛騨牛",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "ibaraki",
+    "name": "茨城県",
+    "flag": "🥜",
+    "region": "関東地方",
+    "capital": "水戸市",
+    "pop": "約280万人",
+    "area": "約6000km²",
+    "products": [
+      "納豆",
+      "メロン"
+    ],
+    "landmark": "偕楽園・筑波山",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "茨城県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "福島市",
+          "名古屋市",
+          "水戸市",
+          "高松市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "茨城県がある地方は？",
+        "choices": [
+          "東北地方",
+          "関東地方",
+          "九州地方",
+          "北海道地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "茨城県の有名な特産品・名産は？",
+        "choices": [
+          "神戸牛",
+          "じゃがいも",
+          "納豆",
+          "椎茸"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "茨城県にある有名な場所（名所）は？",
+        "choices": [
+          "高千穂峡",
+          "偕楽園",
+          "伊勢神宮",
+          "桂浜"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🥜",
+        "choices": [
+          "茨城県",
+          "東京都",
+          "青森県",
+          "香川県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、茨城県に含まれる特徴は？",
+        "choices": [
+          "水戸市",
+          "佐賀市",
+          "さくらんぼ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "tochigi",
+    "name": "栃木県",
+    "flag": "🍠",
+    "region": "関東地方",
+    "capital": "宇都宮市",
+    "pop": "約190万人",
+    "area": "約6400km²",
+    "products": [
+      "いちご",
+      "かんぴょう"
+    ],
+    "landmark": "日光東照宮",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "栃木県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "熊本市",
+          "宇都宮市",
+          "千葉市",
+          "横浜市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "栃木県がある地方は？",
+        "choices": [
+          "四国地方",
+          "九州地方",
+          "中部地方",
+          "関東地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "栃木県の有名な特産品・名産は？",
+        "choices": [
+          "あまおう",
+          "ふぐ",
+          "いちご",
+          "近江牛"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "栃木県にある有名な場所（名所）は？",
+        "choices": [
+          "東尋坊",
+          "日光東照宮",
+          "偕楽園",
+          "厳島神社"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍠",
+        "choices": [
+          "新潟県",
+          "栃木県",
+          "山口県",
+          "鳥取県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、栃木県に含まれる特徴は？",
+        "choices": [
+          "宇都宮市",
+          "宇都宮市",
+          "ラフランス",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "gunma",
+    "name": "群馬県",
+    "flag": "🍓",
+    "region": "関東地方",
+    "capital": "前橋市",
+    "pop": "約190万人",
+    "area": "約6300km²",
+    "products": [
+      "こんにゃく",
+      "キャベツ"
+    ],
+    "landmark": "草津温泉・富岡製糸場",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "群馬県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "前橋市",
+          "大分市",
+          "福井市",
+          "横浜市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "群馬県がある地方は？",
+        "choices": [
+          "東北地方",
+          "九州地方",
+          "関東地方",
+          "中国地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "群馬県の有名な特産品・名産は？",
+        "choices": [
+          "こんにゃく",
+          "小松菜",
+          "うどん",
+          "カステラ"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "群馬県にある有名な場所（名所）は？",
+        "choices": [
+          "吉野ヶ里遺跡",
+          "善光寺",
+          "草津温泉",
+          "ディズニーランド"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍓",
+        "choices": [
+          "愛媛県",
+          "群馬県",
+          "沖縄県",
+          "福井県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、群馬県に含まれる特徴は？",
+        "choices": [
+          "前橋市",
+          "広島市",
+          "柿の葉寿司",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "saitama",
+    "name": "埼玉県",
+    "flag": "🥬",
+    "region": "関東地方",
+    "capital": "さいたま市",
+    "pop": "約730万人",
+    "area": "約3700km²",
+    "products": [
+      "ねぎ",
+      "さつまいも"
+    ],
+    "landmark": "秩父・川越",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "埼玉県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "さいたま市",
+          "千葉市",
+          "神戸市",
+          "青森市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "埼玉県がある地方は？",
+        "choices": [
+          "近畿地方",
+          "九州地方",
+          "四国地方",
+          "関東地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "埼玉県の有名な特産品・名産は？",
+        "choices": [
+          "もみじ饅頭",
+          "海鮮",
+          "漆器",
+          "ねぎ"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "埼玉県にある有名な場所（名所）は？",
+        "choices": [
+          "秋芳洞",
+          "東大寺",
+          "首里城",
+          "秩父"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🥬",
+        "choices": [
+          "愛知県",
+          "宮崎県",
+          "香川県",
+          "埼玉県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、埼玉県に含まれる特徴は？",
+        "choices": [
+          "さいたま市",
+          "横浜市",
+          "メガネフレーム",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "chiba",
+    "name": "千葉県",
+    "flag": "🥜",
+    "region": "関東地方",
+    "capital": "千葉市",
+    "pop": "約620万人",
+    "area": "約5100km²",
+    "products": [
+      "落花生",
+      "梨"
+    ],
+    "landmark": "ディズニーランド・成田空港",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "千葉県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "静岡市",
+          "千葉市",
+          "徳島市",
+          "松山市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "千葉県がある地方は？",
+        "choices": [
+          "関東地方",
+          "東北地方",
+          "中部地方",
+          "中国地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "千葉県の有名な特産品・名産は？",
+        "choices": [
+          "パイナップル",
+          "きりたんぽ",
+          "近江牛",
+          "落花生"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "千葉県にある有名な場所（名所）は？",
+        "choices": [
+          "ディズニーランド",
+          "猪苗代湖",
+          "鳥取砂丘",
+          "鳴門の渦潮"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🥜",
+        "choices": [
+          "愛知県",
+          "福岡県",
+          "沖縄県",
+          "千葉県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、千葉県に含まれる特徴は？",
+        "choices": [
+          "千葉市",
+          "福井市",
+          "金箔",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "tokyo",
+    "name": "東京都",
+    "flag": "🗼",
+    "region": "関東地方",
+    "capital": "新宿区",
+    "pop": "約1400万人",
+    "area": "約2100km²",
+    "products": [
+      "江戸切子",
+      "小松菜"
+    ],
+    "landmark": "東京スカイツリー・浅草寺",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "東京都の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "青森市",
+          "さいたま市",
+          "新宿区",
+          "仙台市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "東京都がある地方は？",
+        "choices": [
+          "関東地方",
+          "中部地方",
+          "四国地方",
+          "東北地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "東京都の有名な特産品・名産は？",
+        "choices": [
+          "江戸切子",
+          "越前ガニ",
+          "いぐさ",
+          "赤べこ"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "東京都にある有名な場所（名所）は？",
+        "choices": [
+          "東京スカイツリー",
+          "高千穂峡",
+          "猪苗代湖",
+          "鳴門の渦潮"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🗼",
+        "choices": [
+          "石川県",
+          "岐阜県",
+          "愛知県",
+          "東京都"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、東京都に含まれる特徴は？",
+        "choices": [
+          "新宿区",
+          "長崎市",
+          "地鶏",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "kanagawa",
+    "name": "神奈川県",
+    "flag": "🥜",
+    "region": "関東地方",
+    "capital": "横浜市",
+    "pop": "約920万人",
+    "area": "約2400km²",
+    "products": [
+      "落花生",
+      "醤油"
+    ],
+    "landmark": "横浜中華街・鎌倉",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "神奈川県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "名古屋市",
+          "神戸市",
+          "横浜市",
+          "大阪市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "神奈川県がある地方は？",
+        "choices": [
+          "四国地方",
+          "九州地方",
+          "関東地方",
+          "近畿地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "神奈川県の有名な特産品・名産は？",
+        "choices": [
+          "出雲そば",
+          "かんぴょう",
+          "ゆず",
+          "落花生"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "神奈川県にある有名な場所（名所）は？",
+        "choices": [
+          "横浜中華街",
+          "白神山地",
+          "白川郷",
+          "桜島"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🥜",
+        "choices": [
+          "香川県",
+          "北海道",
+          "高知県",
+          "神奈川県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、神奈川県に含まれる特徴は？",
+        "choices": [
+          "横浜市",
+          "前橋市",
+          "西陣織",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "niigata",
+    "name": "新潟県",
+    "flag": "🌾",
+    "region": "中部地方",
+    "capital": "新潟市",
+    "pop": "約210万人",
+    "area": "約1.2万km²",
+    "products": [
+      "コシヒカリ",
+      "米菓"
+    ],
+    "landmark": "佐渡島",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "新潟県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "鹿児島市",
+          "さいたま市",
+          "宇都宮市",
+          "新潟市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "新潟県がある地方は？",
+        "choices": [
+          "東北地方",
+          "中部地方",
+          "中国地方",
+          "関東地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "新潟県の有名な特産品・名産は？",
+        "choices": [
+          "乳製品",
+          "コシヒカリ",
+          "落花生",
+          "梨"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "新潟県にある有名な場所（名所）は？",
+        "choices": [
+          "東尋坊",
+          "出雲大社",
+          "佐渡島",
+          "日光東照宮"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🌾",
+        "choices": [
+          "新潟県",
+          "三重県",
+          "神奈川県",
+          "福岡県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、新潟県に含まれる特徴は？",
+        "choices": [
+          "新潟市",
+          "宮崎市",
+          "玉ねぎ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "toyama",
+    "name": "富山県",
+    "flag": "♨️",
+    "region": "中部地方",
+    "capital": "富山市",
+    "pop": "約100万人",
+    "area": "約4200km²",
+    "products": [
+      "こんにゃく",
+      "だるま"
+    ],
+    "landmark": "草津温泉・富岡製糸場（※群馬と混同されがちだが黒部ダム・立山）",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "富山県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "岡山市",
+          "富山市",
+          "宮崎市",
+          "神戸市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "富山県がある地方は？",
+        "choices": [
+          "北海道地方",
+          "東北地方",
+          "中部地方",
+          "関東地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "富山県の有名な特産品・名産は？",
+        "choices": [
+          "真珠",
+          "こんにゃく",
+          "スイカ",
+          "自動車"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "富山県にある有名な場所（名所）は？",
+        "choices": [
+          "金刀比羅宮",
+          "草津温泉",
+          "道後温泉",
+          "名古屋城"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "♨️",
+        "choices": [
+          "富山県",
+          "新潟県",
+          "宮城県",
+          "大分県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、富山県に含まれる特徴は？",
+        "choices": [
+          "富山市",
+          "福島市",
+          "伊勢海老",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "ishikawa",
+    "name": "石川県",
+    "flag": "🍚",
+    "region": "中部地方",
+    "capital": "金沢市",
+    "pop": "約110万人",
+    "area": "約4100km²",
+    "products": [
+      "金箔",
+      "漆器"
+    ],
+    "landmark": "兼六園",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "石川県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "宮崎市",
+          "金沢市",
+          "横浜市",
+          "静岡市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "石川県がある地方は？",
+        "choices": [
+          "中部地方",
+          "九州地方",
+          "近畿地方",
+          "四国地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "石川県の有名な特産品・名産は？",
+        "choices": [
+          "タオル",
+          "金箔",
+          "りんご",
+          "ササニシキ"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "石川県にある有名な場所（名所）は？",
+        "choices": [
+          "なまはげ",
+          "高千穂峡",
+          "松島",
+          "兼六園"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍚",
+        "choices": [
+          "大阪府",
+          "石川県",
+          "青森県",
+          "岡山県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、石川県に含まれる特徴は？",
+        "choices": [
+          "金沢市",
+          "横浜市",
+          "自動車",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "fukui",
+    "name": "福井県",
+    "flag": "🦕",
+    "region": "中部地方",
+    "capital": "福井市",
+    "pop": "約75万人",
+    "area": "約4100km²",
+    "products": [
+      "越前ガニ",
+      "メガネフレーム"
+    ],
+    "landmark": "東尋坊・恐竜博物館",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "福井県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "福井市",
+          "神戸市",
+          "山口市",
+          "水戸市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "福井県がある地方は？",
+        "choices": [
+          "九州地方",
+          "中部地方",
+          "東北地方",
+          "北海道地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "福井県の有名な特産品・名産は？",
+        "choices": [
+          "柿の葉寿司",
+          "ゆず",
+          "越前ガニ",
+          "お好み焼き"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "福井県にある有名な場所（名所）は？",
+        "choices": [
+          "厳島神社",
+          "東大寺",
+          "首里城",
+          "東尋坊"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🦕",
+        "choices": [
+          "京都府",
+          "長野県",
+          "福井県",
+          "香川県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、福井県に含まれる特徴は？",
+        "choices": [
+          "福井市",
+          "千葉市",
+          "金箔",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "yamanashi",
+    "name": "山梨県",
+    "flag": "🍇",
+    "region": "中部地方",
+    "capital": "甲府市",
+    "pop": "約80万人",
+    "area": "約4400km²",
+    "products": [
+      "ぶどう",
+      "桃"
+    ],
+    "landmark": "富士山・富士五湖",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "山梨県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "水戸市",
+          "盛岡市",
+          "長野市",
+          "甲府市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "山梨県がある地方は？",
+        "choices": [
+          "近畿地方",
+          "中国地方",
+          "中部地方",
+          "東北地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "山梨県の有名な特産品・名産は？",
+        "choices": [
+          "みかん",
+          "かぼす",
+          "近江牛",
+          "ぶどう"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "山梨県にある有名な場所（名所）は？",
+        "choices": [
+          "ハウステンボス",
+          "富士山",
+          "白神山地",
+          "秩父"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍇",
+        "choices": [
+          "岡山県",
+          "茨城県",
+          "広島県",
+          "山梨県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、山梨県に含まれる特徴は？",
+        "choices": [
+          "甲府市",
+          "高松市",
+          "すだち",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "nagano",
+    "name": "長野県",
+    "flag": "🍎",
+    "region": "中部地方",
+    "capital": "長野市",
+    "pop": "約200万人",
+    "area": "約1.3万km²",
+    "products": [
+      "りんご",
+      "レタス"
+    ],
+    "landmark": "善光寺・軽井沢",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "長野県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "高知市",
+          "名古屋市",
+          "徳島市",
+          "長野市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "長野県がある地方は？",
+        "choices": [
+          "中部地方",
+          "中国地方",
+          "九州地方",
+          "近畿地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "長野県の有名な特産品・名産は？",
+        "choices": [
+          "柿の葉寿司",
+          "スイカ",
+          "ラフランス",
+          "りんご"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "長野県にある有名な場所（名所）は？",
+        "choices": [
+          "大阪城",
+          "善光寺",
+          "ハウステンボス",
+          "兼六園"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍎",
+        "choices": [
+          "長野県",
+          "青森県",
+          "富山県",
+          "高知県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、長野県に含まれる特徴は？",
+        "choices": [
+          "長野市",
+          "金沢市",
+          "神戸牛",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "gifu",
+    "name": "岐阜県",
+    "flag": "🥬",
+    "region": "中部地方",
+    "capital": "岐阜市",
+    "pop": "約190万人",
+    "area": "約1万km²",
+    "products": [
+      "飛騨牛",
+      "さるぼぼ"
+    ],
+    "landmark": "白川郷・下呂温泉",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "岐阜県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "鳥取市",
+          "新宿区",
+          "岐阜市",
+          "札幌市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "岐阜県がある地方は？",
+        "choices": [
+          "関東地方",
+          "中部地方",
+          "九州地方",
+          "四国地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "岐阜県の有名な特産品・名産は？",
+        "choices": [
+          "飛騨牛",
+          "味噌",
+          "桃",
+          "マンゴー"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "岐阜県にある有名な場所（名所）は？",
+        "choices": [
+          "白川郷",
+          "偕楽園",
+          "熊本城",
+          "東大寺"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🥬",
+        "choices": [
+          "和歌山県",
+          "静岡県",
+          "沖縄県",
+          "岐阜県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、岐阜県に含まれる特徴は？",
+        "choices": [
+          "岐阜市",
+          "新潟市",
+          "かまぼこ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "shizuoka",
+    "name": "静岡県",
+    "flag": "🍵",
+    "region": "中部地方",
+    "capital": "静岡市",
+    "pop": "約350万人",
+    "area": "約7700km²",
+    "products": [
+      "お茶",
+      "みかん"
+    ],
+    "landmark": "富士山・浜名湖",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "静岡県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "盛岡市",
+          "静岡市",
+          "奈良市",
+          "新潟市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "静岡県がある地方は？",
+        "choices": [
+          "九州地方",
+          "近畿地方",
+          "東北地方",
+          "中部地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "静岡県の有名な特産品・名産は？",
+        "choices": [
+          "いちご",
+          "お茶",
+          "桃",
+          "梨"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "静岡県にある有名な場所（名所）は？",
+        "choices": [
+          "猪苗代湖",
+          "富士山",
+          "秋芳洞",
+          "金閣寺"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍵",
+        "choices": [
+          "静岡県",
+          "佐賀県",
+          "熊本県",
+          "山形県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、静岡県に含まれる特徴は？",
+        "choices": [
+          "静岡市",
+          "高知市",
+          "メロン",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "aichi",
+    "name": "愛知県",
+    "flag": "🏯",
+    "region": "中部地方",
+    "capital": "名古屋市",
+    "pop": "約740万人",
+    "area": "約5100km²",
+    "products": [
+      "自動車",
+      "味噌"
+    ],
+    "landmark": "名古屋城",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "愛知県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "広島市",
+          "名古屋市",
+          "金沢市",
+          "仙台市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "愛知県がある地方は？",
+        "choices": [
+          "中部地方",
+          "九州地方",
+          "近畿地方",
+          "中国地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "愛知県の有名な特産品・名産は？",
+        "choices": [
+          "自動車",
+          "落花生",
+          "鳴門金時",
+          "地鶏"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "愛知県にある有名な場所（名所）は？",
+        "choices": [
+          "ディズニーランド",
+          "富士山",
+          "名古屋城",
+          "出雲大社"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🏯",
+        "choices": [
+          "沖縄県",
+          "東京都",
+          "佐賀県",
+          "愛知県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、愛知県に含まれる特徴は？",
+        "choices": [
+          "名古屋市",
+          "甲府市",
+          "小松菜",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "mie",
+    "name": "三重県",
+    "flag": "🍵",
+    "region": "近畿地方",
+    "capital": "津市",
+    "pop": "約170万人",
+    "area": "約5700km²",
+    "products": [
+      "伊勢海老",
+      "真珠"
+    ],
+    "landmark": "伊勢神宮・鈴鹿サーキット",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "三重県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "福島市",
+          "前橋市",
+          "広島市",
+          "津市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "三重県がある地方は？",
+        "choices": [
+          "近畿地方",
+          "北海道地方",
+          "中国地方",
+          "四国地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "三重県の有名な特産品・名産は？",
+        "choices": [
+          "梅",
+          "伊勢海老",
+          "いぐさ",
+          "スイカ"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "三重県にある有名な場所（名所）は？",
+        "choices": [
+          "秋芳洞",
+          "伊勢神宮",
+          "東京スカイツリー",
+          "松島"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍵",
+        "choices": [
+          "三重県",
+          "北海道",
+          "岡山県",
+          "兵庫県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、三重県に含まれる特徴は？",
+        "choices": [
+          "津市",
+          "神戸市",
+          "たこ焼き",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "shiga",
+    "name": "滋賀県",
+    "flag": "💧",
+    "region": "近畿地方",
+    "capital": "大津市",
+    "pop": "約140万人",
+    "area": "約4000km²",
+    "products": [
+      "近江牛",
+      "信楽焼"
+    ],
+    "landmark": "琵琶湖・彦根城",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "滋賀県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "大津市",
+          "松山市",
+          "甲府市",
+          "山口市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "滋賀県がある地方は？",
+        "choices": [
+          "四国地方",
+          "近畿地方",
+          "中国地方",
+          "北海道地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "滋賀県の有名な特産品・名産は？",
+        "choices": [
+          "乳製品",
+          "玉ねぎ",
+          "伊勢海老",
+          "近江牛"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "滋賀県にある有名な場所（名所）は？",
+        "choices": [
+          "厳島神社",
+          "琵琶湖",
+          "白川郷",
+          "富士山"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "💧",
+        "choices": [
+          "山口県",
+          "北海道",
+          "滋賀県",
+          "香川県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、滋賀県に含まれる特徴は？",
+        "choices": [
+          "大津市",
+          "松山市",
+          "かまぼこ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "kyoto",
+    "name": "京都府",
+    "flag": "⛩️",
+    "region": "近畿地方",
+    "capital": "京都市",
+    "pop": "約250万人",
+    "area": "約4600km²",
+    "products": [
+      "八ツ橋",
+      "西陣織"
+    ],
+    "landmark": "金閣寺・清水寺",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "京都府の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "前橋市",
+          "さいたま市",
+          "京都市",
+          "松山市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "京都府がある地方は？",
+        "choices": [
+          "関東地方",
+          "近畿地方",
+          "東北地方",
+          "四国地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "京都府の有名な特産品・名産は？",
+        "choices": [
+          "八ツ橋",
+          "あまおう",
+          "さるぼぼ",
+          "黒豚"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "京都府にある有名な場所（名所）は？",
+        "choices": [
+          "なまはげ",
+          "金閣寺",
+          "吉野ヶ里遺跡",
+          "太宰府天満宮"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "⛩️",
+        "choices": [
+          "島根県",
+          "静岡県",
+          "埼玉県",
+          "京都府"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、京都府に含まれる特徴は？",
+        "choices": [
+          "京都市",
+          "高知市",
+          "信楽焼",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "osaka",
+    "name": "大阪府",
+    "flag": "🐙",
+    "region": "近畿地方",
+    "capital": "大阪市",
+    "pop": "約870万人",
+    "area": "約1900km²",
+    "products": [
+      "たこ焼き",
+      "お好み焼き"
+    ],
+    "landmark": "大阪城・USJ",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "大阪府の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "山口市",
+          "青森市",
+          "新宿区",
+          "大阪市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "大阪府がある地方は？",
+        "choices": [
+          "四国地方",
+          "近畿地方",
+          "中国地方",
+          "中部地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "大阪府の有名な特産品・名産は？",
+        "choices": [
+          "飛騨牛",
+          "出雲そば",
+          "マスカット",
+          "たこ焼き"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "大阪府にある有名な場所（名所）は？",
+        "choices": [
+          "大阪城",
+          "金閣寺",
+          "別府温泉",
+          "偕楽園"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🐙",
+        "choices": [
+          "栃木県",
+          "大阪府",
+          "岩手県",
+          "宮城県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、大阪府に含まれる特徴は？",
+        "choices": [
+          "大阪市",
+          "奈良市",
+          "西陣織",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "hyogo",
+    "name": "兵庫県",
+    "flag": "🚢",
+    "region": "近畿地方",
+    "capital": "神戸市",
+    "pop": "約540万人",
+    "area": "約8400km²",
+    "products": [
+      "神戸牛",
+      "玉ねぎ"
+    ],
+    "landmark": "姫路城・甲子園",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "兵庫県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "山口市",
+          "大分市",
+          "神戸市",
+          "大津市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "兵庫県がある地方は？",
+        "choices": [
+          "中部地方",
+          "近畿地方",
+          "東北地方",
+          "関東地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "兵庫県の有名な特産品・名産は？",
+        "choices": [
+          "ササニシキ",
+          "だるま",
+          "神戸牛",
+          "乳製品"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "兵庫県にある有名な場所（名所）は？",
+        "choices": [
+          "鳴門の渦潮",
+          "日光東照宮",
+          "中尊寺金色堂",
+          "姫路城"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🚢",
+        "choices": [
+          "広島県",
+          "山口県",
+          "秋田県",
+          "兵庫県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、兵庫県に含まれる特徴は？",
+        "choices": [
+          "神戸市",
+          "長野市",
+          "マンゴー",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "nara",
+    "name": "奈良県",
+    "flag": "🦌",
+    "region": "近畿地方",
+    "capital": "奈良市",
+    "pop": "約130万人",
+    "area": "約3600km²",
+    "products": [
+      "柿の葉寿司",
+      "墨"
+    ],
+    "landmark": "東大寺・奈良公園",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "奈良県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "秋田市",
+          "奈良市",
+          "青森市",
+          "福島市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "奈良県がある地方は？",
+        "choices": [
+          "中国地方",
+          "関東地方",
+          "近畿地方",
+          "九州地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "奈良県の有名な特産品・名産は？",
+        "choices": [
+          "あまおう",
+          "きりたんぽ",
+          "金箔",
+          "柿の葉寿司"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "奈良県にある有名な場所（名所）は？",
+        "choices": [
+          "東大寺",
+          "蔵王",
+          "出雲大社",
+          "姫路城"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🦌",
+        "choices": [
+          "熊本県",
+          "大阪府",
+          "奈良県",
+          "愛知県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、奈良県に含まれる特徴は？",
+        "choices": [
+          "奈良市",
+          "盛岡市",
+          "神戸牛",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "wakayama",
+    "name": "和歌山県",
+    "flag": "🍊",
+    "region": "近畿地方",
+    "capital": "和歌山市",
+    "pop": "約90万人",
+    "area": "約4700km²",
+    "products": [
+      "みかん",
+      "梅"
+    ],
+    "landmark": "高野山・白浜",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "和歌山県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "高松市",
+          "青森市",
+          "和歌山市",
+          "水戸市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "和歌山県がある地方は？",
+        "choices": [
+          "九州地方",
+          "東北地方",
+          "近畿地方",
+          "北海道地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "和歌山県の有名な特産品・名産は？",
+        "choices": [
+          "みかん",
+          "近江牛",
+          "黒豚",
+          "うどん"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "和歌山県にある有名な場所（名所）は？",
+        "choices": [
+          "鳥取砂丘",
+          "高野山",
+          "富士山",
+          "秩父"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍊",
+        "choices": [
+          "高知県",
+          "徳島県",
+          "和歌山県",
+          "兵庫県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、和歌山県に含まれる特徴は？",
+        "choices": [
+          "和歌山市",
+          "佐賀市",
+          "スイカ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "tottori",
+    "name": "鳥取県",
+    "flag": "🐪",
+    "region": "中国地方",
+    "capital": "鳥取市",
+    "pop": "約53万人",
+    "area": "約3500km²",
+    "products": [
+      "梨",
+      "カニ"
+    ],
+    "landmark": "鳥取砂丘",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "鳥取県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "金沢市",
+          "鳥取市",
+          "横浜市",
+          "千葉市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "鳥取県がある地方は？",
+        "choices": [
+          "北海道地方",
+          "中部地方",
+          "中国地方",
+          "四国地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "鳥取県の有名な特産品・名産は？",
+        "choices": [
+          "乳製品",
+          "梨",
+          "お茶",
+          "ラフランス"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "鳥取県にある有名な場所（名所）は？",
+        "choices": [
+          "佐渡島",
+          "ハウステンボス",
+          "鳥取砂丘",
+          "秋芳洞"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🐪",
+        "choices": [
+          "鳥取県",
+          "埼玉県",
+          "青森県",
+          "広島県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、鳥取県に含まれる特徴は？",
+        "choices": [
+          "鳥取市",
+          "さいたま市",
+          "墨",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "shimane",
+    "name": "島根県",
+    "flag": "⛩️",
+    "region": "中国地方",
+    "capital": "松江市",
+    "pop": "約65万人",
+    "area": "約6700km²",
+    "products": [
+      "しじみ",
+      "出雲そば"
+    ],
+    "landmark": "出雲大社",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "島根県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "高知市",
+          "和歌山市",
+          "秋田市",
+          "松江市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "島根県がある地方は？",
+        "choices": [
+          "九州地方",
+          "中国地方",
+          "四国地方",
+          "近畿地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "島根県の有名な特産品・名産は？",
+        "choices": [
+          "乳製品",
+          "だるま",
+          "しじみ",
+          "ラフランス"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "島根県にある有名な場所（名所）は？",
+        "choices": [
+          "日光東照宮",
+          "偕楽園",
+          "出雲大社",
+          "東大寺"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "⛩️",
+        "choices": [
+          "島根県",
+          "北海道",
+          "静岡県",
+          "沖縄県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、島根県に含まれる特徴は？",
+        "choices": [
+          "松江市",
+          "大阪市",
+          "飛騨牛",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "okayama",
+    "name": "岡山県",
+    "flag": "🍑",
+    "region": "中国地方",
+    "capital": "岡山市",
+    "pop": "約180万人",
+    "area": "約7100km²",
+    "products": [
+      "白桃",
+      "マスカット"
+    ],
+    "landmark": "後楽園・倉敷",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "岡山県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "千葉市",
+          "岡山市",
+          "津市",
+          "金沢市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "岡山県がある地方は？",
+        "choices": [
+          "東北地方",
+          "九州地方",
+          "近畿地方",
+          "中国地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "岡山県の有名な特産品・名産は？",
+        "choices": [
+          "白桃",
+          "椎茸",
+          "玉ねぎ",
+          "飛騨牛"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "岡山県にある有名な場所（名所）は？",
+        "choices": [
+          "秩父",
+          "善光寺",
+          "後楽園",
+          "草津温泉"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍑",
+        "choices": [
+          "鹿児島県",
+          "香川県",
+          "岡山県",
+          "群馬県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、岡山県に含まれる特徴は？",
+        "choices": [
+          "岡山市",
+          "福島市",
+          "玉ねぎ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "hiroshima",
+    "name": "広島県",
+    "flag": "👖",
+    "region": "中国地方",
+    "capital": "広島市",
+    "pop": "約270万人",
+    "area": "約8400km²",
+    "products": [
+      "牡蠣",
+      "もみじ饅頭"
+    ],
+    "landmark": "厳島神社・原爆ドーム",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "広島県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "那覇市",
+          "鳥取市",
+          "広島市",
+          "佐賀市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "広島県がある地方は？",
+        "choices": [
+          "中国地方",
+          "四国地方",
+          "関東地方",
+          "東北地方"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "広島県の有名な特産品・名産は？",
+        "choices": [
+          "真珠",
+          "さるぼぼ",
+          "かんぴょう",
+          "牡蠣"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "広島県にある有名な場所（名所）は？",
+        "choices": [
+          "中尊寺金色堂",
+          "姫路城",
+          "横浜中華街",
+          "厳島神社"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "👖",
+        "choices": [
+          "広島県",
+          "熊本県",
+          "北海道",
+          "青森県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、広島県に含まれる特徴は？",
+        "choices": [
+          "広島市",
+          "宮崎市",
+          "すだち",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "yamaguchi",
+    "name": "山口県",
+    "flag": "🐡",
+    "region": "中国地方",
+    "capital": "山口市",
+    "pop": "約130万人",
+    "area": "約6100km²",
+    "products": [
+      "ふぐ",
+      "かまぼこ"
+    ],
+    "landmark": "秋芳洞・錦帯橋",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "山口県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "甲府市",
+          "大津市",
+          "鹿児島市",
+          "山口市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "山口県がある地方は？",
+        "choices": [
+          "北海道地方",
+          "近畿地方",
+          "中部地方",
+          "中国地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "山口県の有名な特産品・名産は？",
+        "choices": [
+          "いちご",
+          "墨",
+          "カニ",
+          "ふぐ"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "山口県にある有名な場所（名所）は？",
+        "choices": [
+          "秋芳洞",
+          "ハウステンボス",
+          "高野山",
+          "なまはげ"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🐡",
+        "choices": [
+          "三重県",
+          "宮城県",
+          "山口県",
+          "和歌山県"
+        ],
+        "ans": 2,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、山口県に含まれる特徴は？",
+        "choices": [
+          "山口市",
+          "京都市",
+          "納豆",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "tokushima",
+    "name": "徳島県",
+    "flag": "🍊",
+    "region": "四国地方",
+    "capital": "徳島市",
+    "pop": "約70万人",
+    "area": "約4100km²",
+    "products": [
+      "すだち",
+      "鳴門金時"
+    ],
+    "landmark": "鳴門の渦潮・阿波踊り",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "徳島県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "徳島市",
+          "鹿児島市",
+          "奈良市",
+          "松江市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "徳島県がある地方は？",
+        "choices": [
+          "中部地方",
+          "東北地方",
+          "四国地方",
+          "中国地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "徳島県の有名な特産品・名産は？",
+        "choices": [
+          "梅",
+          "ふぐ",
+          "すだち",
+          "伊万里焼"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "徳島県にある有名な場所（名所）は？",
+        "choices": [
+          "別府温泉",
+          "富士山",
+          "鳴門の渦潮",
+          "ハウステンボス"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍊",
+        "choices": [
+          "滋賀県",
+          "香川県",
+          "栃木県",
+          "徳島県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、徳島県に含まれる特徴は？",
+        "choices": [
+          "徳島市",
+          "秋田市",
+          "かぼす",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "kagawa",
+    "name": "香川県",
+    "flag": "🍜",
+    "region": "四国地方",
+    "capital": "高松市",
+    "pop": "約93万人",
+    "area": "約1800km²",
+    "products": [
+      "うどん",
+      "オリーブ"
+    ],
+    "landmark": "金刀比羅宮・小豆島",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "香川県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "高松市",
+          "長野市",
+          "福井市",
+          "岐阜市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "香川県がある地方は？",
+        "choices": [
+          "中部地方",
+          "四国地方",
+          "関東地方",
+          "東北地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "香川県の有名な特産品・名産は？",
+        "choices": [
+          "しじみ",
+          "うどん",
+          "キャベツ",
+          "タオル"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "香川県にある有名な場所（名所）は？",
+        "choices": [
+          "富士山",
+          "太宰府天満宮",
+          "出雲大社",
+          "金刀比羅宮"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍜",
+        "choices": [
+          "沖縄県",
+          "長崎県",
+          "三重県",
+          "香川県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、香川県に含まれる特徴は？",
+        "choices": [
+          "高松市",
+          "甲府市",
+          "お茶",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "ehime",
+    "name": "愛媛県",
+    "flag": "🍊",
+    "region": "四国地方",
+    "capital": "松山市",
+    "pop": "約130万人",
+    "area": "約5600km²",
+    "products": [
+      "みかん",
+      "タオル"
+    ],
+    "landmark": "道後温泉",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "愛媛県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "鳥取市",
+          "大分市",
+          "松山市",
+          "山形市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "愛媛県がある地方は？",
+        "choices": [
+          "東北地方",
+          "関東地方",
+          "近畿地方",
+          "四国地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "愛媛県の有名な特産品・名産は？",
+        "choices": [
+          "みかん",
+          "オリーブ",
+          "あきたこまち",
+          "神戸牛"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "愛媛県にある有名な場所（名所）は？",
+        "choices": [
+          "ディズニーランド",
+          "道後温泉",
+          "桂浜",
+          "兼六園"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍊",
+        "choices": [
+          "神奈川県",
+          "愛媛県",
+          "宮城県",
+          "富山県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、愛媛県に含まれる特徴は？",
+        "choices": [
+          "松山市",
+          "熊本市",
+          "パイナップル",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "kochi",
+    "name": "高知県",
+    "flag": "🐟",
+    "region": "四国地方",
+    "capital": "高知市",
+    "pop": "約67万人",
+    "area": "約7100km²",
+    "products": [
+      "カツオ",
+      "ゆず"
+    ],
+    "landmark": "桂浜・四万十川",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "高知県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "岡山市",
+          "高知市",
+          "山口市",
+          "福島市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "高知県がある地方は？",
+        "choices": [
+          "北海道地方",
+          "近畿地方",
+          "四国地方",
+          "中部地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "高知県の有名な特産品・名産は？",
+        "choices": [
+          "味噌",
+          "ちゃんぽん",
+          "小松菜",
+          "カツオ"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "高知県にある有名な場所（名所）は？",
+        "choices": [
+          "桂浜",
+          "佐渡島",
+          "なまはげ",
+          "秋芳洞"
+        ],
+        "ans": 0,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🐟",
+        "choices": [
+          "大阪府",
+          "高知県",
+          "島根県",
+          "栃木県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、高知県に含まれる特徴は？",
+        "choices": [
+          "高知市",
+          "徳島市",
+          "だるま",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "fukuoka",
+    "name": "福岡県",
+    "flag": "🍜",
+    "region": "九州地方",
+    "capital": "福岡市",
+    "pop": "約510万人",
+    "area": "約4900km²",
+    "products": [
+      "明太子",
+      "あまおう"
+    ],
+    "landmark": "太宰府天満宮",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "福岡県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "山口市",
+          "岡山市",
+          "福岡市",
+          "名古屋市"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "福岡県がある地方は？",
+        "choices": [
+          "中国地方",
+          "九州地方",
+          "東北地方",
+          "四国地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "福岡県の有名な特産品・名産は？",
+        "choices": [
+          "かぼす",
+          "近江牛",
+          "有田焼",
+          "明太子"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "福岡県にある有名な場所（名所）は？",
+        "choices": [
+          "名古屋城",
+          "太宰府天満宮",
+          "草津温泉",
+          "日光東照宮"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🍜",
+        "choices": [
+          "埼玉県",
+          "福岡県",
+          "佐賀県",
+          "長崎県"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、福岡県に含まれる特徴は？",
+        "choices": [
+          "福岡市",
+          "徳島市",
+          "あきたこまち",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "saga",
+    "name": "佐賀県",
+    "flag": "🔥",
+    "region": "九州地方",
+    "capital": "佐賀市",
+    "pop": "約80万人",
+    "area": "約2400km²",
+    "products": [
+      "有田焼",
+      "伊万里焼"
+    ],
+    "landmark": "吉野ヶ里遺跡",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "佐賀県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "佐賀市",
+          "奈良市",
+          "高松市",
+          "津市"
+        ],
+        "ans": 0,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "佐賀県がある地方は？",
+        "choices": [
+          "近畿地方",
+          "関東地方",
+          "九州地方",
+          "北海道地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "佐賀県の有名な特産品・名産は？",
+        "choices": [
+          "梨",
+          "かんぴょう",
+          "有田焼",
+          "神戸牛"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "佐賀県にある有名な場所（名所）は？",
+        "choices": [
+          "琵琶湖",
+          "道後温泉",
+          "吉野ヶ里遺跡",
+          "白神山地"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🔥",
+        "choices": [
+          "香川県",
+          "広島県",
+          "栃木県",
+          "佐賀県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、佐賀県に含まれる特徴は？",
+        "choices": [
+          "佐賀市",
+          "奈良市",
+          "白桃",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "nagasaki",
+    "name": "長崎県",
+    "flag": "🏺",
+    "region": "九州地方",
+    "capital": "長崎市",
+    "pop": "約120万人",
+    "area": "約4100km²",
+    "products": [
+      "カステラ",
+      "ちゃんぽん"
+    ],
+    "landmark": "ハウステンボス・グラバー園",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "長崎県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "宇都宮市",
+          "長崎市",
+          "佐賀市",
+          "大阪市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "長崎県がある地方は？",
+        "choices": [
+          "四国地方",
+          "東北地方",
+          "関東地方",
+          "九州地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "長崎県の有名な特産品・名産は？",
+        "choices": [
+          "乳製品",
+          "わかめ",
+          "ぶどう",
+          "カステラ"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "長崎県にある有名な場所（名所）は？",
+        "choices": [
+          "猪苗代湖",
+          "ハウステンボス",
+          "金閣寺",
+          "鳥取砂丘"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🏺",
+        "choices": [
+          "京都府",
+          "神奈川県",
+          "和歌山県",
+          "長崎県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、長崎県に含まれる特徴は？",
+        "choices": [
+          "長崎市",
+          "水戸市",
+          "地鶏",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "kumamoto",
+    "name": "熊本県",
+    "flag": "🐻",
+    "region": "九州地方",
+    "capital": "熊本市",
+    "pop": "約170万人",
+    "area": "約7400km²",
+    "products": [
+      "スイカ",
+      "いぐさ"
+    ],
+    "landmark": "熊本城・阿蘇山",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "熊本県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "那覇市",
+          "高知市",
+          "青森市",
+          "熊本市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "熊本県がある地方は？",
+        "choices": [
+          "四国地方",
+          "東北地方",
+          "近畿地方",
+          "九州地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "熊本県の有名な特産品・名産は？",
+        "choices": [
+          "みかん",
+          "ちゃんぽん",
+          "スイカ",
+          "こんにゃく"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "熊本県にある有名な場所（名所）は？",
+        "choices": [
+          "草津温泉",
+          "熊本城",
+          "金刀比羅宮",
+          "高千穂峡"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🐻",
+        "choices": [
+          "熊本県",
+          "埼玉県",
+          "鳥取県",
+          "福井県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、熊本県に含まれる特徴は？",
+        "choices": [
+          "熊本市",
+          "佐賀市",
+          "お茶",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "oita",
+    "name": "大分県",
+    "flag": "🏺",
+    "region": "九州地方",
+    "capital": "大分市",
+    "pop": "約110万人",
+    "area": "約6300km²",
+    "products": [
+      "かぼす",
+      "椎茸"
+    ],
+    "landmark": "別府温泉・湯布院",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "大分県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "京都市",
+          "大分市",
+          "広島市",
+          "岐阜市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "大分県がある地方は？",
+        "choices": [
+          "近畿地方",
+          "中国地方",
+          "九州地方",
+          "東北地方"
+        ],
+        "ans": 2,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "大分県の有名な特産品・名産は？",
+        "choices": [
+          "カツオ",
+          "自動車",
+          "南部鉄器",
+          "かぼす"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "大分県にある有名な場所（名所）は？",
+        "choices": [
+          "高千穂峡",
+          "道後温泉",
+          "金刀比羅宮",
+          "別府温泉"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🏺",
+        "choices": [
+          "島根県",
+          "奈良県",
+          "福岡県",
+          "大分県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、大分県に含まれる特徴は？",
+        "choices": [
+          "大分市",
+          "山口市",
+          "ねぎ",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "miyazaki",
+    "name": "宮崎県",
+    "flag": "♨️",
+    "region": "九州地方",
+    "capital": "宮崎市",
+    "pop": "約100万人",
+    "area": "約7700km²",
+    "products": [
+      "マンゴー",
+      "地鶏"
+    ],
+    "landmark": "高千穂峡",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "宮崎県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "山形市",
+          "大阪市",
+          "奈良市",
+          "宮崎市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "宮崎県がある地方は？",
+        "choices": [
+          "中部地方",
+          "関東地方",
+          "中国地方",
+          "九州地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "宮崎県の有名な特産品・名産は？",
+        "choices": [
+          "スイカ",
+          "カツオ",
+          "りんご",
+          "マンゴー"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "宮崎県にある有名な場所（名所）は？",
+        "choices": [
+          "松島",
+          "首里城",
+          "高千穂峡",
+          "桜島"
+        ],
+        "ans": 2,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "♨️",
+        "choices": [
+          "茨城県",
+          "宮崎県",
+          "広島県",
+          "北海道"
+        ],
+        "ans": 1,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、宮崎県に含まれる特徴は？",
+        "choices": [
+          "宮崎市",
+          "京都市",
+          "かんぴょう",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "kagoshima",
+    "name": "鹿児島県",
+    "flag": "🥭",
+    "region": "九州地方",
+    "capital": "鹿児島市",
+    "pop": "約150万人",
+    "area": "約9100km²",
+    "products": [
+      "さつまいも",
+      "黒豚"
+    ],
+    "landmark": "桜島",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "鹿児島県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "津市",
+          "京都市",
+          "鳥取市",
+          "鹿児島市"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "鹿児島県がある地方は？",
+        "choices": [
+          "関東地方",
+          "近畿地方",
+          "中国地方",
+          "九州地方"
+        ],
+        "ans": 3,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "鹿児島県の有名な特産品・名産は？",
+        "choices": [
+          "自動車",
+          "ぶどう",
+          "オリーブ",
+          "さつまいも"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "鹿児島県にある有名な場所（名所）は？",
+        "choices": [
+          "姫路城",
+          "桜島",
+          "白神山地",
+          "大阪城"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🥭",
+        "choices": [
+          "鹿児島県",
+          "三重県",
+          "滋賀県",
+          "岐阜県"
+        ],
+        "ans": 0,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、鹿児島県に含まれる特徴は？",
+        "choices": [
+          "鹿児島市",
+          "高松市",
+          "黒豚",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  },
+  {
+    "id": "okinawa",
+    "name": "沖縄県",
+    "flag": "🌺",
+    "region": "九州・沖縄地方",
+    "capital": "那覇市",
+    "pop": "約140万人",
+    "area": "約2200km²",
+    "products": [
+      "サトウキビ",
+      "パイナップル"
+    ],
+    "landmark": "首里城・美ら海水族館",
+    "questions": [
+      {
+        "type": "県庁所在地",
+        "text": "沖縄県の県庁所在地（都・道・府庁所在地）は？",
+        "choices": [
+          "大津市",
+          "那覇市",
+          "大分市",
+          "松江市"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "地方",
+        "text": "沖縄県がある地方は？",
+        "choices": [
+          "中部地方",
+          "九州・沖縄地方",
+          "中国地方",
+          "四国地方"
+        ],
+        "ans": 1,
+        "hard": false
+      },
+      {
+        "type": "特産",
+        "text": "沖縄県の有名な特産品・名産は？",
+        "choices": [
+          "わかめ",
+          "米菓",
+          "すだち",
+          "サトウキビ"
+        ],
+        "ans": 3,
+        "hard": true
+      },
+      {
+        "type": "名所",
+        "text": "沖縄県にある有名な場所（名所）は？",
+        "choices": [
+          "白神山地",
+          "首里城",
+          "名古屋城",
+          "中尊寺金色堂"
+        ],
+        "ans": 1,
+        "hard": true
+      },
+      {
+        "type": "シンボル",
+        "text": "このシンボルが表す都道府県は？",
+        "flagShow": "🌺",
+        "choices": [
+          "京都府",
+          "大分県",
+          "高知県",
+          "沖縄県"
+        ],
+        "ans": 3,
+        "hard": false,
+        "isFlag": true
+      },
+      {
+        "type": "地理",
+        "text": "次のうち、沖縄県に含まれる特徴は？",
+        "choices": [
+          "那覇市",
+          "秋田市",
+          "近江牛",
+          "砂漠"
+        ],
+        "ans": 0,
+        "hard": true
+      }
+    ]
+  }
+];
+
+let state = {
+  cleared: [], wrongQ: [], points: 0, ptsHistory: [], bossClears: 0,
+  currentCountry: null, questions: [], qIdx: 0,
+  enemyHp: 100, enemyMaxHp: 100, combo: 0, battlePts: 0,
+  correctCount: 0, timerInterval: null, timerLeft: 0,
+  answered: false, isBoss: false,
+};
+
+function saveState(){ try{ localStorage.setItem("geoBattleJapan", JSON.stringify(state)); }catch(e){} }
+function loadState(){
+  try{ const d=localStorage.getItem("geoBattleJapan"); if(d){const s=JSON.parse(d);Object.assign(state,s);} }catch(e){}
+}
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function openMap(){ showScreen("mapScreen"); renderMap(); }
+
+function renderMap(){
+  document.getElementById("hClear").textContent=state.cleared.length;
+  document.getElementById("hPoints").textContent=state.points;
+  const pct=Math.round(state.cleared.length/COUNTRIES.length*100);
+  document.getElementById("progressFill").style.width=pct+"%";
+  document.getElementById("progressLabel").textContent=pct+"% 平定済み";
+
+  const grid=document.getElementById("countryGrid");
+  grid.innerHTML="";
+
+  const bossReady=state.cleared.length>0&&state.cleared.length%10===0&&state.cleared.length>(state.bossClears*10);
+  if(bossReady){
+    const bc=document.createElement("div"); bc.className="boss-card";
+    bc.innerHTML=`<div class="boss-card-title">⚠️ 幕府軍出現！</div><div class="boss-card-sub">${state.cleared.length}か国平定記念 — 幕府軍による一斉テスト</div>`;
+    bc.addEventListener("click",()=>startBoss());
+    grid.appendChild(bc);
+  }
+
+  COUNTRIES.forEach((c)=>{
+    const cleared=state.cleared.includes(c.id);
+    const card=document.createElement("div");
+    card.className="country-card"+(cleared?" cleared":"");
+    card.innerHTML=`<div class="cc-flag">${c.flag}</div><div class="cc-name">${c.name}</div><div class="cc-region">${c.region}</div><div class="cc-status">${cleared?"🌸":""}</div><div class="cc-hp-bar"><div class="cc-hp-fill" style="width:${cleared?0:100}%"></div></div>`;
+    if(!cleared){
+      card.addEventListener("click",()=>startBattle(c));
+    }
+    grid.appendChild(card);
+  });
+}
+
+function buildQuestions(country, isBoss){
+  if(isBoss){
+    const pool=[];
+    COUNTRIES.filter(c=>state.cleared.includes(c.id)).forEach(cc=>{
+      cc.questions.forEach(q=>pool.push({...q,countryName:cc.name}));
+    });
+    return shuffle(pool).slice(0,10).map(q=>({...q,text:(q.countryName?`[${q.countryName}] `:"")+q.text}));
+  }
+  return shuffle([...country.questions]).slice(0,6);
+}
+
+function shuffle(arr){return[...arr].sort(()=>Math.random()-.5);}
+
+const MONSTERS = {"北海道地方":"🐻","東北地方":"👹","関東地方":"🗼","中部地方":"🗻","近畿地方":"🏯","中国地方":"⛩️","四国地方":"🍊","九州地方":"🌋","九州・沖縄地方":"🌺"};
+function getMonster(region){ return MONSTERS[region]||"🏯"; }
+
+function startBattle(country){
+  state.currentCountry=country; state.isBoss=false;
+  state.questions=buildQuestions(country,false);
+  state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
+  state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
+  const flagEl = document.getElementById("bFlag");
+  flagEl.textContent=getMonster(country.region);
+  flagEl.classList.remove("dead");
+  document.getElementById("bName").textContent=country.name;
+  document.getElementById("bName").classList.remove("hidden-for-flag");
+  document.getElementById("bTitle").textContent=`⚔️ vs ${country.name}`;
+  showScreen("battleScreen"); renderBattleHp(); showQuestion();
+}
+
+function startBoss(){
+  state.isBoss=true; state.currentCountry={name:"幕府軍",region:"天下",id:"boss"};
+  state.questions=buildQuestions(null,true);
+  if(state.questions.length===0){alert("問題がありません！");return;}
+  state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
+  state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
+  const flagEl = document.getElementById("bFlag");
+  flagEl.textContent="🐎";
+  flagEl.classList.remove("dead");
+  document.getElementById("bName").textContent="幕府軍 精鋭部隊";
+  document.getElementById("bTitle").textContent="⚔️ 幕府軍襲来！";
+  showScreen("battleScreen"); renderBattleHp(); showQuestion();
+}
+
+function renderBattleHp(){
+  const pct=Math.max(0,state.enemyHp/state.enemyMaxHp*100);
+  document.getElementById("bEnemyHp").style.width=pct+"%";
+  document.getElementById("bEnemyHpVal").textContent=`${state.enemyHp}/${state.enemyMaxHp}`;
+  document.getElementById("bPts").textContent=`⭐ ${state.points}両`;
+}
+
+function showQuestion(){
+  clearTimer();
+  if(state.qIdx>=state.questions.length){
+    const isPerfect = state.correctCount === state.questions.length;
+    if(isPerfect) {
+      state.enemyHp = 0;
+      document.getElementById("bFlag").classList.add("dead");
+    }
+    renderBattleHp();
+    endBattle(isPerfect);return;
+  }
+  const q=state.questions[state.qIdx];
+  state.answered=false;
+  document.getElementById("qCounter").textContent=`問${state.qIdx+1} / ${state.questions.length}`;
+  document.getElementById("qType").textContent=q.type||"";
+  const isHard=q.hard;
+  document.getElementById("qDiff").textContent=isHard?`難問 +20両`:`通常 +10両`;
+  document.getElementById("qText").textContent=q.text;
+  document.getElementById("qFeedback").textContent="";
+  document.getElementById("qFeedback").className="q-feedback";
+
+  const flagDisp=document.getElementById("qFlagDisplay");
+  const nameEl=document.getElementById("bName");
+  if(q.isFlag && q.flagShow){
+    flagDisp.textContent=q.flagShow; flagDisp.style.display="block"; nameEl.classList.add("hidden-for-flag");
+  } else { flagDisp.style.display="none"; nameEl.classList.remove("hidden-for-flag"); }
+
+  const cb=document.getElementById("comboBadge");
+  if(state.combo>=5){cb.textContent=`🔥 ${state.combo}連続！×1.5`;cb.classList.add("show");}
+  else if(state.combo>=3){cb.textContent=`🔥 ${state.combo}連続！×1.2`;cb.classList.add("show");}
+  else cb.classList.remove("show");
+
+  const wrap=document.getElementById("choices"); wrap.innerHTML="";
+  q.choices.forEach((cTxt,i)=>{
+    const btn=document.createElement("button"); btn.className="choice-btn"; btn.textContent=cTxt;
+    btn.addEventListener("click",()=>answer(i,q,btn,wrap)); wrap.appendChild(btn);
+  });
+  startTimer(15);
+}
+
+function startTimer(sec){
+  state.timerLeft=sec*10;
+  const fill=document.getElementById("timerFill"); fill.style.width="100%";
+  fill.style.background="linear-gradient(90deg,var(--accent2),var(--gold))";
+  state.timerInterval=setInterval(()=>{
+    state.timerLeft--; const pct=state.timerLeft/(sec*10)*100;
+    fill.style.width=pct+"%";
+    if(pct<30)fill.style.background="var(--red)";
+    if(state.timerLeft<=0){clearTimer();if(!state.answered)timeOut();}
+  },100);
+}
+function clearTimer(){clearInterval(state.timerInterval);}
+
+function timeOut(){
+  if(state.answered)return; state.answered=true; state.combo=0;
+  const q=state.questions[state.qIdx];
+  const wrap=document.getElementById("choices");
+  wrap.querySelectorAll(".choice-btn").forEach(btn=>{
+    if(btn.textContent===q.choices[q.ans])btn.classList.add("reveal");
+  });
+  document.getElementById("qFeedback").textContent=`⏰ 時間切れ！正解: ${q.choices[q.ans]}`;
+  document.getElementById("qFeedback").className="q-feedback ng";
+  flash("miss"); setTimeout(()=>{state.qIdx++;showQuestion();},1800);
+}
+
+function answer(idx,q,btn,wrap){
+  if(state.answered)return; state.answered=true; clearTimer();
+  const correct=idx===q.ans; const isHard=q.hard;
+  if(correct){
+    btn.classList.add("correct"); state.combo++;
+    let mult=state.combo>=5?1.5:state.combo>=3?1.2:1;
+    const dmg=Math.round((isHard?20:10)*mult);
+    state.enemyHp=Math.max(0,state.enemyHp-dmg);
+    state.battlePts+=Math.round((isHard?20:10)*mult);
+    state.correctCount++; renderBattleHp();
+    spawnDamageText("-"+dmg,"#e6b422"); flash("hit");
+    document.getElementById("qFeedback").textContent=`🌸 正解！ ${mult>1?"連撃×"+mult+" ":""}-${dmg}ダメージ`;
+    document.getElementById("qFeedback").className="q-feedback ok";
+  } else {
+    btn.classList.add("wrong");
+    wrap.querySelectorAll(".choice-btn").forEach(b=>{
+      if(b.textContent===q.choices[q.ans])b.classList.add("reveal");
+    });
+    state.combo=0; flash("miss");
+    document.getElementById("qFeedback").textContent=`無念… 正解: ${q.choices[q.ans]}`;
+    document.getElementById("qFeedback").className="q-feedback ng";
+  }
+  renderBattleHp(); setTimeout(()=>{state.qIdx++;showQuestion();},1800);
+}
+
+function endBattle(won){
+  clearTimer(); const c=state.currentCountry;
+  let earned=state.battlePts; let bonuses=[];
+  const perfect=state.correctCount===state.questions.length;
+  if(won){
+    if(!state.isBoss&&!state.cleared.includes(c.id)){
+      state.cleared.push(c.id); earned+=20; bonuses.push({label:"🏯 初回平定ボーナス",val:"+20両"});
+    }
+    if(perfect){earned+=30;bonuses.push({label:"🌸 完全勝利ボーナス",val:"+30両"});}
+    if(state.isBoss){
+      state.bossClears++; earned+=50; bonuses.push({label:"🐎 幕府軍撃破ボーナス",val:"+50両"});
+    }
+    state.points+=earned;
+  }
+  saveState(); showResult(won,c,earned,bonuses,perfect);
+}
+
+function showResult(won,country,earned,bonuses,perfect){
+  showScreen("resultScreen"); const isBoss=state.isBoss;
+  document.getElementById("rIcon").textContent=won?(isBoss?"🐴":(perfect?"🌸":"✅")):"💀";
+  const rTitle=document.getElementById("rTitle");
+  rTitle.className="result-title "+(won?(isBoss?"boss":"win"):"lose");
+  rTitle.textContent=won?(isBoss?"幕府軍撃退！":(perfect?"完全平定！":"平定成功！")):"敗北…";
+  document.getElementById("rSubtitle").textContent=won?`${country.name} を制圧した！`:"全問正解しなければ平定できないぞ！";
+
+  document.getElementById("rStats").innerHTML=`
+    <div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div>
+    <div class="rs-row"><span>最大連撃</span><span class="rs-val">${state.combo}連続</span></div>
+    <div class="rs-row"><span>獲得金額</span><span class="rs-val gold">+${earned}両</span></div>
+    ${bonuses.map(b=>`<div class="rs-row"><span>${b.label}</span><span class="rs-val gold">${b.val}</span></div>`).join("")}
+    <div class="rs-row"><span>累計金額</span><span class="rs-val gold">${state.points}両</span></div>`;
+
+  const btns=document.getElementById("rBtns"); btns.innerHTML="";
+  const addBtn=(text,fn,cls="btn-primary")=>{
+    const b=document.createElement("button"); b.className=`btn ${cls}`; b.textContent=text;
+    b.addEventListener("click",fn); btns.appendChild(b);
+  };
+  if(won){
+    addBtn("🗺️ 地図に戻る",openMap);
+  } else {
+    addBtn("🔄 もう一度挑む",()=>startBattle(country));
+    addBtn("🗺️ 地図に戻る",openMap,"btn-secondary");
+  }
+}
+
+function spawnDamageText(text,color){
+  const el=document.createElement("div"); el.className="damage-text"; el.textContent=text;
+  el.style.cssText=`color:${color};left:${40+Math.random()*20}%;top:30%;`;
+  document.getElementById("battleScreen").appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+function flash(type){
+  const el=document.getElementById("battleFlash");
+  el.className="screen-flash "+type; setTimeout(()=>el.className="screen-flash",300);
+}
+
+document.getElementById("btnStart").addEventListener("click", openMap);
+document.getElementById("btnMapBack").addEventListener("click", ()=>showScreen("titleScreen"));
+document.getElementById("btnBattleQuit").addEventListener("click", openMap);
+
+loadState();
+</script>
+</body>
+</html>
