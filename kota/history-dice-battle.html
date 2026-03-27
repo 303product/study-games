@@ -6,852 +6,1307 @@
     <title>日本史ダイスバトル</title>
     <style>
         :root {
-            --bg: #0d0d0d;
-            --clay: #1a1510;
+            --bg: #0b0b0b;
+            --panel: #1a1410;
+            --panel-alt: #221b16;
             --gold: #d4af37;
-            --red: #8b0000;
-            --accent: #ff4500;
-            --text: #f0ead6;
-            --border: #3d3d3d;
+            --red: #b30000;
+            --accent: #ff7b1a;
+            --text: #f5eddc;
+            --muted: #a89778;
+            --border: #3c2c1c;
+            --shadow: rgba(0,0,0,0.45);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
-            background-color: var(--bg);
+            font-family: "Hiragino Mincho ProN", "Yu Mincho", "游明朝", serif;
+            background: radial-gradient(circle at top, #1b120b, #050505 60%);
             color: var(--text);
-            font-family: "Hiragino Mincho ProN", "MS Mincho", serif;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
+            align-items: stretch;
         }
 
-        #game-container {
+        #game-shell {
             width: 100%;
-            max-width: 500px;
-            height: 100%;
+            max-width: 560px;
+            min-height: 100vh;
+            background: linear-gradient(160deg, #0d0d0d, #1b1108 70%);
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
             position: relative;
-            background: linear-gradient(135deg, #0d0d0d, #1a0a00);
-            border-left: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
+            overflow: hidden;
         }
 
         .screen {
-            flex: 1;
             display: none;
             flex-direction: column;
-            padding: 20px;
-            animation: fadeIn 0.5s ease;
-            overflow-y: auto;
+            height: 100%;
+            padding: 22px 20px 30px;
+            animation: fadeIn 0.3s ease;
         }
 
-        .screen.active { display: flex; }
+        .screen.active {
+            display: flex;
+        }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        /* Typography */
-        h1 { font-size: 2.5rem; text-align: center; color: var(--gold); text-shadow: 2px 2px 4px #000; margin-bottom: 20px; }
-        .subtitle { text-align: center; color: var(--accent); font-weight: bold; margin-bottom: 20px; }
-
-        /* UI Elements */
-        .btn {
-            background: linear-gradient(135deg, var(--red), #4a0000);
+        h1 {
+            font-size: 2.4rem;
+            text-align: center;
+            margin-bottom: 16px;
             color: var(--gold);
-            border: 2px solid var(--gold);
-            padding: 15px 10px;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0,0,0,0.7);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--accent);
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #4c1b10, #7a2411);
+            border: 2px solid var(--border);
+            color: var(--text);
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
             cursor: pointer;
-            margin-bottom: 10px;
-            text-shadow: 1px 1px 2px #000;
-            transition: transform 0.1s;
+            transition: transform 0.15s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
 
-        .btn:active { transform: scale(0.95); }
-        .btn-gold { background: linear-gradient(135deg, var(--gold), #8a6d3b); color: #000; }
+        .btn:active {
+            transform: scale(0.97);
+        }
 
-        /* Title Screen */
-        #title-screen { justify-content: center; }
-        .title-img { font-size: 100px; text-align: center; margin-bottom: 30px; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37, #8a6a1a);
+            color: #201303;
+            border-color: #9c7b21;
+        }
 
-        /* Map Screen */
-        .header-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.9rem; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
-        .timeline-bar { height: 30px; background: #222; border-radius: 15px; position: relative; margin: 20px 0; border: 1px solid var(--gold); overflow: hidden; }
-        .timeline-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #333, var(--gold)); transition: width 0.5s; }
-        .timeline-labels { display: flex; justify-content: space-between; font-size: 0.7rem; padding: 0 5px; margin-top: -38px; position: relative; z-index: 2; pointer-events: none; }
+        .btn-outline {
+            background: transparent;
+            border: 2px dashed var(--muted);
+            color: var(--muted);
+        }
 
-        .map-grid { 
-            display: flex; 
-            flex-direction: row; 
-            gap: 15px; 
-            margin-top: 20px; 
-            overflow-x: auto; 
-            padding: 30px 15px;
-            scroll-behavior: smooth;
-            background: rgba(0,0,0,0.5);
+        .btn-dark {
+            background: linear-gradient(135deg, #0f0f0f, #1f1f1f);
+        }
+
+        .title-logo {
+            font-size: 2.1rem;
+            text-align: center;
+            letter-spacing: 0.1em;
+            margin-top: 40px;
+            margin-bottom: 10px;
+        }
+
+        .note {
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .era-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin-top: 10px;
+            flex: 1;
+        }
+
+        .era-card {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 130px;
+            position: relative;
+            box-shadow: 0 6px 15px var(--shadow);
+        }
+
+        .era-card.ready {
+            border-color: var(--gold);
+        }
+
+        .era-name {
+            font-size: 1.3rem;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .era-note {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .era-card button {
+            margin-top: 12px;
+            font-size: 1rem;
+            padding: 10px;
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .timeline span {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            color: var(--muted);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .timeline span.active {
+            background: linear-gradient(135deg, rgba(212,175,55,0.3), rgba(212,175,55,0.05));
+            color: var(--gold);
+            font-weight: bold;
+        }
+
+        .map-panel {
+            flex: 1;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.35);
+        }
+
+        .map-tiles {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .tile {
+            flex: 0 0 80px;
+            height: 100px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--panel-alt);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .tile span {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }
+
+        .tile.cleared {
+            opacity: 0.5;
+        }
+
+        .tile.current {
+            border-color: var(--gold);
+            box-shadow: 0 0 10px rgba(212,175,55,0.5);
+        }
+
+        .tile.complete {
+            border-style: dashed;
+        }
+
+        #player-token {
+            position: absolute;
+            top: -18px;
+            font-size: 1.4rem;
+        }
+
+        .info-box {
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 0.95rem;
+        }
+
+        .info-box strong {
+            color: var(--gold);
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-top: 6px;
+        }
+
+        .battle-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .battle-stats, .battle-log {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .battle-log {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+
+        .hp-bar {
+            height: 12px;
+            background: #2b1c15;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff3131, #ff9b62);
+            width: 100%;
+        }
+
+        .dice-area {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dice {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            background: radial-gradient(circle, #fff -20%, #f3d493 60%, #b99034 110%);
+            color: #2b1d06;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+        }
+
+        .skill-name {
+            flex: 1;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 20;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .overlay-box {
+            width: 100%;
+            max-width: 520px;
+            background: #21150f;
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+        }
+
+        .quiz-choices button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 1rem;
             border-radius: 10px;
-            border-bottom: 4px dotted var(--gold);
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.2);
+            color: var(--text);
         }
-        .map-tile { 
-            flex: 0 0 100px;
-            height: 120px;
-            border: 2px solid var(--border); border-radius: 10px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            background: var(--clay); position: relative; 
-            transition: all 0.3s;
+
+        .quiz-choices button.correct {
+            border-color: #38c77a;
+            color: #38c77a;
         }
-        .map-tile.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); background: #2a1a00; transform: translateY(-10px); }
-        .map-tile.cleared { opacity: 0.7; border-color: #444; }
-        .map-tile.boss { border-color: var(--accent); animation: pulseRed 1s infinite alternate; }
-        @keyframes pulseRed { from { box-shadow: 0 0 5px var(--red); } to { box-shadow: 0 0 20px var(--red); } }
-        /* Hide scrollbar */
-        .map-grid::-webkit-scrollbar { display: none; }
-        .map-grid { -ms-overflow-style: none; scrollbar-width: none; }
-        .tile-icon { font-size: 1.5rem; margin-bottom: 5px; }
-        .tile-label { font-size: 0.7rem; color: #aaa; }
-        .player-token { position: absolute; font-size: 2rem; z-index: 10; transform: translate(-50%, -50%); transition: all 0.5s ease-in-out; }
 
-        /* Battle Screen */
-        .battle-view { height: 220px; position: relative; display: flex; justify-content: center; align-items: flex-end; margin-bottom: 20px; overflow: hidden; border-bottom: 2px solid var(--gold); }
-        .enemy-box { text-align: center; position: relative; }
-        .enemy-sprite { font-size: 100px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.8)); }
-        .enemy-hp-bar { width: 150px; height: 10px; background: #222; border: 1px solid #555; margin-top: 10px; position: relative; }
-        .enemy-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--red), #ff0000); transition: width 0.3s; }
-        .enemy-name { font-weight: bold; margin-top: 5px; }
-
-        .battle-controls { display: flex; flex-direction: column; gap: 10px; }
-        .battle-log { height: 80px; background: rgba(0,0,0,0.8); border: 1px solid var(--border); border-radius: 5px; padding: 10px; font-size: 0.9rem; overflow-y: auto; margin-bottom: 10px; }
-
-        .dice-area { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0; }
-        .dice { width: 60px; height: 60px; background: #fff; color: #000; font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 900; box-shadow: 2px 2px 5px #000; position: relative; }
-        .dice.rolling { animation: diceRoll 0.1s linear infinite; }
-        @keyframes diceRoll { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .skill-info { flex: 1; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--gold); padding: 5px 10px; border-radius: 5px; }
-        .skill-name { color: var(--gold); font-weight: bold; }
-        .skill-desc { font-size: 0.8rem; color: #ccc; }
-
-        /* Quiz Overlay */
-        #quiz-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 100;
-            display: none; flex-direction: column; padding: 20px;
+        .quiz-choices button.wrong {
+            border-color: #ff5a5a;
+            color: #ff5a5a;
         }
-        #quiz-overlay.active { display: flex; }
-        .q-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--gold); padding-bottom: 10px; margin-bottom: 20px; color: var(--gold); }
-        .q-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
-        .choice-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .choice-btn { 
-            background: #1a1a1a; color: var(--text); border: 1px solid var(--border); 
-            padding: 12px; border-radius: 5px; text-align: left; font-size: 1rem; 
-            cursor: pointer; cursor: pointer; transition: 0.2s;
+
+        .result-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 14px;
         }
-        .choice-btn.correct { background: #004400; border-color: #00ff00; }
-        .choice-btn.wrong { background: #440000; border-color: #ff0000; font-style: italic; opacity: 0.7; }
 
-        .result-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; text-align: center; }
-        .result-box { background: var(--clay); border: 2px solid var(--gold); padding: 20px; border-radius: 10px; width: 80%; }
-        .result-box h2 { color: var(--gold); margin-bottom: 15px; }
-        .result-box p { margin-bottom: 15px; }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
 
-        /* Year Table Screen */
-        .year-table { list-style: none; margin: 20px 0; }
-        .year-item { display: flex; margin-bottom: 15px; align-items: center; }
-        .year-date { width: 80px; font-weight: bold; color: var(--gold); border-right: 1px solid var(--gold); padding-right: 10px; text-align: right; }
-        .year-content { padding-left: 10px; flex: 1; }
-        .year-highlight { background: rgba(255, 69, 0, 0.2); border-left: 3px solid var(--accent); }
+        .weak-list {
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-        /* Flash Effects */
-        .flash-white { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 200; }
-        .flash-red { position: absolute; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 200; }
-        @keyframes flashEffect { 0% { opacity: 0.8; } 100% { opacity: 0; } }
+        .weak-item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.25);
+        }
 
-        /* HP Color */
-        .hp-val { font-weight: bold; }
-        .hp-low { color: var(--accent); }
+        .weak-item small {
+            color: var(--muted);
+            display: block;
+            margin-top: 4px;
+        }
 
-        /* Modal */
-        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--clay); border: 2px solid var(--gold); border-radius: 10px; padding: 20px; max-width: 400px; width: 100%; position: relative; }
-        .modal-close { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; cursor: pointer; color: var(--gold); }
+        .map-status {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 520px) {
+            .screen {
+                padding: 18px 14px 24px;
+            }
+
+            .map-tiles { gap: 6px; }
+            .tile { flex: 0 0 74px; font-size: 0.75rem; }
+            .dice { width: 60px; height: 60px; font-size: 1.9rem; }
+        }
     </style>
 </head>
 <body>
-
-<div id="game-container">
-    <div id="flash-white" class="flash-white"></div>
-    <div id="flash-red" class="flash-red"></div>
-
-    <!-- 1. TITLE SCREEN -->
+<!-- kota/index.html にリンクを置く場合の案: <li><a href="history-dice-battle.html">日本史ダイスバトル</a></li> -->
+<div id="game-shell">
     <div id="screen-title" class="screen active">
-        <div class="subtitle">日本史学習ゲーム</div>
-        <h1>日本史<br>ダイスバトル</h1>
-        <div class="title-img">⚔️</div>
-        <button class="btn" onclick="showEraSelect()">⚡ はじめる</button>
-        <button class="btn btn-gold" onclick="toggleNigacho()">📖 苦手帳</button>
-        <div style="margin-top: auto; font-size: 0.7rem; color: #555; text-align: center;">© 2026 日本史ダイスバトル製作委員会</div>
+        <div class="title-logo">日本史ダイスバトル</div>
+        <p class="subtitle">サイコロ＆クイズで戦国を駆け抜けよう</p>
+        <button id="btn-start" class="btn">🗾 はじめる</button>
+        <button id="btn-continue" class="btn btn-gold">▶ つづきから</button>
+        <button id="btn-weak" class="btn btn-dark">📚 苦手帳</button>
+        <button id="btn-reset" class="btn btn-outline">🗑 データをリセット</button>
+        <p class="note">localStorage に進行度・苦手帳を保存します。</p>
     </div>
 
-    <!-- 1.5 ERA SELECT SCREEN -->
-    <div id="screen-era-select" class="screen">
-        <h1>時代を選択</h1>
-        <div class="subtitle">どの時代を攻略する？</div>
-        <div id="era-list" style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn btn-gold" onclick="prepareStage('nara')">🦌 奈良時代</button>
-            <button class="btn btn-gold" onclick="prepareStage('heian')">🌸 平安時代</button>
-            <button class="btn btn-gold" onclick="prepareStage('kamakura')">⚔️ 鎌倉時代</button>
-            <button class="btn btn-gold" onclick="prepareStage('sengoku')">🔥 戦国時代</button>
-            <button class="btn btn-gold" onclick="prepareStage('edo')">🏯 江戸時代</button>
-        </div>
-        <button class="btn" style="margin-top: 20px; background: #333;" onclick="showScreen('screen-title')">戻る</button>
+    <div id="screen-era" class="screen">
+        <h1>時代を選ぶ</h1>
+        <p class="subtitle">まずは戦国から攻略しよう！</p>
+        <div class="era-list" id="era-list"></div>
+        <button class="btn" id="btn-era-back">← タイトルに戻る</button>
     </div>
 
-    <!-- 2. INTRO (YEAR TABLE) -->
-    <div id="screen-intro" class="screen">
-        <h1 id="intro-title">戦国時代の幕開け</h1>
-        <div id="intro-sub" class="subtitle">室町時代から戦国時代へ…</div>
-        <ul id="intro-years" class="year-table">
-            <!-- Dynamic -->
-        </ul>
-        <button class="btn btn-gold" onclick="startGame()">合戦開始！</button>
-    </div>
-
-    <!-- 3. MAP SCREEN -->
     <div id="screen-map" class="screen">
-        <div class="header-info">
-            <span>🛡️ HP: <span id="map-hp" class="hp-val">100/100</span></span>
-            <span>💰 功績: <span id="map-pts">0</span></span>
+        <h1 id="map-stage-title">戦国マップ</h1>
+        <div class="timeline" id="timeline-bar">
+            <span data-era="muromachi">室町</span>
+            <span data-era="sengoku">戦国</span>
+            <span data-era="azuchi">安土桃山</span>
+            <span data-era="edo">江戸</span>
         </div>
-        <div class="timeline-bar">
-            <div id="tl-fill" class="timeline-fill"></div>
-        </div>
-        <div class="timeline-labels">
-            <span id="label-prev">室町</span>
-            <span id="label-curr" style="color:var(--gold);">戦国時代</span>
-            <span id="label-next">安土桃山</span>
-        </div>
-
-        <div id="map-grid" class="map-grid">
-            <!-- Tiles generated via JS -->
-        </div>
-
-        <div style="margin-top: auto; padding: 10px 0;">
-            <div style="text-align: center; margin-bottom: 5px; font-size: 0.9rem;" id="map-msg">サイコロを振って進め！</div>
-            <button id="btn-roll" class="btn" style="width: 100%;" onclick="moveStep()">➡️ 次のマスへ進む</button>
+        <div class="info-box" id="map-context"></div>
+        <div class="map-panel">
+            <div class="map-tiles" id="map-tiles"></div>
+            <div class="info-box" id="map-tile-info">マスを選択</div>
+            <div class="status-row">
+                <div>HP: <strong id="map-hp">0 / 0</strong></div>
+                <div>攻撃補正: <strong id="map-bonus">+0</strong></div>
+            </div>
+            <div class="status-row">
+                <div>正解: <strong id="map-correct">0</strong></div>
+                <div>ミス: <strong id="map-wrong">0</strong></div>
+            </div>
+            <button class="btn btn-gold" id="map-action">決行</button>
+            <div class="info-box map-status" id="map-status">マスを選んで進行しよう。</div>
         </div>
     </div>
 
-    <!-- 4. BATTLE SCREEN -->
     <div id="screen-battle" class="screen">
-        <div class="header-info">
-            <span>🛡️ 自軍HP: <span id="btl-hp" class="hp-val">100</span></span>
-            <span>👹 <span id="btl-enemy-name">足軽</span></span>
-        </div>
-
-        <div class="battle-view">
-            <div id="enemy-sprite" class="enemy-sprite">🪖</div>
-            <div style="position: absolute; top: 0; width: 100%; text-align: center;">
-                <div class="enemy-hp-bar"><div id="enemy-hp-fill" class="enemy-hp-fill"></div></div>
-                <div style="font-size: 0.7rem; margin-top: 2px;" id="enemy-hp-text">100 / 100</div>
+        <h1>戦闘</h1>
+        <div class="info-box" id="battle-subtitle"></div>
+        <div class="battle-wrap">
+            <div class="battle-stats">
+                <div><strong id="enemy-name">敵</strong></div>
+                <div class="status-row">
+                    <div>敵HP: <span id="enemy-hp-text">0 / 0</span></div>
+                    <div>味方HP: <span id="player-hp-text">0 / 0</span></div>
+                </div>
+                <div class="hp-bar"><div id="enemy-hp-bar" class="hp-fill"></div></div>
+                <div class="hp-bar"><div id="player-hp-bar" class="hp-fill"></div></div>
             </div>
-        </div>
-
-        <div id="battle-log" class="battle-log"></div>
-
-        <div class="battle-controls">
-            <div class="dice-area">
-                <div id="battle-dice" class="dice">?</div>
-                <div class="skill-info">
-                    <div id="skill-name" class="skill-name">???</div>
-                    <div id="skill-desc" class="skill-desc">サイコロを振って技を決定！</div>
+            <div class="battle-stats">
+                <div class="dice-area">
+                    <div class="dice" id="battle-dice">?</div>
+                    <div class="skill-name" id="skill-name">サイコロを振ろう</div>
+                    <button class="btn btn-gold" id="btn-roll">🎲 サイコロ</button>
                 </div>
             </div>
-            <button id="btn-roll-btl" class="btn" style="width: 100%;" onclick="rollSkill()">🎲 サイコロを振る</button>
-        </div>
-
-        <!-- QUIZ OVERLAY -->
-        <div id="quiz-overlay">
-            <div class="q-header">
-                <span id="q-cat">人物</span>
-                <span id="q-idx">問 1/15</span>
-            </div>
-            <div id="q-text" class="q-text">クイズ読み込み中...</div>
-            <div id="choices" class="choice-list"></div>
-            <div id="q-fb" style="margin-top: 20px; display: none;">
-                <div id="q-fb-text" style="font-weight: bold; margin-bottom: 10px;"></div>
-                <div id="q-explanation" style="font-size: 0.8rem; background: #222; padding: 10px; border-radius: 5px;"></div>
-                <button class="btn btn-gold" style="width: 100%; margin-top: 15px;" onclick="nextStep()">次へ進む</button>
-            </div>
+            <div class="battle-log" id="battle-log"></div>
+            <button class="btn" id="btn-battle-leave">← マップへ戻る(敗北時)</button>
         </div>
     </div>
 
-    <!-- 5. RESULT SCREEN -->
     <div id="screen-result" class="screen">
-        <h1>戦果報告</h1>
-        <div id="res-icon" style="font-size: 100px; text-align: center; margin: 20px 0;">🏆</div>
-        <div id="res-title" style="text-align: center; font-size: 1.5rem; color: var(--gold); font-weight: bold;">完全制覇！</div>
-        
-        <div style="margin: 20px 0; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span>正解数</span><span id="res-correct" class="hp-val">0 / 0</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>獲得功績</span><span id="res-pts" class="gold">0 pt</span>
-            </div>
+        <h1 id="result-title">結果</h1>
+        <div class="result-card">
+            <div class="stat-row"><span>正解数</span><strong id="result-correct">0</strong></div>
+            <div class="stat-row"><span>間違えた数</span><strong id="result-wrong">0</strong></div>
+            <div class="stat-row"><span>最大コンボ</span><strong id="result-combo">0</strong></div>
         </div>
-
-        <div id="res-summary" style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
-            戦国時代を生き抜き、見事天下統一への足がかりを築いた！重要人物：織田信長、豊臣秀吉をしっかり覚えたようだ。
+        <div class="result-card">
+            <p id="result-message"></p>
+            <ul id="result-highlights"></ul>
         </div>
-
-        <button class="btn" onclick="location.reload()">もう一度遊ぶ</button>
-        <button class="btn btn-gold" onclick="showScreen('screen-title')">タイトルへ戻る</button>
+        <button class="btn btn-gold" id="btn-retry">↺ もう一度</button>
+        <button class="btn" id="btn-result-title">← タイトルへ戻る</button>
     </div>
 
-    <!-- MODAL (NIGACHO) -->
-    <div id="modal-overlay">
-        <div class="modal-content">
-            <span class="modal-close" onclick="toggleNigacho()">×</span>
-            <h2 style="color:var(--gold); margin-bottom: 10px;">📖 苦手帳</h2>
-            <div id="nigacho-content" style="max-height: 300px; overflow-y: auto; font-size: 0.8rem;">
-                まだ間違えた問題はありません。
-            </div>
+    <div class="overlay" id="quiz-overlay">
+        <div class="overlay-box">
+            <h2 id="quiz-title">クイズ</h2>
+            <p id="quiz-question" style="margin-top:8px;"></p>
+            <div class="quiz-choices" id="quiz-choices"></div>
+            <p id="quiz-feedback" style="margin-top:12px; min-height:32px; font-size:0.95rem;"></p>
+        </div>
+    </div>
+
+    <div class="overlay" id="weak-overlay">
+        <div class="overlay-box">
+            <h2>苦手帳</h2>
+            <div class="weak-list" id="weak-list"></div>
+            <button class="btn" id="btn-weak-close" style="margin-top:14px;">閉じる</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="message-overlay">
+        <div class="overlay-box">
+            <h2>歴史メモ</h2>
+            <p id="message-text" style="margin-top:10px; min-height:80px;"></p>
+            <button class="btn btn-gold" id="btn-message-close" style="margin-top:14px;">進む</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- DATA ---
-    const STAGES = {
-        nara: {
-            name: "奈良時代",
-            sub: "平城京、大仏、そして律令国家の完成...",
-            years: [
-                { date: "710年", txt: "平城京遷都", desc: "奈良に新しい都が造られました。" },
-                { date: "743年", txt: "墾田永年私財法", desc: "開墾した土地の永代私有が認められました。" },
-                { date: "752年", txt: "大仏開眼供養", desc: "東大寺に大仏が完成しました。" }
-            ],
-            boss: { name: "聖武天皇", icon: "👑", hp: 150 },
-            enemies: [{ name: "貴族の兵", icon: "💂", hp: 40 }, { name: "僧兵", icon: "📿", hp: 50 }],
-            labels: ["飛鳥", "奈良時代", "平安"],
-            questions: [
-                { id: "n01", cat: "政治", q: "710年、唐の長安をモデルに奈良に造られた都は？", choice: ["平安京", "平城京", "難波京", "藤原京"], ans: 1, exp: "平城京はシルクロードの終着点とも呼ばれ、国際色豊かな文化が栄えました。" },
-                { id: "n02", cat: "宗教", q: "聖武天皇が国の平和を願って東大寺に造らせた巨大な像は？", choice: ["金剛力士像", "阿修羅像", "奈良の大仏", "弥勒菩薩"], ans: 2, exp: "仏教の力で国を治めようとする「鎮護国家」の思想に基づいています。" },
-                { id: "n03", cat: "制度", q: "開墾した土地の永遠の私有を認めた、743年の法律は？", choice: ["墾田永年私財法", "三世一身の法", "公地公民", "地租改正"], ans: 0, exp: "これにより公地公民の原則が崩れ、後に荘園が広がるきっかけとなりました。" },
-                { id: "n04", cat: "人物", q: "唐から5度の失敗を乗り越えて来日し、唐招提寺を建てた僧は？", choice: ["空海", "最澄", "鑑真", "行基"], ans: 2, exp: "来日時には失明していましたが、正しい仏教の戒律を日本に伝えました。" },
-                { id: "n05", cat: "文化", q: "聖武天皇の遺品などが納められている、東大寺にある倉は？", choice: ["法隆寺", "正倉院", "金閣", "銀閣"], ans: 1, exp: "校倉造で作られており、世界各地から伝わった宝物が数多く残っています。" }
-            ]
-        },
-        heian: {
-            name: "平安時代",
-            sub: "平安京への遷都、華やかな国風文化...",
-            years: [
-                { date: "794年", txt: "平安京遷都", desc: "「鳴くよウグイス平安京」で有名。" },
-                { date: "894年", txt: "遣唐使の廃止", desc: "菅原道真の提案により廃止。" },
-                { date: "1016年", txt: "藤原道長の摂政就任", desc: "摂関政治の全盛期。" }
-            ],
-            boss: { name: "藤原道長", icon: "🤴", hp: 180 },
-            enemies: [{ name: "検非違使", icon: "👮", hp: 50 }, { name: "下級貴族", icon: "👘", hp: 40 }],
-            labels: ["奈良", "平安時代", "鎌倉"],
-            questions: [
-                { id: "h01", cat: "政治", q: "794年、平安京に都を移した天皇は？", choice: ["聖武天皇", "桓武天皇", "推古天皇", "天智天皇"], ans: 1, exp: "平城京での仏教勢力の影響を避けるため、山背国（京都）へ都を移しました。" },
-                { id: "h02", cat: "政治", q: "藤原氏が行った、娘を天皇の后にして政治の実権を握る手法は？", choice: ["院政", "摂関政治", "武家政治", "執権政治"], ans: 1, exp: "藤原道長や頼通の親子がその全盛期を築きました。" },
-                { id: "h03", cat: "文化", q: "平安時代中期、遣唐使の廃止をきっかけに発達した日本独自の文化は？", choice: ["飛鳥文化", "国風文化", "桃山文化", "元禄文化"], ans: 1, exp: "かな文字の発達により、物語や随筆など優れた文学作品が生まれました。" },
-                { id: "h04", cat: "文化", q: "世界最古の長編小説ともいわれる『源氏物語』の作者は？", choice: ["清少納言", "紫式部", "持統天皇", "和泉式部"], ans: 1, exp: "光源氏を主人公とする、平安貴族の生活を描いた長編小説です。" },
-                { id: "h05", cat: "制度", q: "894年、菅原道真の提案で中止になった中国への使節は？", choice: ["遣隋使", "遣唐使", "遣新羅使", "遣明使"], ans: 1, exp: "唐の衰退と往復の危険を理由に中止されました。" }
-            ]
-        },
-        kamakura: {
-            name: "鎌倉時代",
-            sub: "武士の台頭、源平合戦、そして幕府の誕生...",
-            years: [
-                { date: "1185年", txt: "鎌倉幕府の実質的成立", desc: "源頼朝が守護・地頭を設置。" },
-                { date: "1232年", txt: "御成敗式目", desc: "武士のための最初の法律。" },
-                { date: "1274年", txt: "元寇（文永の役）", desc: "元軍が北九州に襲来。" }
-            ],
-            boss: { name: "北条時宗", icon: "🏯", hp: 220 },
-            enemies: [{ name: "平氏の残党", icon: "⚔️", hp: 60 }, { name: "元軍兵士", icon: "🏹", hp: 70 }],
-            labels: ["平安", "鎌倉時代", "室町"],
-            questions: [
-                { id: "k01", cat: "政治", q: "鎌倉幕府を開き、1192年に征夷大将軍となった人物は？", choice: ["源義経", "源頼朝", "平清盛", "北条時政"], ans: 1, exp: "武士による本格的な政権を鎌倉に築きました。" },
-                { id: "k02", cat: "制度", q: "将軍が御家人の領地を保証し、御家人が軍役を果たす関係を何という？", choice: ["下剋上", "御恩と奉公", "刀狩", "参勤交代"], ans: 1, exp: "土地を仲立ちとした、将軍と部下の主従関係です。" },
-                { id: "k03", cat: "政治", q: "北条泰時が制定した、武士社会の慣習をまとめた法律は？", choice: ["十七条の憲法", "御成敗式目", "武家諸法度", "公事方御定書"], ans: 1, exp: "裁判の基準を明確にするために作られた日本初の武家法です。" },
-                { id: "k04", cat: "外交", q: "13世紀後半、2度にわたって日本を襲撃した巨大帝国は？", choice: ["元", "宋", "明", "清"], ans: 0, exp: "フビライ・ハンの命により、北九州に大軍が押し寄せました。" },
-                { id: "k05", cat: "生活", q: "鎌倉時代の定期市で、ひと月に3回開かれたものを何という？", choice: ["六斎市", "三斎市", "十客市", "楽市"], ans: 1, exp: "物資の流通が盛んになり、地域の中心地で定期的に市が開かれました。" }
-            ]
-        },
-        sengoku: {
-            name: "戦国・安土桃山",
-            sub: "下剋上の世、織田信長と豊臣秀吉の天下統一...",
-            years: [
-                { date: "1467年", txt: "応仁の乱", desc: "戦国時代の始まり。" },
-                { date: "1582年", txt: "本能寺の変", desc: "織田信長が討たれる。" },
-                { date: "1590年", txt: "豊臣秀吉の天下統一", desc: "小田原北条氏を滅ぼす。" }
-            ],
-            boss: { name: "第六天魔王 織田信長", icon: "👹", hp: 200 },
-            enemies: [{ name: "足軽", icon: "🪖", hp: 40 }, { name: "鉄砲隊", icon: "🔫", hp: 50 }],
-            labels: ["室町", "戦国時代", "安土桃山"],
-            questions: [
-                { id: "s01", cat: "人物", q: "1582年、本能寺の変で明智光秀に倒された戦国大名は？", choice: ["武田信玄", "豊臣秀吉", "織田信長", "今川義元"], ans: 2, exp: "織田信長は天下統一を目前にして、家臣の明智光秀に襲われました。" },
-                { id: "s02", cat: "政策", q: "織田信長が行った、商工業を自由にするための政策は？", choice: ["刀狩", "楽市楽座", "墾田永年私財法", "班田収授法"], ans: 1, exp: "市場の税を免除し、誰でも商売ができるようにして城下町を活気づけました。" },
-                { id: "s03", cat: "人物", q: "織田信長の後を継ぎ、1590年に全国統一を成し遂げた人物は？", choice: ["徳川家康", "豊臣秀吉", "上杉謙信", "明智光秀"], ans: 1, exp: "秀吉は信長の敵を討ち、小田原の北条氏を滅ぼして天下統一を達成しました。" },
-                { id: "s04", cat: "政策", q: "豊臣秀吉が農民から武器を取り上げ、兵農分離を進めた政策は？", choice: ["刀狩", "太閤検地", "御成敗式目", "参勤交代"], ans: 0, exp: "一揆を防ぎ、農民を耕作に専念させるために行われました。" },
-                { id: "s05", cat: "出来事", q: "1600年、徳川家康率いる東軍が石田三成の西軍を破った戦いは？", choice: ["長篠の戦い", "川中島の戦い", "関ヶ原の戦い", "壇ノ浦の戦い"], ans: 2, exp: "「天下分け目の戦い」と呼ばれ、これにより江戸幕府の基礎が築かれました。" }
-            ]
-        },
-        edo: {
-            name: "江戸時代",
-            sub: "徳川将軍家による260年の泰平の世...",
-            years: [
-                { date: "1603年", txt: "江戸幕府創設", desc: "徳川家康が征夷大将軍に。" },
-                { date: "1635年", txt: "参勤交代の義務化", desc: "3代将軍家光による法制化。" },
-                { date: "1853年", txt: "ペリー来航", desc: "幕末の動乱の始まり。" }
-            ],
-            boss: { name: "将軍 徳川家康", icon: "🍱", hp: 250 },
-            enemies: [{ name: "道場破り", icon: "🤺", hp: 60 }, { name: "奉行所の同心", icon: "🏮", hp: 50 }],
-            labels: ["戦国", "江戸時代", "明治"],
-            questions: [
-                { id: "e01", cat: "政治", q: "1603年、征夷大将軍となり江戸に幕府を開いた人物は？", choice: ["豊臣秀吉", "徳川家康", "織田信長", "足利尊氏"], ans: 1, exp: "関ヶ原の戦いに勝利し、長く続く安定政権を築きました。" },
-                { id: "e02", cat: "制度", q: "大名に1年おきに江戸と自領を往復させる、幕府への忠誠を示す制度は？", choice: ["刀狩", "参勤交代", "座", "禁中並公家諸法度"], ans: 1, exp: "莫大な費用をかけさせることで、大名の財力を削ぐ目的もありました。" },
-                { id: "e03", cat: "外交", q: "キリスト教を禁止し、貿易を制限した江戸幕府の政策を何という？", choice: ["鎖国", "文明開化", "富国強兵", "神仏分離"], ans: 0, exp: "オランダ、清、朝鮮、琉球、アイヌ民族以外との交流を断ちました。" },
-                { id: "e04", cat: "人物", q: "1853年、4隻の黒船を率いて浦賀に来航したアメリカの司令官は？", choice: ["ペリー", "マッカーサー", "ハリス", "ザビエル"], ans: 0, exp: "開国を要求し、日本を長い眠りから目覚めさせました。" },
-                { id: "e05", cat: "文化", q: "本居宣長が完成させた、日本古来の精神を研究する学問は？", choice: ["朱子学", "蘭学", "国学", "心学"], ans: 2, exp: "『古事記伝』を著し、記紀などの古典研究を大成させました。" }
-            ]
-        }
+(() => {
+    const STORAGE_KEYS = {
+        PROGRESS: 'ndb-progress',
+        WEAK: 'ndb-weak',
+        CLEARS: 'ndb-clears'
     };
 
-    const TILES_TEMPLATE = [
-        { type: "start", icon: "🏠", label: "始まりの場所" },
-        { type: "event", icon: "🌾", label: "周辺の村" },
-        { type: "battle", icon: "⚔️", label: "関所" },
-        { type: "quiz", icon: "📜", label: "学び舎" },
-        { type: "event", icon: "🍵", label: "茶処" },
-        { type: "battle", icon: "💥", label: "荒野" },
-        { type: "heal", icon: "♨️", label: "温泉" },
-        { type: "quiz", icon: "🏯", label: "古戦場" },
-        { type: "event", icon: "🗺️", label: "峠" },
-        { type: "boss", icon: "👹", label: "ボスの居城" }
+    const ERAS = [
+        { id: 'jomon', name: '縄文・弥生', note: '準備中' },
+        { id: 'nara', name: '奈良', note: '準備中' },
+        { id: 'heian', name: '平安', note: '準備中' },
+        { id: 'kamakura', name: '鎌倉', note: '準備中' },
+        { id: 'sengoku', name: '戦国', note: '戦乱を制覇せよ', stageId: 'sengoku' },
+        { id: 'edo', name: '江戸', note: '準備中' }
     ];
 
+    const ENEMY_LIBRARY = {
+        ashigaru: { name: '足軽', hp: 36, atk: [6, 10], intro: '雑兵の突撃！' },
+        samurai: { name: '甲冑武者', hp: 48, atk: [8, 12], intro: '鍛え抜かれた武将。' },
+        teppo: { name: '鉄砲隊', hp: 55, atk: [10, 13], intro: '火縄銃を構えている。' },
+        ninja: { name: '忍者', hp: 42, atk: [7, 14], intro: '素早い影が迫る。' }
+    };
+
     const SKILLS = {
-        1: { name: "小攻撃", desc: "敵にダメージを与える", power: 10 },
-        2: { name: "連撃", desc: "2回攻撃を行う", power: 15, double: true },
-        3: { name: "精神統一", desc: "大きくHPを回復する", heal: 20 },
-        4: { name: "剛速球", desc: "中ダメージを与える", power: 25 },
-        5: { name: "火炎陣", desc: "大ダメージを与える", power: 40 },
-        6: { name: "究極奥義", desc: "最大級のダメージ！", power: 70 }
+        1: { name: '斬り込み', type: 'attack', power: 14, text: '小攻撃' },
+        2: { name: '鉄壁の構え', type: 'guard', guard: 0.6, text: '防御', missGuard: 0.3 },
+        3: { name: '連撃', type: 'multi', power: 9, hits: 2, text: '連続攻撃' },
+        4: { name: '兵糧回復', type: 'heal', heal: 18, text: '回復' },
+        5: { name: '奇襲策', type: 'special', power: 18, weaken: 4, text: '特殊' },
+        6: { name: '天下一閃', type: 'attack', power: 32, text: '必殺' }
     };
 
-    // --- STATE ---
-    let state = {
-        currentEra: "sengoku",
-        pos: 0, hp: 100, maxHp: 100, pts: 0,
-        wrongQ: [], correct: 0, total: 0,
-        currEnemy: null, currSkill: null,
-        diceRolling: false, qPool: [], qIdx: 0,
-        inBattle: false
-    };
-
-    function showEraSelect() { showScreen("screen-era-select"); }
-
-    function prepareStage(eraId) {
-        state.currentEra = eraId;
-        const stage = STAGES[eraId];
-        
-        // Update Intro Screen
-        document.getElementById("intro-title").textContent = stage.name + "の幕開け";
-        document.getElementById("intro-sub").textContent = stage.sub;
-        const list = document.getElementById("intro-years");
-        list.innerHTML = stage.years.map(y => `
-            <li class="year-item"><div class="year-date">${y.date}</div><div class="year-content">${y.txt}<br><small>${y.desc}</small></div></li>
-        `).join("");
-
-        // Update Map Labels
-        document.getElementById("label-prev").textContent = stage.labels[0];
-        document.getElementById("label-curr").textContent = stage.labels[1];
-        document.getElementById("label-next").textContent = stage.labels[2];
-        
-        showScreen("screen-intro");
-    }
-
-    // --- SYSTEM ---
-    function save() {
-        const data = { ...state };
-        delete data.qPool; // Don't save transient pool
-        localStorage.setItem("histDiceGlobal", JSON.stringify(data)); 
-    }
-    function load() {
-        const d = localStorage.getItem("histDiceGlobal");
-        if(d) state = Object.assign(state, JSON.parse(d));
-    }
-
-    function showScreen(id) {
-        document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-        document.getElementById(id).classList.add("active");
-    }
-
-    function flash(type) {
-        const el = document.getElementById(type === "hit" ? "flash-white" : "flash-red");
-        el.style.animation = "none"; void el.offsetWidth;
-        el.style.animation = "flashEffect 0.3s forwards";
-    }
-
-    function toggleNigacho() {
-        const overlay = document.getElementById("modal-overlay");
-        const list = document.getElementById("nigacho-content");
-        if(overlay.style.display === "flex") {
-            overlay.style.display = "none";
-        } else {
-            overlay.style.display = "flex";
-            const d = JSON.parse(localStorage.getItem("histDiceSengoku") || "{}");
-            const wrongs = d.wrongQ || [];
-            if(wrongs.length === 0) {
-                list.innerHTML = "まだ間違えた問題はありません。";
-            } else {
-                list.innerHTML = wrongs.map(qId => {
-                    const qObj = QUESTIONS.find(q => q.id === qId);
-                    return `<div style="margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:5px;">
-                        <div style="color:var(--gold)">[${qObj.cat}]</div>
-                        <div>${qObj.q}</div>
-                        <div style="color:var(--accent); margin-top:3px;">正解: ${qObj.choice[qObj.ans]}</div>
-                        <div style="font-size:0.7rem; color:#888;">${qObj.exp}</div>
-                    </div>`;
-                }).join("");
-            }
+    const STAGES = {
+        sengoku: {
+            id: 'sengoku',
+            name: '戦国時代',
+            timelinePhase: 'sengoku',
+            intro: '室町幕府の力が衰え、下剋上の気風が日本全土に広がった。各地の戦国大名を打ち破り、時代の流れをつかもう。',
+            clearText: '織田信長を退け、天下布武への道を切り開いた。戦国の学びを胸に、次なる時代へ進もう。',
+            baseHP: 70,
+            summary: '戦国大名の台頭と織田信長の改革で、日本は中央集権へ向かい始めた。',
+            highlights: ['下剋上と分国法', '鉄砲伝来とキリスト教', '長篠の戦い', '織田信長と天下布武'],
+            enemyPool: ['ashigaru', 'samurai', 'teppo', 'ninja'],
+            boss: { name: '織田信長', hp: 110, atk: [12, 18], intro: '天下布武を掲げる第六天魔王。', special: '二段攻撃' },
+            tiles: [
+                { type: 'quiz', label: '国人衆との盟約', icon: '📜', description: '地侍と協力して勢力拡大。' },
+                { type: 'battle', label: '足軽との小競り合い', icon: '⚔️', enemy: 'ashigaru' },
+                { type: 'heal', label: '寺社で療養', icon: '♨️', value: 20 },
+                { type: 'battle', label: '甲冑武者の奇襲', icon: '🛡️', enemy: 'samurai' },
+                { type: 'quiz', label: '分国法を定める', icon: '📘', description: '統治方針を確認。' },
+                { type: 'boost', label: '鍛冶場を抑える', icon: '⛏️', value: 6 },
+                { type: 'battle', label: '鉄砲隊との試練', icon: '🔥', enemy: 'teppo' },
+                { type: 'event', subtype: 'bossprep', label: '軍備を整える', icon: '🎌', description: '最終決戦の前哨。' },
+                { type: 'battle', label: '忍びの妨害', icon: '🌀', enemy: 'ninja' },
+                { type: 'boss', label: '天下布武の頂', icon: '👑' }
+            ],
+            questions: [
+                { id: 'sq1', text: '戦国大名が領国統治のために独自に定めた法令を何という？', choices: ['御成敗式目', '分国法', '公地公民', '太政官令'], answer: 1, explain: '分国法は各戦国大名が家臣統制や領内支配のために作った法令集。', genre: '制度' },
+                { id: 'sq2', text: '1467年の応仁の乱をきっかけに始まった約100年の戦乱期を何という？', choices: ['戦国時代', '南北朝時代', '江戸時代', '幕末'], answer: 0, explain: '応仁の乱後、各地で下剋上が頻発した時代が「戦国時代」。', genre: '時代' },
+                { id: 'sq3', text: '1543年、種子島に伝わった新兵器はどれ？', choices: ['鉄砲', '羅針盤', '蒸気機関', '活版印刷'], answer: 0, explain: 'ポルトガル人が鉄砲を伝え、戦い方が一変した。', genre: '出来事' },
+                { id: 'sq4', text: '1549年に鹿児島へ来日しキリスト教を広めた宣教師は？', choices: ['ルター', 'マテオ・リッチ', 'フランシスコ・ザビエル', 'コロンブス'], answer: 2, explain: 'ザビエルは鹿児島で布教を始め、九州の大名にも影響を与えた。', genre: '人物' },
+                { id: 'sq5', text: '織田信長が楽市楽座を実施した目的として最も適切なのは？', choices: ['農民を保護するため', '商工業の自由な発展を促すため', '年貢を免除するため', '寺社勢力を守るため'], answer: 1, explain: '座や関所を廃し、市場を開放して経済力を強めた。', genre: '制度' },
+                { id: 'sq6', text: '1575年の長篠の戦いで信長・家康連合軍が用いたとされる戦法は？', choices: ['火牛の計', '三段撃ち', '桶狭間奇襲', '水攻め'], answer: 1, explain: '鉄砲を三列で交互に撃つことで武田騎馬軍を撃破したと伝わる。', genre: '出来事' },
+                { id: 'sq7', text: '武田信玄が家臣統制のために定めた法律は？', choices: ['御成敗式目', '甲州法度次第', '武家諸法度', '公事方御定書'], answer: 1, explain: '甲州法度次第は武田家の家臣統制や裁判の基準を示した。', genre: '制度' },
+                { id: 'sq8', text: '越後国で「軍神」と呼ばれた上杉謙信の本拠地は？', choices: ['春日山城', '駿府城', '小田原城', '大坂城'], answer: 0, explain: '上杉謙信は春日山城を拠点に北陸・関東へ進出した。', genre: '人物' },
+                { id: 'sq9', text: '伊豆を拠点として関東に勢力を広げ、のちの後北条氏の基礎を築いた人物は？', choices: ['北条早雲', '毛利元就', '島津義弘', '今川義元'], answer: 0, explain: '北条早雲は伊豆から相模へ進出し、関東支配の足場を作った。', genre: '人物' },
+                { id: 'sq10', text: '加賀国では農民や僧が主導して守護大名を追い出した運動が続いた。これを何という？', choices: ['一向一揆', '生類憐み令', '打ちこわし', '島原の乱'], answer: 0, explain: '本願寺門徒が中心となった一向一揆で、加賀は「百姓の持ちたる国」と呼ばれた。', genre: '出来事' },
+                { id: 'sq11', text: '南蛮貿易とキリスト教を積極的に受け入れた豊後の大名は？', choices: ['浅井長政', '朝倉義景', '大友宗麟', '真田昌幸'], answer: 2, explain: '大友宗麟はポルトガルとの貿易で銀を得て、カトリックにも改宗した。', genre: '人物' },
+                { id: 'sq12', text: '織田信長が室町幕府を事実上終わらせた出来事は？', choices: ['桶狭間の戦い', '足利義昭の追放', '明智光秀の謀反', '島津征伐'], answer: 1, explain: '1573年に第15代将軍足利義昭を京都から追放し、幕府が滅んだ。', genre: '出来事' },
+                { id: 'sq13', text: '石垣と天主からなる近世城郭の先駆けとなった信長の城は？', choices: ['安土城', '姫路城', '名古屋城', '熊本城'], answer: 0, explain: '琵琶湖畔に築いた安土城は豪華な天主で知られる。', genre: '文化' },
+                { id: 'sq14', text: '織田信長が勢力拡大の障害とみなして焼き討ちにした寺院は？', choices: ['東大寺', '比叡山延暦寺', '金剛峯寺', '浅草寺'], answer: 1, explain: '延暦寺は武装し周辺に影響力を持っていたため、信長は徹底的に攻撃した。', genre: '出来事' },
+                { id: 'sq15', text: '本能寺の変後、信長の後を継いで全国統一を進めた武将は？', choices: ['徳川家康', '豊臣秀吉', '北条氏政', '伊達政宗'], answer: 1, explain: '明智光秀を討った羽柴（豊臣）秀吉が主導権を握った。', genre: '人物' },
+                { id: 'sq16', text: '刀や鉄砲を農民から没収し身分を固定しようとした政策は？', choices: ['刀狩', '廃仏毀釈', '朱印船貿易', '鎖国'], answer: 0, explain: '秀吉の刀狩令で農民の武装を禁じ、兵農分離が進んだ。', genre: '制度' }
+            ]
         }
+    };
+
+    const state = {
+        stageId: null,
+        stage: null,
+        pos: 0,
+        hp: 0,
+        maxHp: 0,
+        powerBonus: 0,
+        correct: 0,
+        wrong: 0,
+        combo: 0,
+        maxCombo: 0,
+        questionQueue: [],
+        currEnemy: null,
+        guardPercent: 0,
+        enemyWeaken: 0,
+        inBattle: false,
+        pendingAdvance: false
+    };
+
+    let weakList = [];
+    let messageCallback = null;
+    let activeQuiz = null;
+
+    // DOM refs
+    const screens = {
+        title: document.getElementById('screen-title'),
+        era: document.getElementById('screen-era'),
+        map: document.getElementById('screen-map'),
+        battle: document.getElementById('screen-battle'),
+        result: document.getElementById('screen-result')
+    };
+
+    const timelineBar = document.getElementById('timeline-bar');
+    const mapTilesEl = document.getElementById('map-tiles');
+    const mapContext = document.getElementById('map-context');
+    const mapTileInfo = document.getElementById('map-tile-info');
+    const mapActionBtn = document.getElementById('map-action');
+    const mapStatus = document.getElementById('map-status');
+
+    const battleLog = document.getElementById('battle-log');
+    const battleDice = document.getElementById('battle-dice');
+    const skillName = document.getElementById('skill-name');
+
+    const quizOverlay = document.getElementById('quiz-overlay');
+    const weakOverlay = document.getElementById('weak-overlay');
+    const messageOverlay = document.getElementById('message-overlay');
+
+    weakList = loadWeakList();
+
+    renderEraList();
+    updateContinueButton();
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        showScreen('era');
+    });
+
+    document.getElementById('btn-continue').addEventListener('click', () => {
+        const stored = loadProgress();
+        if(!stored) {
+            alert('保存データがありません。');
+            return;
+        }
+        restoreProgress(stored);
+    });
+
+    document.getElementById('btn-weak').addEventListener('click', () => {
+        renderWeakList();
+        weakOverlay.classList.add('active');
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        if(confirm('進行状況と苦手帳を削除します。よろしいですか？')) {
+            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+            localStorage.removeItem(STORAGE_KEYS.WEAK);
+            localStorage.removeItem(STORAGE_KEYS.CLEARS);
+            weakList = [];
+            updateContinueButton();
+            alert('データをリセットしました。');
+        }
+    });
+
+    document.getElementById('btn-era-back').addEventListener('click', () => showScreen('title'));
+    document.getElementById('btn-weak-close').addEventListener('click', () => weakOverlay.classList.remove('active'));
+    document.getElementById('btn-message-close').addEventListener('click', () => {
+        messageOverlay.classList.remove('active');
+        if(typeof messageCallback === 'function') {
+            const cb = messageCallback;
+            messageCallback = null;
+            cb();
+        }
+    });
+
+    mapActionBtn.addEventListener('click', () => handleTile());
+    document.getElementById('btn-roll').addEventListener('click', rollBattleDice);
+    document.getElementById('btn-battle-leave').addEventListener('click', () => {
+        if(state.hp <= 0) {
+            showResult(false);
+        } else {
+            alert('戦闘中は戻れません！');
+        }
+    });
+
+    document.getElementById('btn-retry').addEventListener('click', () => {
+        if(state.stageId) {
+            startStage(state.stageId, true);
+        } else {
+            showScreen('title');
+        }
+    });
+
+    document.getElementById('btn-result-title').addEventListener('click', () => {
+        showScreen('title');
+    });
+
+    document.getElementById('btn-start').focus();
+
+    function renderEraList() {
+        const container = document.getElementById('era-list');
+        container.innerHTML = '';
+        ERAS.forEach(era => {
+            const card = document.createElement('div');
+            card.className = 'era-card' + (era.stageId ? ' ready' : '');
+            card.innerHTML = `
+                <div>
+                    <div class="era-name">${era.name}</div>
+                    <div class="era-note">${era.note}</div>
+                </div>
+            `;
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            if(era.stageId) {
+                btn.classList.add('btn-gold');
+                btn.textContent = '進入';
+                btn.addEventListener('click', () => startStage(era.stageId, true));
+            } else {
+                btn.textContent = '準備中';
+                btn.disabled = true;
+            }
+            card.appendChild(btn);
+            container.appendChild(card);
+        });
     }
 
-    // --- LOGIC ---
-    function showIntro() { showScreen("screen-intro"); }
+    function startStage(stageId, fresh) {
+        const stage = STAGES[stageId];
+        if(!stage) return;
+        state.stageId = stageId;
+        state.stage = stage;
+        state.pos = 0;
+        state.hp = stage.baseHP;
+        state.maxHp = stage.baseHP;
+        state.powerBonus = 0;
+        state.correct = 0;
+        state.wrong = 0;
+        state.combo = 0;
+        state.maxCombo = 0;
+        state.guardPercent = 0;
+        state.enemyWeaken = 0;
+        state.questionQueue = shuffle(stage.questions.slice());
+        state.currEnemy = null;
+        showStageMessage(stage.intro, () => {
+            renderMap();
+            saveProgress();
+        });
+    }
 
-    function startGame() {
-        const stage = STAGES[state.currentEra];
-        state.pos = 0; state.hp = 100; state.pts = 0; state.correct = 0; state.total = 0;
-        state.qPool = [...stage.questions].sort(() => Math.random() - 0.5);
-        state.qIdx = 0;
-        showScreen("screen-map");
+    function restoreProgress(data) {
+        const stage = STAGES[data.stageId];
+        if(!stage) {
+            alert('ステージデータが見つかりません。');
+            return;
+        }
+        Object.assign(state, {
+            stageId: data.stageId,
+            stage,
+            pos: data.pos,
+            hp: data.hp,
+            maxHp: data.maxHp,
+            powerBonus: data.powerBonus || 0,
+            correct: data.correct || 0,
+            wrong: data.wrong || 0,
+            combo: data.combo || 0,
+            maxCombo: data.maxCombo || 0
+        });
+        state.guardPercent = 0;
+        state.enemyWeaken = 0;
+        state.questionQueue = shuffle(stage.questions.slice());
+        state.currEnemy = null;
         renderMap();
     }
 
     function renderMap() {
-        const stage = STAGES[state.currentEra];
-        const grid = document.getElementById("map-grid");
-        grid.innerHTML = "";
-        TILES_TEMPLATE.forEach((t, i) => {
-            const div = document.createElement("div");
-            div.className = "map-tile";
-            if(i === state.pos) div.classList.add("active");
-            if(i < state.pos) div.classList.add("cleared");
-            if(t.type === "boss") div.classList.add("boss");
-            
-            // Use stage-specific icons if needed, or default
-            let icon = t.icon;
-            let label = t.label;
-            if(t.type === "boss") { icon = stage.boss.icon; label = stage.boss.name; }
-            
-            div.innerHTML = `<div class="tile-icon">${icon}</div><div class="tile-label">${label}</div>`;
-            grid.appendChild(div);
-        });
-
-        document.getElementById("map-hp").textContent = `${state.hp}/${state.maxHp}`;
-        document.getElementById("map-hp").className = "hp-val" + (state.hp < 30 ? " hp-low" : "");
-        document.getElementById("map-pts").textContent = state.pts;
-        document.getElementById("tl-fill").style.width = ((state.pos + 1) / TILES_TEMPLATE.length * 100) + "%";
-        
-        // --- AUTO SCROLL ---
-        setTimeout(() => {
-            const activeTile = grid.querySelector('.active');
-            if(activeTile) activeTile.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-        }, 100);
-
-        if(state.pos === TILES_TEMPLATE.length - 1) {
-            document.getElementById("btn-roll").textContent = `👹 ${stage.boss.name}!`;
-        } else {
-            document.getElementById("btn-roll").textContent = "➡️ 次のマスへ進む";
+        if(!state.stage) return;
+        if(state.pos >= state.stage.tiles.length) {
+            stageCleared();
+            return;
         }
-    }
-
-    function moveStep() {
-        if(state.diceRolling) return;
-        if(state.pos === TILES_TEMPLATE.length - 1) { handleTile(); return; }
-
-        state.diceRolling = true;
-        const btn = document.getElementById("btn-roll");
-        btn.disabled = true;
-
-        document.getElementById("map-msg").textContent = `次のマスへ移動中...`;
-
-        setTimeout(() => {
-            state.pos = Math.min(TILES_TEMPLATE.length - 1, state.pos + 1);
-            renderMap();
-            state.diceRolling = false;
-            btn.disabled = false;
-            setTimeout(() => handleTile(), 500);
-        }, 600);
+        showScreen('map');
+        updateTimeline(state.stage.timelinePhase);
+        document.getElementById('map-stage-title').textContent = `${state.stage.name}マップ`;
+        mapContext.textContent = state.stage.summary;
+        const tiles = state.stage.tiles;
+        mapTilesEl.innerHTML = '';
+        tiles.forEach((tile, idx) => {
+            const div = document.createElement('div');
+            const cleared = idx < state.pos;
+            const current = idx === state.pos;
+            div.className = 'tile';
+            if(cleared) div.classList.add('cleared');
+            if(current) div.classList.add('current');
+            if(tile.type === 'boss' && cleared) div.classList.add('complete');
+            div.innerHTML = `<span>${tile.icon || '⬜'}</span>${tile.label}`;
+            if(current) {
+                const token = document.createElement('div');
+                token.id = 'player-token';
+                token.textContent = '▲';
+                div.appendChild(token);
+            }
+            mapTilesEl.appendChild(div);
+        });
+        const tile = tiles[state.pos];
+        mapTileInfo.textContent = tile.description || actionDescription(tile.type);
+        mapActionBtn.textContent = actionLabel(tile.type);
+        mapActionBtn.disabled = false;
+        state.pendingAdvance = false;
+        mapStatus.textContent = 'マスのイベントを実行しよう。';
+        document.getElementById('map-hp').textContent = `${state.hp} / ${state.maxHp}`;
+        document.getElementById('map-bonus').textContent = `+${state.powerBonus}`;
+        document.getElementById('map-correct').textContent = state.correct;
+        document.getElementById('map-wrong').textContent = state.wrong;
     }
 
     function handleTile() {
-        if(state.pos === 0) return;
-        const t = TILES_TEMPLATE[state.pos];
-        if(t.type === "boss") {
-            startBoss();
-        } else {
-            startBattle();
+        if(!state.stage) return;
+        const tile = state.stage.tiles[state.pos];
+        if(!tile) return;
+        mapActionBtn.disabled = true;
+        switch(tile.type) {
+            case 'quiz':
+                startMapQuiz();
+                break;
+            case 'battle':
+                startBattle(tile.enemy || randomPick(state.stage.enemyPool), false);
+                break;
+            case 'heal':
+                state.hp = Math.min(state.maxHp, state.hp + (tile.value || 20));
+                mapStatus.textContent = `HPが${tile.value || 20}回復した！`;
+                setTimeout(() => advanceTile(), 800);
+                break;
+            case 'boost':
+                state.powerBonus += tile.value || 5;
+                mapStatus.textContent = `攻撃力が+${tile.value || 5}強化された！`;
+                setTimeout(() => advanceTile(), 800);
+                break;
+            case 'event':
+                if(tile.subtype === 'bossprep') {
+                    showStageMessage('軍備を整え、士気が上がった。ボス戦に備えよう。', () => {
+                        mapStatus.textContent = '士気が高まった！HPが少し回復。';
+                        state.hp = Math.min(state.maxHp, state.hp + 15);
+                        advanceTile();
+                    });
+                } else {
+                    advanceTile();
+                }
+                break;
+            case 'boss':
+                startBattle('boss', true);
+                break;
+            default:
+                advanceTile();
         }
     }
 
-    function handleEvent() {
-        const events = [
-            { txt: "🌾 村人から兵糧をもらった！ HPが10回復。", fn: () => state.hp = Math.min(state.maxHp, state.hp + 10) },
-            { txt: "🦊 古い祠にお参りした。功績が500増えた。", fn: () => state.pts += 500 },
-            { txt: "⛈️ 嵐に見舞われた… HPを5失った。", fn: () => state.hp = Math.max(1, state.hp - 5) }
-        ];
-        const e = events[Math.floor(Math.random() * events.length)];
-        alert(e.txt);
-        e.fn();
+    function startMapQuiz() {
+        const question = drawQuestion();
+        openQuiz(question, { kind: 'map' }, (result) => {
+            if(result.correct) {
+                mapStatus.textContent = '正解！士気が上がった。';
+            } else {
+                mapStatus.textContent = '不正解…先を急ごう。';
+            }
+            setTimeout(() => advanceTile(), 700);
+        });
+    }
+
+    function advanceTile() {
+        state.pos += 1;
+        saveProgress();
         renderMap();
     }
 
-    function startBattle() {
-        const stage = STAGES[state.currentEra];
-        const e = stage.enemies[Math.floor(Math.random() * stage.enemies.length)];
-        state.currEnemy = { ...e, maxHp: e.hp };
-        state.inBattle = true;
-        initBattle();
+    function stageCleared() {
+        showStageMessage(state.stage.clearText, () => {
+            recordClear(state.stageId);
+            saveProgress(true);
+            showResult(true);
+        });
     }
 
-    function startBoss() {
-        const stage = STAGES[state.currentEra];
-        state.currEnemy = { ...stage.boss, maxHp: stage.boss.hp };
+    function startBattle(enemyKey, isBoss) {
         state.inBattle = true;
-        initBattle();
-    }
-
-    function initBattle() {
-        showScreen("screen-battle");
-        document.getElementById("btl-enemy-name").textContent = state.currEnemy.name;
-        document.getElementById("enemy-sprite").textContent = state.currEnemy.icon;
-        document.getElementById("battle-log").innerHTML = `<div>戦乱の足音が聞こえる…！ <b>${state.currEnemy.name}</b> 現る！</div>`;
+        let enemyData;
+        if(isBoss) {
+            enemyData = Object.assign({}, state.stage.boss);
+        } else {
+            const base = enemyKey === 'boss' ? state.stage.boss : ENEMY_LIBRARY[enemyKey];
+            enemyData = Object.assign({}, base);
+        }
+        enemyData.currentHp = enemyData.hp;
+        state.currEnemy = enemyData;
+        battleLog.innerHTML = `<div>${enemyData.intro || '敵が現れた。'}</div>`;
+        document.getElementById('battle-subtitle').textContent = isBoss ? '最終決戦！クイズに勝って大技を決めろ。' : 'クイズに正解して攻撃しよう。';
+        battleDice.textContent = '?';
+        skillName.textContent = 'サイコロを振って技を決めよう';
+        document.getElementById('enemy-name').textContent = enemyData.name;
         updateBattleUI();
-        document.getElementById("btn-roll-btl").disabled = false;
-        document.getElementById("battle-dice").textContent = "?";
-        document.getElementById("skill-name").textContent = "???";
-        document.getElementById("skill-desc").textContent = "サイコロを振って技を決定！";
+        showScreen('battle');
+        enableRoll(true);
+    }
+
+    function rollBattleDice() {
+        enableRoll(false);
+        const roll = Math.floor(Math.random() * 6) + 1;
+        battleDice.textContent = roll;
+        const skill = SKILLS[roll];
+        state.currentSkill = skill;
+        skillName.textContent = `${skill.name}（${skill.text}）`;
+        const question = drawQuestion();
+        openQuiz(question, { kind: 'battle' }, (result) => {
+            resolveBattleTurn(result.correct);
+        });
+    }
+
+    function resolveBattleTurn(isCorrect) {
+        const enemy = state.currEnemy;
+        const skill = state.currentSkill;
+        if(!enemy || !skill) return;
+        const logLines = [];
+        let dmg = 0;
+        switch(skill.type) {
+            case 'attack':
+                dmg = applyDamage(skill.power, isCorrect);
+                enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
+                logLines.push(`⚔️ ${skill.name}！${enemy.name}に${dmg}ダメージ`);
+                break;
+            case 'multi':
+                const perHit = applyDamage(skill.power, isCorrect);
+                const hits = isCorrect ? skill.hits : 1;
+                dmg = perHit * hits;
+                enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
+                logLines.push(`⚔️ ${skill.name}！${hits}回の斬撃で${dmg}ダメージ`);
+                break;
+            case 'heal':
+                const heal = isCorrect ? skill.heal : Math.floor(skill.heal / 2);
+                state.hp = Math.min(state.maxHp, state.hp + heal);
+                logLines.push(`✨ ${skill.name}！HPが${heal}回復`);
+                break;
+            case 'guard':
+                state.guardPercent = isCorrect ? skill.guard : (skill.missGuard || 0.2);
+                logLines.push(`🛡️ ${skill.name}！次の被ダメージを軽減`);
+                break;
+            case 'special':
+                dmg = applyDamage(skill.power, isCorrect);
+                enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
+                state.enemyWeaken = isCorrect ? skill.weaken : Math.floor(skill.weaken / 2);
+                logLines.push(`🎯 ${skill.name}！${dmg}ダメージ＋敵の攻撃力低下`);
+                break;
+            default:
+                break;
+        }
+        battleLog.innerHTML += `<div>${logLines.join(' ')}</div>`;
+        battleLog.scrollTop = battleLog.scrollHeight;
+        updateBattleUI();
+        if(enemy.currentHp <= 0) {
+            finishBattle(true);
+            return;
+        }
+        if(isCorrect) {
+            battleLog.innerHTML += `<div style="color:var(--gold)">好機！敵の反撃を許さない。</div>`;
+            battleLog.scrollTop = battleLog.scrollHeight;
+            enableRoll(true);
+        } else {
+            enemyAttack();
+        }
+    }
+
+    function applyDamage(base, isCorrect) {
+        const bonus = state.powerBonus;
+        let power = base + bonus;
+        if(!isCorrect) power = Math.max(1, Math.floor(power / 2));
+        return power;
+    }
+
+    function enemyAttack() {
+        const enemy = state.currEnemy;
+        if(!enemy) return;
+        const range = enemy.atk || [8, 12];
+        let dmg = randomRange(range[0], range[1]);
+        if(state.enemyWeaken > 0) {
+            dmg = Math.max(1, dmg - state.enemyWeaken);
+            state.enemyWeaken = 0;
+        }
+        if(state.guardPercent > 0) {
+            const reduced = Math.max(1, Math.floor(dmg * (1 - state.guardPercent)));
+            battleLog.innerHTML += `<div>🛡️ 防御成功！${dmg}→${reduced}に軽減。</div>`;
+            dmg = reduced;
+            state.guardPercent = 0;
+        }
+        state.hp = Math.max(0, state.hp - dmg);
+        battleLog.innerHTML += `<div style="color:var(--accent)">💥 ${enemy.name}の反撃！${dmg}ダメージ</div>`;
+        battleLog.scrollTop = battleLog.scrollHeight;
+        updateBattleUI();
+        if(state.hp <= 0) {
+            state.hp = 0;
+            finishBattle(false);
+        } else {
+            enableRoll(true);
+        }
+    }
+
+    function finishBattle(win) {
+        enableRoll(false);
+        const cleanup = () => {
+            state.inBattle = false;
+            state.currEnemy = null;
+            state.currentSkill = null;
+            state.guardPercent = 0;
+            state.enemyWeaken = 0;
+        };
+        if(win) {
+            battleLog.innerHTML += '<div style="color:var(--gold)">勝利！</div>';
+            setTimeout(() => {
+                cleanup();
+                advanceTile();
+            }, 600);
+        } else {
+            battleLog.innerHTML += '<div style="color:#ff6961">敗北…</div>';
+            setTimeout(() => {
+                cleanup();
+                showResult(false);
+            }, 800);
+        }
     }
 
     function updateBattleUI() {
-        document.getElementById("btl-hp").textContent = state.hp;
-        document.getElementById("btl-hp").className = "hp-val" + (state.hp < 30 ? " hp-low" : "");
-        const fill = document.getElementById("enemy-hp-fill");
-        const pct = (state.currEnemy.hp / state.currEnemy.maxHp) * 100;
-        fill.style.width = pct + "%";
-        document.getElementById("enemy-hp-text").textContent = `${state.currEnemy.hp} / ${state.currEnemy.maxHp}`;
+        if(!state.currEnemy) return;
+        const enemy = state.currEnemy;
+        document.getElementById('enemy-hp-text').textContent = `${enemy.currentHp} / ${enemy.hp}`;
+        document.getElementById('player-hp-text').textContent = `${state.hp} / ${state.maxHp}`;
+        document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.currentHp / enemy.hp) * 100)}%`;
+        document.getElementById('player-hp-bar').style.width = `${Math.max(0, (state.hp / state.maxHp) * 100)}%`;
     }
 
-    function rollSkill() {
-        const dice = document.getElementById("battle-dice");
-        const btn = document.getElementById("btn-roll-btl");
-        btn.disabled = true;
-        dice.classList.add("rolling");
-
-        setTimeout(() => {
-            const roll = Math.floor(Math.random() * 6) + 1;
-            dice.classList.remove("rolling");
-            dice.textContent = roll;
-            state.currSkill = SKILLS[roll];
-            document.getElementById("skill-name").textContent = state.currSkill.name;
-            document.getElementById("skill-desc").textContent = state.currSkill.desc;
-            
-            setTimeout(() => showQuizOverlay(), 800);
-        }, 1000);
+    function enableRoll(flag) {
+        document.getElementById('btn-roll').disabled = !flag;
     }
 
-    function showQuizOverlay() {
-        document.getElementById("quiz-overlay").classList.add("active");
-        if(state.qIdx >= state.qPool.length) {
-            state.qPool = [...QUESTIONS].sort(() => Math.random() - 0.5);
-            state.qIdx = 0;
+    function drawQuestion() {
+        if(state.questionQueue.length === 0) {
+            state.questionQueue = shuffle(state.stage.questions.slice());
         }
-        const q = state.qPool[state.qIdx];
-        document.getElementById("q-cat").textContent = q.cat;
-        document.getElementById("q-idx").textContent = `問 ${state.qIdx + 1}/15`;
-        document.getElementById("q-text").textContent = q.q;
-        document.getElementById("q-fb").style.display = "none";
-        
-        const wrap = document.getElementById("choices");
-        wrap.innerHTML = "";
-        q.choice.forEach((c, i) => {
-            const b = document.createElement("button");
-            b.className = "choice-btn";
-            b.textContent = c;
-            b.onclick = () => checkAns(i, b);
-            wrap.appendChild(b);
-        });
+        return state.questionQueue.pop();
     }
 
-    function checkAns(idx, btn) {
-        const q = state.qPool[state.qIdx];
-        const correct = (idx === q.ans);
-        
-        document.querySelectorAll(".choice-btn").forEach((b, i) => {
-            b.disabled = true;
-            if(i === q.ans) b.classList.add("correct");
+    function openQuiz(question, meta, callback) {
+        activeQuiz = { question, callback, meta, resolved: false };
+        document.getElementById('quiz-title').textContent = meta && meta.kind === 'battle' ? '戦闘クイズ' : 'マスクイズ';
+        document.getElementById('quiz-question').textContent = question.text;
+        const choiceBox = document.getElementById('quiz-choices');
+        choiceBox.innerHTML = '';
+        question.choices.forEach((choice, idx) => {
+            const btn = document.createElement('button');
+            btn.textContent = choice;
+            btn.addEventListener('click', () => submitQuiz(idx));
+            choiceBox.appendChild(btn);
         });
+        document.getElementById('quiz-feedback').textContent = '';
+        quizOverlay.classList.add('active');
+    }
 
+    function submitQuiz(selectIdx) {
+        if(!activeQuiz) return;
+        if(activeQuiz.resolved) return;
+        activeQuiz.resolved = true;
+        const { question, callback, meta } = activeQuiz;
+        const correct = question.answer === selectIdx;
+        const buttons = Array.from(document.getElementById('quiz-choices').children);
+        buttons.forEach((btn, idx) => {
+            btn.disabled = true;
+            if(idx === question.answer) btn.classList.add('correct');
+            if(idx === selectIdx && !correct) btn.classList.add('wrong');
+        });
+        document.getElementById('quiz-feedback').textContent = `${correct ? '正解！' : '不正解…'} ${question.explain}`;
+        if(meta && meta.kind === 'battle') {
+            if(correct) {
+                state.combo += 1;
+                state.maxCombo = Math.max(state.maxCombo, state.combo);
+            } else {
+                state.combo = 0;
+            }
+        }
         if(correct) {
-            state.correct++;
-            document.getElementById("q-fb-text").textContent = "🌸 正解！ 技が成功するぞ！";
-            document.getElementById("q-fb-text").style.color = "#00ff00";
+            state.correct += 1;
         } else {
-            btn.classList.add("wrong");
-            document.getElementById("q-fb-text").textContent = "💀 不正解… 技は失敗だ！";
-            document.getElementById("q-fb-text").style.color = "#ff0000";
-            if(!state.wrongQ.includes(q.id)) {
-                state.wrongQ.push(q.id);
-                save();
-            }
+            state.wrong += 1;
+            addWeakEntry(question, selectIdx);
         }
-        state.total++;
-        document.getElementById("q-explanation").textContent = q.exp;
-        document.getElementById("q-fb").style.display = "block";
-        state.isCorrect = correct;
-    }
-
-    function nextStep() {
-        document.getElementById("quiz-overlay").classList.remove("active");
-        state.qIdx++;
-        
-        const log = document.getElementById("battle-log");
-        const skill = state.currSkill;
-        if(!state.isCorrect) {
-            log.innerHTML += `<div style="color:#aaa">💨 <b>${skill.name}</b> 失敗！ 効果なし！</div>`;
-        } else {
-            if(skill.heal) {
-                const h = skill.heal;
-                state.hp = Math.min(state.maxHp, state.hp + h);
-                log.innerHTML += `<div>⚔️ <b>${skill.name}</b>！ 自軍のHPが ${h} 回復した！</div>`;
-            } else {
-                let pwr = skill.power || 0;
-                let totalDmg = pwr;
-                if(skill.double) totalDmg *= 2;
-                state.currEnemy.hp = Math.max(0, state.currEnemy.hp - totalDmg);
-                log.innerHTML += `<div>⚔️ <b>${skill.name}</b>！ 敵に ${totalDmg} ダメージ！</div>`;
-                flash("hit");
-            }
-        }
-
-        updateBattleUI();
         setTimeout(() => {
-            if(state.currEnemy.hp <= 0) {
-                winBattle();
-            } else if (!state.isCorrect) {
-                // 不正解の時だけ反撃
-                enemyTurn();
-            } else {
-                // 正解時は反撃を受けず、次のターンへ
-                log.innerHTML += `<div style="color:var(--gold)">✨ 攻撃を回避した！ 続けて攻撃のチャンスだ！</div>`;
-                document.getElementById("btn-roll-btl").disabled = false;
-                document.getElementById("battle-dice").textContent = "?";
-                document.getElementById("skill-name").textContent = "???";
-            }
-        }, 1000);
+            quizOverlay.classList.remove('active');
+            const cb = callback;
+            activeQuiz = null;
+            cb({ correct, question, selected: selectIdx });
+        }, 1200);
     }
 
-    function enemyTurn() {
-        const log = document.getElementById("battle-log");
-        const dmg = Math.floor(Math.random() * 10) + 5 + (state.pos * 1);
-        state.hp = Math.max(0, state.hp - dmg);
-        log.innerHTML += `<div style="color:var(--accent)">💥 敵の反撃！ ${dmg} ダメージを受けた！</div>`;
-        flash("miss");
-        updateBattleUI();
-        
-        setTimeout(() => {
-            if(state.hp <= 0) {
-                gameOver();
-            } else {
-                document.getElementById("btn-roll-btl").disabled = false;
-                document.getElementById("battle-dice").textContent = "?";
-                document.getElementById("skill-name").textContent = "???";
-            }
-        }, 800);
-    }
-
-    function winBattle() {
-        state.pts += state.pos * 200 + (state.currEnemy.maxHp * 2);
-        
-        const t = TILES_TEMPLATE[state.pos];
-        if(t.type === "heal") {
-            state.hp = Math.min(state.maxHp, state.hp + 30);
-            alert(`勝利！ ♨️ 温泉で ${state.currEnemy.name} を退け、HPが30回復した！`);
-        } else if(t.type === "event") {
-            alert(`勝利！ ${state.currEnemy.name} を討ち取った！ さらに...`);
-            handleEvent();
-        } else if(t.type === "quiz") {
-            state.pts += 500;
-            alert(`勝利！ 📚 ${state.currEnemy.name} を退け、学問の功績で500pt獲得！`);
-        } else {
-            alert(`勝利！ ${state.currEnemy.name} を退けた！`);
+    function renderWeakList() {
+        const listEl = document.getElementById('weak-list');
+        if(weakList.length === 0) {
+            listEl.innerHTML = '<p>まだ苦手問題はありません。</p>';
+            return;
         }
-
-        showScreen("screen-map");
-        if(state.pos === TILES_TEMPLATE.length - 1) {
-            gameClear();
-        } else {
-            renderMap();
-        }
+        listEl.innerHTML = '';
+        weakList.slice().reverse().forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'weak-item';
+            div.innerHTML = `
+                <strong>Q. ${item.question}</strong>
+                <small>あなたの解答: ${item.yourAnswer}</small>
+                <small>正解: ${item.correctAnswer}</small>
+                <p style="margin-top:6px;">${item.explain}</p>
+            `;
+            listEl.appendChild(div);
+        });
     }
 
-    function gameClear() {
-        const stage = STAGES[state.currentEra];
-        showScreen("screen-result");
-        document.getElementById("res-icon").textContent = "🏆";
-        document.getElementById("res-title").textContent = stage.name + "制覇！";
-        document.getElementById("res-correct").textContent = `${state.correct} / ${state.total}`;
-        document.getElementById("res-pts").textContent = state.pts + " pt";
-        document.getElementById("res-summary").textContent = `${stage.name}を見事駆け抜けた！${stage.boss.name}を倒し、歴史に名を刻んだ。君こそが真の歴史マスターだ！`;
-    }
-
-    function gameOver() {
-        showScreen("screen-result");
-        document.getElementById("res-icon").textContent = "💀";
-        document.getElementById("res-title").textContent = "野心潰えたり…";
-        document.getElementById("res-correct").textContent = `${state.correct} / ${state.total}`;
-        document.getElementById("res-pts").textContent = "0 pt";
-        document.getElementById("res-summary").textContent = "力尽き、時代の塵となってしまった。もう一度最初から修行し直しだ。";
-    }
-
-    function startQuiz() {
-        showQuizOverlay(); // Use logic similar to battle but it transitions back to map
-        // Custom override for quiz tile
-        const oldStep = nextStep;
-        nextStep = function() {
-            document.getElementById("quiz-overlay").classList.remove("active");
-            state.qIdx++;
-            if(state.isCorrect) {
-                alert("🌸 正解！ 功績を300手に入れた。");
-                state.pts += 300;
-            } else {
-                alert("💀 不正解… 何も得られなかった。");
-            }
-            nextStep = oldStep;
-            renderMap();
+    function addWeakEntry(question, selectedIdx) {
+        const entry = {
+            question: question.text,
+            yourAnswer: question.choices[selectedIdx] || '未回答',
+            correctAnswer: question.choices[question.answer],
+            explain: question.explain,
+            at: Date.now()
         };
+        weakList.push(entry);
+        saveWeakList();
     }
 
-    // --- INIT ---
-    window.onload = () => {
-        load();
-        // Initial state
-    };
+    function showStageMessage(text, cb) {
+        messageCallback = cb;
+        document.getElementById('message-text').textContent = text;
+        messageOverlay.classList.add('active');
+    }
 
+    function showResult(clear) {
+        showScreen('result');
+        document.getElementById('result-title').textContent = clear ? 'ステージクリア！' : 'ゲームオーバー';
+        document.getElementById('result-correct').textContent = state.correct;
+        document.getElementById('result-wrong').textContent = state.wrong;
+        document.getElementById('result-combo').textContent = state.maxCombo;
+        document.getElementById('result-message').textContent = clear ? '戦国の知識が身についた！次の時代も攻略しよう。' : '力尽きてしまった…クイズで鍛えて再挑戦しよう。';
+        const list = document.getElementById('result-highlights');
+        list.innerHTML = '';
+        state.stage.highlights.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `・${item}`;
+            list.appendChild(li);
+        });
+        if(clear) {
+            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+            updateContinueButton();
+        }
+    }
+
+    function updateTimeline(phase) {
+        Array.from(timelineBar.children).forEach(el => {
+            el.classList.toggle('active', el.dataset.era === phase);
+        });
+    }
+
+    function actionLabel(type) {
+        switch(type) {
+            case 'quiz': return '📝 クイズに挑む';
+            case 'battle': return '⚔️ 戦闘開始';
+            case 'heal': return '♨️ 休息する';
+            case 'boost': return '⛏️ 強化する';
+            case 'event': return '📜 イベント';
+            case 'boss': return '👑 ボス戦';
+            default: return '進む';
+        }
+    }
+
+    function actionDescription(type) {
+        switch(type) {
+            case 'quiz': return '歴史クイズで士気を高めよう。';
+            case 'battle': return 'クイズ→技で敵を倒せ。';
+            case 'heal': return '兵を休ませてHP回復。';
+            case 'boost': return '兵装を整えて攻撃力アップ。';
+            case 'event': return '特別イベント。';
+            case 'boss': return '織田信長との最終決戦！';
+            default: return '';
+        }
+    }
+
+    function saveProgress(clear = false) {
+        if(clear) {
+            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+            return;
+        }
+        const data = {
+            stageId: state.stageId,
+            pos: state.pos,
+            hp: state.hp,
+            maxHp: state.maxHp,
+            powerBonus: state.powerBonus,
+            correct: state.correct,
+            wrong: state.wrong,
+            combo: state.combo,
+            maxCombo: state.maxCombo
+        };
+        localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(data));
+        updateContinueButton();
+    }
+
+    function loadProgress() {
+        const raw = localStorage.getItem(STORAGE_KEYS.PROGRESS);
+        if(!raw) return null;
+        try { return JSON.parse(raw); } catch(e) { return null; }
+    }
+
+    function updateContinueButton() {
+        const btn = document.getElementById('btn-continue');
+        btn.disabled = !localStorage.getItem(STORAGE_KEYS.PROGRESS);
+        btn.style.opacity = btn.disabled ? 0.5 : 1;
+    }
+
+    function saveWeakList() {
+        localStorage.setItem(STORAGE_KEYS.WEAK, JSON.stringify(weakList));
+    }
+
+    function loadWeakList() {
+        const raw = localStorage.getItem(STORAGE_KEYS.WEAK);
+        if(!raw) return [];
+        try { return JSON.parse(raw); } catch(e) { return []; }
+    }
+
+    function recordClear(stageId) {
+        let clears = {};
+        try {
+            const raw = localStorage.getItem(STORAGE_KEYS.CLEARS);
+            clears = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            clears = {};
+        }
+        clears[stageId] = true;
+        try {
+            localStorage.setItem(STORAGE_KEYS.CLEARS, JSON.stringify(clears));
+        } catch (e) {
+            console.warn('clear history could not be saved', e);
+        }
+    }
+
+    function showScreen(name) {
+        Object.values(screens).forEach(el => el.classList.remove('active'));
+        if(screens[name]) screens[name].classList.add('active');
+    }
+
+    function shuffle(arr) {
+        for(let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function randomPick(list) {
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function randomRange(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+})();
 </script>
 </body>
 </html>
