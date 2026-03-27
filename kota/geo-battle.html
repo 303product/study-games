@@ -8080,7 +8080,7 @@ function renderMap(){
   const allCleared = state.cleared.length >= COUNTRIES.length;
   if(allCleared && !state.finalBossDefeated){
     const fbc=document.createElement("div"); fbc.className="final-boss-card";
-    fbc.innerHTML=`<div class="final-boss-card-emoji">🐲</div><div class="final-boss-card-title">👹 最終ボス出現！— 世界の魔王</div><div class="final-boss-card-sub">全ての国を征服した者よ…最後の試練だ！ 50問に正解して世界を救え！</div>`;
+    fbc.innerHTML=`<div class="final-boss-card-emoji">🐲</div><div class="final-boss-card-title">👹 最終ボス出現！— 世界の魔王</div><div class="final-boss-card-sub">全ての国を征服した者よ…最後の試練だ！ 30問に正解して世界を救え！</div>`;
     fbc.addEventListener("click",()=>startFinalBoss());
     fbc.addEventListener("touchend",(e)=>{e.preventDefault();startFinalBoss();});
     grid.appendChild(fbc);
@@ -8124,7 +8124,7 @@ function buildQuestions(country, isBoss, isFinalBoss){
     COUNTRIES.forEach(cc=>{
       cc.questions.forEach(q=>pool.push({...q,countryName:cc.name}));
     });
-    return shuffle(pool).slice(0,50).map(q=>({...q,text:(q.countryName?`[${q.countryName}] `:"")+q.text}));
+    return shuffle(pool).slice(0,30).map(q=>({...q,text:(q.countryName?`[${q.countryName}] `:"")+q.text}));
   }
   if(isBoss){
     const pool=[];
