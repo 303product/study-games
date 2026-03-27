@@ -2,55 +2,56 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>日本史ダイスバトル</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本史ダイスバトル - 全時代編</title>
     <style>
         :root {
-            --bg: #0b0b0b;
-            --panel: #1a1410;
-            --panel-alt: #221b16;
-            --gold: #d4af37;
-            --red: #b30000;
-            --accent: #ff7b1a;
-            --text: #f5eddc;
-            --muted: #a89778;
-            --border: #3c2c1c;
-            --shadow: rgba(0,0,0,0.45);
+            --primary: #c93a40; /* 緋色 */
+            --secondary: #1e50a2; /* 瑠璃色 */
+            --accent: #fcc800; /* 山吹色 */
+            --bg-color: #f8f4e6; /* 生成り色 */
+            --text-color: #333333;
+            --white: #ffffff;
+            --dark: #222222;
         }
 
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+            user-select: none;
         }
 
         body {
-            font-family: "Hiragino Mincho ProN", "Yu Mincho", "游明朝", serif;
-            background: radial-gradient(circle at top, #1b120b, #050505 60%);
-            color: var(--text);
-            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             justify-content: center;
-            align-items: stretch;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        #game-shell {
+        #game-container {
             width: 100%;
-            max-width: 560px;
-            min-height: 100vh;
-            background: linear-gradient(160deg, #0d0d0d, #1b1108 70%);
-            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            max-width: 480px;
+            height: 100%;
+            background: var(--white);
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
             position: relative;
             overflow: hidden;
+            border-left: 2px solid var(--primary);
+            border-right: 2px solid var(--primary);
         }
 
         .screen {
             display: none;
-            flex-direction: column;
+            width: 100%;
             height: 100%;
-            padding: 22px 20px 30px;
-            animation: fadeIn 0.3s ease;
+            flex-direction: column;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
         .screen.active {
@@ -62,1251 +63,1050 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        h1 {
-            font-size: 2.4rem;
+        h1, h2, h3 {
             text-align: center;
-            margin-bottom: 16px;
-            color: var(--gold);
-            text-shadow: 0 0 8px rgba(0,0,0,0.7);
+            margin-bottom: 20px;
+            color: var(--primary);
         }
 
-        .subtitle {
-            text-align: center;
-            color: var(--accent);
-            margin-bottom: 30px;
-            font-size: 1rem;
+        h1 {
+            font-size: 28px;
+            margin-top: 40px;
+            text-shadow: 2px 2px 0px var(--accent);
         }
 
         .btn {
-            width: 100%;
-            padding: 14px;
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, #4c1b10, #7a2411);
-            border: 2px solid var(--border);
-            color: var(--text);
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 10px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.15s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #93282c;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
 
         .btn:active {
-            transform: scale(0.97);
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #93282c;
         }
 
-        .btn-gold {
-            background: linear-gradient(135deg, #d4af37, #8a6a1a);
-            color: #201303;
-            border-color: #9c7b21;
+        .btn-secondary { background: var(--secondary); box-shadow: 0 4px 0 #13346b; }
+        .btn-secondary:active { transform: translateY(4px); box-shadow: 0 0 0 #13346b; }
+        .btn-purple { background: #8e44ad; box-shadow: 0 4px 0 #5b2c6f; }
+        .btn-purple:active { transform: translateY(4px); box-shadow: 0 0 0 #5b2c6f; }
+
+        /* Stage Select */
+        #stage-list { overflow-y: auto; flex-grow: 1; margin-bottom: 10px; }
+        .stage-card {
+            background: var(--white); border: 2px solid var(--primary);
+            border-radius: 8px; padding: 15px; margin-bottom: 10px;
+            cursor: pointer; text-align: left; transition: all 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .stage-card:active { background: #f0f0f0; transform: translateY(2px); }
+        .stage-card h3 { margin: 0; color: var(--dark); font-size: 16px; text-align: left; }
+        .stage-card .boss-emoji { font-size: 30px; }
+        .stage-card.locked { opacity: 0.5; pointer-events: none; filter: grayscale(1); border-color: #999; }
+        .stage-card.cleared { border-color: #27ae60; background: #e6f9ec; }
+
+        /* StatusBar */
+        .status-bar {
+            display: flex; justify-content: space-between;
+            background: var(--dark); color: var(--white);
+            padding: 10px 15px; border-radius: 8px;
+            margin-bottom: 20px; font-weight: bold;
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 2px dashed var(--muted);
-            color: var(--muted);
-        }
-
-        .btn-dark {
-            background: linear-gradient(135deg, #0f0f0f, #1f1f1f);
-        }
-
-        .title-logo {
-            font-size: 2.1rem;
-            text-align: center;
-            letter-spacing: 0.1em;
-            margin-top: 40px;
-            margin-bottom: 10px;
-        }
-
-        .note {
-            font-size: 0.85rem;
-            color: var(--muted);
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .era-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 14px;
-            margin-top: 10px;
-            flex: 1;
-        }
-
-        .era-card {
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 130px;
-            position: relative;
-            box-shadow: 0 6px 15px var(--shadow);
-        }
-
-        .era-card.ready {
-            border-color: var(--gold);
-        }
-
-        .era-name {
-            font-size: 1.3rem;
-            color: var(--gold);
-            margin-bottom: 8px;
-        }
-
-        .era-note {
-            font-size: 0.85rem;
-            color: var(--muted);
-        }
-
-        .era-card button {
-            margin-top: 12px;
-            font-size: 1rem;
-            padding: 10px;
-        }
-
+        /* Timeline bar */
         .timeline {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            overflow: hidden;
+            display: flex; justify-content: space-between;
+            font-size: 10px; position: relative; color: #888;
+            margin-bottom: 20px; font-weight: bold;
+        }
+        .timeline::before {
+            content: ''; position: absolute; top: 50%; left: 0; right: 0;
+            height: 2px; background: #ccc; z-index: 1;
+        }
+        .timeline span { background: var(--white); padding: 0 2px; z-index: 2; }
+        .timeline .current-era {
+            color: var(--primary); font-size: 12px; text-shadow: 0 0 5px var(--accent);
         }
 
-        .timeline span {
-            flex: 1;
-            text-align: center;
-            padding: 8px 0;
-            font-size: 0.85rem;
-            color: var(--muted);
-            background: rgba(0,0,0,0.3);
+        /* Map */
+        .map-board {
+            flex-grow: 1; display: flex; flex-direction: column-reverse;
+            gap: 10px; overflow-y: auto; padding-right: 10px; scroll-behavior: smooth;
         }
 
-        .timeline span.active {
-            background: linear-gradient(135deg, rgba(212,175,55,0.3), rgba(212,175,55,0.05));
-            color: var(--gold);
-            font-weight: bold;
+        .map-node {
+            background: #eee; border: 2px solid #ccc; border-radius: 12px;
+            padding: 15px; display: flex; align-items: center; justify-content: space-between;
+            font-weight: bold; transition: all 0.3s; position: relative;
         }
 
-        .map-panel {
-            flex: 1;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.35);
+        .map-node.type-start { border-color: #888; background: #ddd; }
+        .map-node.type-quiz { border-color: var(--secondary); background: #e6f0ff; }
+        .map-node.type-battle { border-color: var(--primary); background: #fce6e6; }
+        .map-node.type-rest { border-color: #27ae60; background: #e6f9ec; }
+        .map-node.type-event { border-color: var(--accent); background: #fffbe6; }
+        .map-node.type-boss { border-color: #8e44ad; background: #f4e6f9; color: #8e44ad; }
+
+        .player-icon {
+            width: 30px; height: 30px; background: var(--primary); color: white;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 14px; position: absolute; left: -15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid white;
+            transition: all 0.5s ease-in-out;
         }
 
-        .map-tiles {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 8px;
+        /* Dice Modal */
+        #dice-modal, #message-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        #dice-modal.active, #message-modal.active { display: flex; }
+        
+        .modal-content {
+            background: white; padding: 30px; border-radius: 12px;
+            text-align: center; border: 4px solid var(--primary); width: 80%;
         }
 
-        .tile {
-            flex: 0 0 80px;
-            height: 100px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            background: var(--panel-alt);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.8rem;
-            text-align: center;
-            position: relative;
+        .dice-display { font-size: 64px; font-weight: bold; margin: 20px 0; color: var(--dark); }
+        .dice-rolling { animation: shake 0.5s infinite; }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-15deg); }
+            100% { transform: rotate(0deg); }
         }
 
-        .tile span {
-            font-size: 1.5rem;
-            margin-bottom: 6px;
+        /* Quiz */
+        .quiz-question {
+            font-size: 16px; margin-bottom: 15px; line-height: 1.5;
+            background: #f0f0f0; padding: 15px; border-radius: 8px; border-left: 5px solid var(--secondary);
         }
-
-        .tile.cleared {
-            opacity: 0.5;
+        .choices { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y:auto; }
+        .choice-btn {
+            background: white; border: 2px solid var(--secondary); color: var(--dark);
+            padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer; text-align: left; transition: all 0.2s;
         }
-
-        .tile.current {
-            border-color: var(--gold);
-            box-shadow: 0 0 10px rgba(212,175,55,0.5);
+        .choice-btn:active { background: #e6f0ff; }
+        
+        /* Battle */
+        .battle-area { display: flex; flex-direction: column; align-items: center; flex-grow: 1; margin-bottom: 20px; }
+        .enemy-container {
+            width: 150px; height: 150px; background: var(--dark); color: white;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-radius: 10px; font-size: 20px; font-weight: bold;
+            margin-bottom: 20px; border: 5px solid #8e44ad;
+            box-shadow: 0 0 15px rgba(142,68,173,0.5); transition: all 0.3s;
         }
-
-        .tile.complete {
-            border-style: dashed;
+        .enemy-emoji { font-size: 60px; margin-bottom: 5px; }
+        
+        @keyframes shakeDamage {
+            0%, 100% { transform: translateX(0); filter: drop-shadow(0 0 0 red); background: rgba(255,0,0,0.2); }
+            25% { transform: translateX(-10px); filter: drop-shadow(0 0 20px red); background: rgba(255,0,0,0.5); }
+            50% { transform: translateX(10px); filter: drop-shadow(0 0 20px red); background: rgba(255,0,0,0.5); }
+            75% { transform: translateX(-10px); filter: drop-shadow(0 0 20px red); background: rgba(255,0,0,0.5); }
         }
-
-        #player-token {
-            position: absolute;
-            top: -18px;
-            font-size: 1.4rem;
+        @keyframes healFlash {
+            0%, 100% { filter: drop-shadow(0 0 0 green); transform: scale(1); background: transparent; }
+            50% { filter: drop-shadow(0 0 20px green); transform: scale(1.02); background: rgba(0,255,0,0.2); }
         }
+        .anim-damage { animation: shakeDamage 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .anim-heal { animation: healFlash 0.5s ease-in-out both; }
 
-        .info-box {
-            background: rgba(0,0,0,0.35);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 0.95rem;
+        .hp-bar-bg { width: 100%; height: 20px; background: #ccc; border-radius: 10px; margin-bottom: 10px; overflow: hidden; position: relative; }
+        .hp-bar-fill { height: 100%; background: #27ae60; width: 100%; transition: width 0.3s; }
+        .hp-bar-fill.danger { background: var(--primary); }
+        .hp-bar-text {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 12px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
         }
-
-        .info-box strong {
-            color: var(--gold);
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            margin-top: 6px;
-        }
-
-        .battle-wrap {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .battle-stats, .battle-log {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-        }
-
         .battle-log {
-            flex: 1;
-            overflow-y: auto;
-            font-size: 0.9rem;
+            width: 100%; height: 100px; background: #f0f0f0; border-radius: 8px;
+            padding: 10px; font-size: 14px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #ccc;
         }
 
-        .hp-bar {
-            height: 12px;
-            background: #2b1c15;
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 4px;
-        }
-
-        .hp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff3131, #ff9b62);
-            width: 100%;
-        }
-
-        .dice-area {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .dice {
-            width: 70px;
-            height: 70px;
-            border-radius: 16px;
-            background: radial-gradient(circle, #fff -20%, #f3d493 60%, #b99034 110%);
-            color: #2b1d06;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            font-weight: bold;
-            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
-        }
-
-        .skill-name {
-            flex: 1;
-            font-size: 1rem;
-            color: var(--accent);
-        }
-
-        .overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 20;
-        }
-
-        .overlay.active {
-            display: flex;
-        }
-
-        .overlay-box {
-            width: 100%;
-            max-width: 520px;
-            background: #21150f;
-            border: 2px solid var(--gold);
-            border-radius: 16px;
-            padding: 18px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
-        }
-
-        .quiz-choices button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            font-size: 1rem;
-            border-radius: 10px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.2);
-            color: var(--text);
-        }
-
-        .quiz-choices button.correct {
-            border-color: #38c77a;
-            color: #38c77a;
-        }
-
-        .quiz-choices button.wrong {
-            border-color: #ff5a5a;
-            color: #ff5a5a;
-        }
-
-        .result-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 14px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
-        .weak-list {
-            max-height: 400px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .weak-item {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            background: rgba(0,0,0,0.25);
-        }
-
-        .weak-item small {
-            color: var(--muted);
-            display: block;
-            margin-top: 4px;
-        }
-
-        .map-status {
-            min-height: 54px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 0.95rem;
-        }
-
-        @media (max-width: 520px) {
-            .screen {
-                padding: 18px 14px 24px;
-            }
-
-            .map-tiles { gap: 6px; }
-            .tile { flex: 0 0 74px; font-size: 0.75rem; }
-            .dice { width: 60px; height: 60px; font-size: 1.9rem; }
-        }
+        /* Result */
+        .result-stats { background: #e6f0ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--secondary); }
+        .result-stats p { font-size: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; font-weight:bold; }
     </style>
 </head>
 <body>
-<!-- kota/index.html にリンクを置く場合の案: <li><a href="history-dice-battle.html">日本史ダイスバトル</a></li> -->
-<div id="game-shell">
-    <div id="screen-title" class="screen active">
-        <div class="title-logo">日本史ダイスバトル</div>
-        <p class="subtitle">サイコロ＆クイズで戦国を駆け抜けよう</p>
-        <button id="btn-start" class="btn">🗾 はじめる</button>
-        <button id="btn-continue" class="btn btn-gold">▶ つづきから</button>
-        <button id="btn-weak" class="btn btn-dark">📚 苦手帳</button>
-        <button id="btn-reset" class="btn btn-outline">🗑 データをリセット</button>
-        <p class="note">localStorage に進行度・苦手帳を保存します。</p>
-    </div>
 
-    <div id="screen-era" class="screen">
-        <h1>時代を選ぶ</h1>
-        <p class="subtitle">まずは戦国から攻略しよう！</p>
-        <div class="era-list" id="era-list"></div>
-        <button class="btn" id="btn-era-back">← タイトルに戻る</button>
-    </div>
-
-    <div id="screen-map" class="screen">
-        <h1 id="map-stage-title">戦国マップ</h1>
-        <div class="timeline" id="timeline-bar">
-            <span data-era="muromachi">室町</span>
-            <span data-era="sengoku">戦国</span>
-            <span data-era="azuchi">安土桃山</span>
-            <span data-era="edo">江戸</span>
+<div id="game-container">
+    
+    <!-- Title Screen -->
+    <div id="title-screen" class="screen active">
+        <h1>日本史ダイスバトル<br><small>〜全時代編〜</small></h1>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="text-align: center; color: #666; font-weight:bold;">サイコロを振って歴史を駆け抜けろ！<br>知識を武器に立ちはだかる偉人を倒せ。</p>
         </div>
-        <div class="info-box" id="map-context"></div>
-        <div class="map-panel">
-            <div class="map-tiles" id="map-tiles"></div>
-            <div class="info-box" id="map-tile-info">マスを選択</div>
-            <div class="status-row">
-                <div>HP: <strong id="map-hp">0 / 0</strong></div>
-                <div>攻撃補正: <strong id="map-bonus">+0</strong></div>
+        <button class="btn" onclick="openStageSelect()">はじめる</button>
+        <button class="btn btn-secondary" onclick="continueGame()">つづきから</button>
+        <button class="btn btn-purple" onclick="showMessage('お知らせ', '苦手帳は今後のアップデートで実装予定です。')">苦手帳</button>
+        <button class="btn" style="background:#888; box-shadow:0 4px 0 #555;" onclick="resetSave()">データを消す</button>
+    </div>
+
+    <!-- Stage Select Screen -->
+    <div id="stage-select-screen" class="screen">
+        <h2>時代をえらぶ</h2>
+        <div id="stage-list">
+            <!-- Stage cards generated here -->
+        </div>
+        <button class="btn btn-secondary" onclick="changeScreen('title-screen')">タイトルへ戻る</button>
+    </div>
+
+    <!-- Map Screen -->
+    <div id="map-screen" class="screen">
+        <div class="status-bar">
+            <span>HP: <span id="map-hp">100/100</span></span>
+            <span>残りマス: <span id="map-remain">10</span></span>
+        </div>
+        <div class="timeline" id="map-timeline">
+            <!-- Timeline inserted here -->
+        </div>
+        <div class="map-board" id="map-board">
+            <!-- Map nodes will be generated here -->
+        </div>
+        <button class="btn" onclick="openDiceForMap()">サイコロを振る</button>
+        <button class="btn btn-secondary" style="margin-top:5px; padding:10px;" onclick="saveAndQuit()">セーブして中断</button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="screen">
+        <div class="status-bar">
+            <span id="quiz-subject">クイズマス</span>
+        </div>
+        <div class="quiz-question" id="quiz-question"></div>
+        <div class="choices" id="quiz-choices"></div>
+    </div>
+
+    <!-- Battle Screen -->
+    <div id="battle-screen" class="screen">
+        <div class="status-bar">
+            <span>⚔️ バトル！</span>
+            <span>自分のHP: <span id="battle-player-hp">100</span></span>
+        </div>
+        <div class="battle-area">
+            <div class="enemy-container" id="enemy-sprite">
+                <div class="enemy-emoji" id="enemy-emoji-disp">🥷</div>
+                <div id="enemy-name-disp">忍者</div>
             </div>
-            <div class="status-row">
-                <div>正解: <strong id="map-correct">0</strong></div>
-                <div>ミス: <strong id="map-wrong">0</strong></div>
+            <div style="width: 100%; text-align: center; margin-bottom: 5px; font-weight: bold;">敵HP</div>
+            <div class="hp-bar-bg">
+                <div class="hp-bar-fill" id="enemy-hp-fill"></div>
+                <div class="hp-bar-text" id="enemy-hp-text">30/30</div>
             </div>
-            <button class="btn btn-gold" id="map-action">決行</button>
-            <div class="info-box map-status" id="map-status">マスを選んで進行しよう。</div>
+        </div>
+        <div class="battle-log" id="battle-log">戦闘開始！</div>
+        <button class="btn" id="btn-battle-dice" onclick="openDiceForBattle()">サイコロを振る</button>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+        <h1 id="result-title">クリア！</h1>
+        <div class="result-stats">
+            <p><span>挑戦した時代:</span> <span id="result-era">戦国</span></p>
+            <p><span>正解数:</span> <span id="result-correct" style="color:var(--secondary);">0</span></p>
+            <p><span>不正解数:</span> <span id="result-wrong" style="color:var(--primary);">0</span></p>
+            <p><span>到達マス:</span> <span id="result-pos">0</span> / 20</p>
+        </div>
+        <div style="flex-grow:1; overflow-y:auto; font-size:14px; margin-bottom:20px;">
+            <h3>登場した重要ワード</h3>
+            <ul id="result-learned" style="padding-left:20px; line-height:1.6;"></ul>
+        </div>
+        <button class="btn" onclick="openStageSelect()">ステージ選択へ</button>
+    </div>
+
+    <!-- Dice Modal -->
+    <div id="dice-modal">
+        <div class="modal-content">
+            <h2 id="dice-title">サイコロ</h2>
+            <div class="dice-display" id="dice-number">🎲</div>
+            <div id="dice-skill-name" style="color:var(--primary); font-weight:bold; font-size:20px; margin-bottom:15px; display:none;"></div>
+            <button class="btn" id="btn-roll-dice" onclick="rollDiceAction()">ストップ！</button>
         </div>
     </div>
 
-    <div id="screen-battle" class="screen">
-        <h1>戦闘</h1>
-        <div class="info-box" id="battle-subtitle"></div>
-        <div class="battle-wrap">
-            <div class="battle-stats">
-                <div><strong id="enemy-name">敵</strong></div>
-                <div class="status-row">
-                    <div>敵HP: <span id="enemy-hp-text">0 / 0</span></div>
-                    <div>味方HP: <span id="player-hp-text">0 / 0</span></div>
-                </div>
-                <div class="hp-bar"><div id="enemy-hp-bar" class="hp-fill"></div></div>
-                <div class="hp-bar"><div id="player-hp-bar" class="hp-fill"></div></div>
+    <!-- Message Modal -->
+    <div id="message-modal">
+        <div class="modal-content">
+            <h2 id="msg-title">イベント</h2>
+            <p id="msg-text" style="margin:20px 0; font-size:16px; line-height:1.5;">メッセージ</p>
+            <div id="msg-btn-container" style="display:flex; justify-content:center; gap:10px;">
+                <button class="btn" id="msg-btn-main" onclick="closeMessageModal()">次へ</button>
             </div>
-            <div class="battle-stats">
-                <div class="dice-area">
-                    <div class="dice" id="battle-dice">?</div>
-                    <div class="skill-name" id="skill-name">サイコロを振ろう</div>
-                    <button class="btn btn-gold" id="btn-roll">🎲 サイコロ</button>
-                </div>
-            </div>
-            <div class="battle-log" id="battle-log"></div>
-            <button class="btn" id="btn-battle-leave">← マップへ戻る(敗北時)</button>
         </div>
     </div>
 
-    <div id="screen-result" class="screen">
-        <h1 id="result-title">結果</h1>
-        <div class="result-card">
-            <div class="stat-row"><span>正解数</span><strong id="result-correct">0</strong></div>
-            <div class="stat-row"><span>間違えた数</span><strong id="result-wrong">0</strong></div>
-            <div class="stat-row"><span>最大コンボ</span><strong id="result-combo">0</strong></div>
-        </div>
-        <div class="result-card">
-            <p id="result-message"></p>
-            <ul id="result-highlights"></ul>
-        </div>
-        <button class="btn btn-gold" id="btn-retry">↺ もう一度</button>
-        <button class="btn" id="btn-result-title">← タイトルへ戻る</button>
-    </div>
-
-    <div class="overlay" id="quiz-overlay">
-        <div class="overlay-box">
-            <h2 id="quiz-title">クイズ</h2>
-            <p id="quiz-question" style="margin-top:8px;"></p>
-            <div class="quiz-choices" id="quiz-choices"></div>
-            <p id="quiz-feedback" style="margin-top:12px; min-height:32px; font-size:0.95rem;"></p>
-        </div>
-    </div>
-
-    <div class="overlay" id="weak-overlay">
-        <div class="overlay-box">
-            <h2>苦手帳</h2>
-            <div class="weak-list" id="weak-list"></div>
-            <button class="btn" id="btn-weak-close" style="margin-top:14px;">閉じる</button>
-        </div>
-    </div>
-
-    <div class="overlay" id="message-overlay">
-        <div class="overlay-box">
-            <h2>歴史メモ</h2>
-            <p id="message-text" style="margin-top:10px; min-height:80px;"></p>
-            <button class="btn btn-gold" id="btn-message-close" style="margin-top:14px;">進む</button>
-        </div>
-    </div>
 </div>
 
 <script>
-(() => {
-    const STORAGE_KEYS = {
-        PROGRESS: 'ndb-progress',
-        WEAK: 'ndb-weak',
-        CLEARS: 'ndb-clears'
-    };
-
-    const ERAS = [
-        { id: 'jomon', name: '縄文・弥生', note: '準備中' },
-        { id: 'nara', name: '奈良', note: '準備中' },
-        { id: 'heian', name: '平安', note: '準備中' },
-        { id: 'kamakura', name: '鎌倉', note: '準備中' },
-        { id: 'sengoku', name: '戦国', note: '戦乱を制覇せよ', stageId: 'sengoku' },
-        { id: 'edo', name: '江戸', note: '準備中' }
+    // --- Master Data (Split for size) ---
+    const stagesData1 = [
+        { id:0, name:"第1巻：日本の誕生（旧石器・縄文・弥生時代）", boss:{name:'卑弥呼',hp:80,emoji:'👑'}, timeline:["旧石器","縄文","弥生"], enemies:[{name:'狩人',hp:20,emoji:'🏹'}], quizData:[
+            { category:"生活", question:"縄文時代の人々が生活の拠点とした円形の住居は？", choices:["竪穴住居","高床倉庫","寝殿造","書院造"], answerIndex:0, explanation:"地面を掘り下げて屋根をかけた住居です。" },
+            { category:"政治", question:"邪馬台国の女王で、魏に使いを送り「親魏倭王」となったのは？", choices:["卑弥呼","推古天皇","持統天皇","北条政子"], answerIndex:0, explanation:"3世紀ごろ、30余りの国を従えた女王です。" },
+            { category:"生活", question:"弥生時代に始まった、収穫物をネズミや湿気から守るための建物は？", choices:["高床倉庫","竪穴住居","土蔵","天守閣"], answerIndex:0, explanation:"床を高くして風通しをよくした倉庫です。" },
+            { category:"文化", question:"縄文時代に作られた、女性の姿などをかたどった土製品は？", choices:["土偶","埴輪","銅鐸","銅矛"], answerIndex:0, explanation:"魔除けや豊作を祈るために作られたと考えられています。" },
+            { category:"発見", question:"群馬県にある、日本の旧石器時代の存在を証明した遺跡は？", choices:["岩宿遺跡","三内丸山遺跡","吉野ヶ里遺跡","登呂遺跡"], answerIndex:0, explanation:"相沢忠洋が関東ローム層から打製石器を発見しました。" },
+            { category:"道具", question:"旧石器時代に使われていた、石を打ち欠いて作った鋭い石器は？", choices:["打製石器","磨製石器","青銅器","鉄器"], answerIndex:0, explanation:"獲物を狩ったり、肉を切るのに使われました。" },
+            { category:"発見", question:"佐賀県にある、弥生時代の巨大な環濠集落の跡が残る遺跡は？", choices:["吉野ヶ里遺跡","三内丸山遺跡","大森貝塚","登呂遺跡"], answerIndex:0, explanation:"物見やぐらや大きな倉庫があり、クニの形成を物語っています。" },
+            { category:"道具", question:"弥生時代に祭りの道具として使われたとされる、釣鐘型の青銅器は？", choices:["銅鐸","銅鏡","銅剣","埴輪"], answerIndex:0, explanation:"主に関畿地方で多く発掘されています。" }
+        ]},
+        { id:1, name:"第2巻：飛鳥の朝廷（古墳・飛鳥時代）", boss:{name:'聖徳太子',hp:80,emoji:'👑'}, timeline:["古墳","飛鳥"], enemies:[{name:'渡来人',hp:25,emoji:'🛳️'}], quizData:[
+            { category:"文化", question:"古墳の周りに並べられた土製の焼き物を何というか？", choices:["埴輪","土偶","銅鐸","土師器"], answerIndex:0, explanation:"権力の象徴として古墳に並べられました。" },
+            { category:"政治", question:"役人の心構えを示した「十七条の憲法」を定めたのは？", choices:["聖徳太子","中大兄皇子","藤原鎌足","桓武天皇"], answerIndex:0, explanation:"「和を以て貴しとなす」から始まります。" },
+            { category:"政治", question:"645年、中大兄皇子らが蘇我氏を倒して始めた改革は？", choices:["大化の改新","建武の新政","享保の改革","明治維新"], answerIndex:0, explanation:"天皇中心の国づくりを目指す大きな改革です。" },
+            { category:"文化", question:"大陸から日本へ移り住み、漢字や仏教などの新しい技術や文化を伝えた人々は？", choices:["渡来人","防人","遣唐使","遣隋使"], answerIndex:0, explanation:"須恵器の製法や機織りなども伝えました。" },
+            { category:"建築", question:"聖徳太子が建てた、現存する世界最古の木造建築である寺院は？", choices:["法隆寺","東大寺","平等院鳳凰堂","唐招提寺"], answerIndex:0, explanation:"飛鳥文化を代表する美しいお寺です。" },
+            { category:"外交", question:"聖徳太子が隋（中国）の進んだ文化を取り入れるため、派遣した使いの代表は？", choices:["小野妹子","鑑真","阿倍仲麻呂","菅原道真"], answerIndex:0, explanation:"「日出づる処の天子…」という国書を持参しました。" },
+            { category:"戦争", question:"663年、日本が百済を助けるために朝鮮半島に出兵し、唐・新羅の連合軍に大敗した戦いは？", choices:["白村江の戦い","壬申の乱","平将門の乱","文永の役"], answerIndex:0, explanation:"敗戦後、九州に防人（さきもり）を置くなど国防を固めました。" },
+            { category:"内乱", question:"天智天皇の死後、後継者をめぐって起きた争いで、大海人皇子が勝利し天武天皇となった内乱は？", choices:["壬申の乱","保元の乱","平治の乱","承久の乱"], answerIndex:0, explanation:"古代最大の内乱と言われています。" }
+        ]},
+        { id:2, name:"第3巻：奈良の都（奈良時代）", boss:{name:'聖武天皇',hp:85,emoji:'👑'}, timeline:["奈良"], enemies:[{name:'僧兵',hp:30,emoji:'📿'}], quizData:[
+            { category:"政治", question:"710年に唐の長安にならって造られた都は？", choices:["平城京","平安京","藤原京","長岡京"], answerIndex:0, explanation:"「なんと（710）見事な平城京」で覚えましょう。" },
+            { category:"文化", question:"仏教の力で国を守るため、全国に国分寺を建てさせた天皇は？", choices:["聖武天皇","桓武天皇","白河天皇","後醍醐天皇"], answerIndex:0, explanation:"東大寺に大仏も造らせました。" },
+            { category:"文化", question:"天皇から農民まで幅広い人々の歌が収められた最古の和歌集は？", choices:["万葉集","古今和歌集","新古今和歌集","金槐和歌集"], answerIndex:0, explanation:"当時の人々の素朴な感情が詠まれています。" },
+            { category:"法", question:"701年に制定され、日本の政治の仕組みの基本となった法律は？", choices:["大宝律令","御成敗式目","武家諸法度","公事方御定書"], answerIndex:0, explanation:"刑罰のきまり（律）と政治のきまり（令）がまとめられました。" },
+            { category:"経済", question:"708年に鋳造され、日本で最初に流通したと言われる貨幣は？", choices:["和同開珎","富本銭","天保通宝","寛永通宝"], answerIndex:0, explanation:"政府はこれを使って役人の給料を払うなど、流通を促しました。" },
+            { category:"土地", question:"743年に出され、新しく開墾した土地は永久に自分のものにしてよいとした法律は？", choices:["墾田永年私財法","班田収授法","太閤検地","地租改正"], answerIndex:0, explanation:"これにより公地公民制が崩れ、貴族や寺社の私有地（荘園）が増えました。" },
+            { category:"文化", question:"聖武天皇などの遺品が納められている、校倉造（あぜくらづくり）の宝物殿は？", choices:["正倉院","金閣","銀閣","中尊寺金色堂"], answerIndex:0, explanation:"シルクロードを通ってペルシャやインドから来た宝物も納められています。" },
+            { category:"人物", question:"唐から何度も船が難破しながらも日本へ渡り、正しい仏教の教え（戒律）を伝えた僧は？", choices:["鑑真","最澄","空海","法然"], answerIndex:0, explanation:"日本に着いた頃には失明していました。唐招提寺を建てました。" }
+        ]},
+        { id:3, name:"第4巻：平安京の人びと（平安時代前期）", boss:{name:'桓武天皇',hp:85,emoji:'👑'}, timeline:["平安前期"], enemies:[{name:'貴族の護衛',hp:35,emoji:'💂'}], quizData:[
+            { category:"政治", question:"794年に桓武天皇が遷都した新しい都は？", choices:["平安京","平城京","長岡京","大津京"], answerIndex:0, explanation:"「泣くよ（794）ウグイス平安京」です。" },
+            { category:"文化", question:"唐から新しい仏教（天台宗）を伝え、比叡山に延暦寺を建てた僧は？", choices:["最澄","空海","法然","親鸞"], answerIndex:0, explanation:"最澄は天台宗、空海は真言宗と覚えましょう。" },
+            { category:"政治", question:"蝦夷（えみし）を平定するため、征夷大将軍に任命されたのは？", choices:["坂上田村麻呂","阿弖流為","平将門","源頼朝"], answerIndex:0, explanation:"東北地方の平定に活躍し、胆沢城を築きました。" },
+            { category:"文化", question:"唐から真言宗を伝え、高野山に金剛峯寺を建てた僧は？", choices:["空海（弘法大師）","最澄","一遍","栄西"], answerIndex:0, explanation:"書道の名人としても有名です（弘法にも筆の誤り）。" },
+            { category:"政治", question:"東北地方の蝦夷のリーダーで、朝廷軍と激しく戦ったものの、最終的に降伏したのは？", choices:["阿弖流為（アテルイ）","坂上田村麻呂","平将門","藤原純友"], answerIndex:0, explanation:"優れた戦術で朝廷軍を苦しめました。" },
+            { category:"政治", question:"桓武天皇が農民の負担を軽くするため、兵役を廃止し、代わりに郡司の子弟などを集めて組織した軍隊は？", choices:["健児（こんでい）","防人","武士","僧兵"], answerIndex:0, explanation:"農民の逃亡を防ぐための対策の一つでした。" },
+            { category:"文化", question:"平安時代初期、災いや怨霊を鎮めるために行われた密教の特徴的な祈祷（お祈り）は？", choices:["加持祈祷","念仏","座禅","巡礼"], answerIndex:0, explanation:"貴族の間で病気治癒や災厄除けとして流行しました。" }
+        ]},
+        { id:4, name:"第5巻：貴族のさかえ（平安時代中期・後期）", boss:{name:'藤原道長',hp:90,emoji:'👺'}, timeline:["平安中後期"], enemies:[{name:'武士団',hp:40,emoji:'⚔️'}], quizData:[
+            { category:"政治", question:"天皇が幼少時は摂政、成人後は関白として権力を握った政治は？", choices:["摂関政治","院政","武家政治","執権政治"], answerIndex:0, explanation:"藤原道長・頼通の親子が全盛期を築きました。" },
+            { category:"文化", question:"紫式部が書いた、国風文化を代表する物語は？", choices:["源氏物語","枕草子","土佐日記","古今和歌集"], answerIndex:0, explanation:"仮名文字を使って書かれた長編小説です。" },
+            { category:"文化", question:"藤原頼通が宇治に建てた、極楽浄土を表現した建物は？", choices:["平等院鳳凰堂","金閣","銀閣","中尊寺金色堂"], answerIndex:0, explanation:"10円玉に描かれていることでも有名です。" },
+            { category:"文化", question:"平安時代、唐が衰えたため894年に遣唐使の停止を提案した人物は？", choices:["菅原道真","藤原道長","平将門","桓武天皇"], answerIndex:0, explanation:"「白紙（894）に戻す遣唐使」で覚えましょう。" },
+            { category:"文化", question:"清少納言が宮中での生活や自然の美しさを仮名文字で綴った随筆は？", choices:["枕草子","源氏物語","竹取物語","徒然草"], answerIndex:0, explanation:"「春はあけぼの…」から始まる名作です。" },
+            { category:"反乱", question:"10世紀前半、関東地方で反乱を起こし「新皇」と名乗った武士は？", choices:["平将門","藤原純友","源義家","平清盛"], answerIndex:0, explanation:"瀬戸内海で反乱を起こした藤原純友の乱と同時期に起きました（承平・天慶の乱）。" },
+            { category:"政治", question:"11世紀後半に白河上皇が始まりとした、天皇が位を譲った後も上皇として政治を行う形態は？", choices:["院政","摂関政治","執権政治","武家政治"], answerIndex:0, explanation:"藤原氏の力を抑えるために行われました。" },
+            { category:"文化", question:"世の中が乱れ、仏の教えが衰えるという考え方から、お経を唱えれば極楽浄土に行けるとする信仰は？", choices:["浄土信仰","密教","禅宗","キリスト教"], answerIndex:0, explanation:"この世の不安から、阿弥陀如来にすがる信仰が貴族に広まりました。" }
+        ]},
+        { id:5, name:"第6巻：源平の戦い（平安時代末期）", boss:{name:'平清盛',hp:95,emoji:'👺'}, timeline:["平安末期"], enemies:[{name:'平氏の武者',hp:45,emoji:'🗡️'}], quizData:[
+            { category:"政治", question:"武士として初めて太政大臣になり政治の実権を握ったのは？", choices:["平清盛","源義朝","平将門","源頼朝"], answerIndex:0, explanation:"日宋貿易を行い、一族で権力を独占しました。" },
+            { category:"出来事", question:"1185年、源義経の活躍により平氏が滅亡した戦いは？", choices:["壇ノ浦の戦い","屋島の戦い","一ノ谷の戦い","保元の乱"], answerIndex:0, explanation:"山口県の壇ノ浦で平家が滅びました。" },
+            { category:"文化", question:"平氏の繁栄と滅亡を描いた軍記物語は？", choices:["平家物語","太平記","吾妻鏡","将門記"], answerIndex:0, explanation:"琵琶法師によって語り伝えられました。" },
+            { category:"内乱", question:"1156年、崇徳上皇と後白河天皇の対立から始まり、武士の力を見せつけるきっかけとなった乱は？", choices:["保元の乱","平治の乱","承久の乱","応仁の乱"], answerIndex:0, explanation:"この乱に続いて、平治の乱（1159年）が起きました。" },
+            { category:"経済", question:"平清盛が現在の神戸港（大輪田泊）を整備して行った貿易は？", choices:["日宋貿易","日明貿易","勘合貿易","南蛮貿易"], answerIndex:0, explanation:"宋（中国）から宋銭を輸入し、日本の貨幣として流通させました。" },
+            { category:"人物", question:"伊豆に流されていたが挙兵し、鎌倉を拠点として平氏打倒の軍を起こした源氏の棟梁は？", choices:["源頼朝","源義経","源義仲","源頼政"], answerIndex:0, explanation:"のちに鎌倉幕府を開く人物です。" },
+            { category:"人物", question:"平家を次々と打ち破り「鵯越（ひよどりごえ）の逆落とし」などの奇襲で活躍した頼朝の弟は？", choices:["源義経","源範頼","源行家","源義仲"], answerIndex:0, explanation:"平家を滅ぼした最大の功労者ですが、のちに頼朝と対立して追討されます。" }
+        ]},
+        { id:6, name:"第7巻：鎌倉幕府の成立（鎌倉時代）", boss:{name:'源頼朝',hp:100,emoji:'👹'}, timeline:["鎌倉"], enemies:[{name:'御家人',hp:40,emoji:'🐎'}], quizData:[
+            { category:"政治", question:"源頼朝が1192年（または1185年）に開いた武家政権は？", choices:["鎌倉幕府","室町幕府","江戸幕府","六波羅探題"], answerIndex:0, explanation:"関東を拠点とする初の本格的な武家政権です。" },
+            { category:"法", question:"北条泰時が定めた、武士の道理に基づく日本初の武家法は？", choices:["御成敗式目","武家諸法度","公事方御定書","十七条の憲法"], answerIndex:0, explanation:"土地の争いを公平にさばくための基準でした。" },
+            { category:"出来事", question:"13世紀後半、二度にわたり日本を襲ってきたモンゴルの軍勢は？", choices:["元寇","刀伊の入寇","倭寇","壬申の乱"], answerIndex:0, explanation:"文永の役と弘安の役と呼ばれます。" },
+            { category:"政治", question:"鎌倉時代、将軍と御家人が土地を通して結んでいた主従関係を何というか？", choices:["御恩と奉公","寄親・寄子","下剋上","座"], answerIndex:0, explanation:"将軍が土地を保護し（御恩）、御家人は戦いに参加します（奉公）。" },
+            { category:"出来事", question:"1221年、朝廷の権力を取り戻すために後鳥羽上皇が起こしたが、幕府軍に敗れた反乱は？", choices:["承久の乱","保元の乱","応仁の乱","島原の乱"], answerIndex:0, explanation:"北条政子の名演説で御家人が団結しました。" },
+            { category:"役職", question:"承久の乱の後、朝廷の監視と西国の武士をまとめるために京都に置かれた幕府の役所は？", choices:["六波羅探題","京都所司代","鎌倉公方","関東管領"], answerIndex:0, explanation:"幕府の支配が西日本にも強く及ぶようになりました。" },
+            { category:"役職", question:"鎌倉幕府において、将軍の補佐として政治の実権を握った北条氏の役職は？", choices:["執権","管領","老中","大老"], answerIndex:0, explanation:"二代将軍が暗殺された後、北条氏による「執権政治」が確立しました。" },
+            { category:"政治", question:"元寇の後、御家人の生活を救うために幕府が借金を帳消しにした法令は？", choices:["徳政令（永仁の徳政令）","御成敗式目","惣無事令","武家諸法度"], answerIndex:0, explanation:"一時的な効果しかなく、かえって御家人の生活は苦しくなりました。" }
+        ]},
+        { id:7, name:"第8巻：南朝と北朝（南北朝・室町前期）", boss:{name:'足利尊氏',hp:100,emoji:'👹'}, timeline:["南北朝","室町前期"], enemies:[{name:'悪党',hp:45,emoji:'🪓'}], quizData:[
+            { category:"政治", question:"鎌倉幕府滅亡後、後醍醐天皇が行った天皇中心の政治は？", choices:["建武の新政","大化の改新","明治維新","寛政の改革"], answerIndex:0, explanation:"武士の不満を集め、わずか2年で崩壊しました。" },
+            { category:"政治", question:"足利尊氏が開いた、京都の室町に置かれた幕府は？", choices:["室町幕府","鎌倉幕府","江戸幕府","六波羅探題"], answerIndex:0, explanation:"後醍醐天皇は吉野に逃れ、南北朝時代が始まりました。" },
+            { category:"文化", question:"三代将軍・足利義満が京都北山に建てた、金箔が貼られた別荘は？", choices:["金閣","銀閣","平等院鳳凰堂","中尊寺金色堂"], answerIndex:0, explanation:"公家と武家の文化が融合した北山文化の代表です。" },
+            { category:"人物", question:"鎌倉幕府を滅ぼす中心的な役割を果たした悪党の一人で、千早城などでゲリラ戦を行ったのは？", choices:["楠木正成","足利尊氏","新田義貞","北条高時"], answerIndex:0, explanation:"後醍醐天皇に忠義を尽くした武将です。" },
+            { category:"政治", question:"京都の北朝と吉野の南朝に分かれて約60年間続いた争いを終わらせ、南北朝を合一した将軍は？", choices:["足利義満","足利尊氏","足利義政","足利義昭"], answerIndex:0, explanation:"室町幕府の全盛期を築き、太政大臣にもなりました。" },
+            { category:"外交", question:"足利義満が倭寇を取り締まり、明（中国）と国交を開いて正式に始めた貿易は？", choices:["勘合貿易（日明貿易）","日宋貿易","南蛮貿易","朱印船貿易"], answerIndex:0, explanation:"倭寇と正式な貿易船を区別するために「勘合」という札を使いました。" },
+            { category:"人物", question:"鎌倉幕府を滅ぼした武将の一人で、稲村ヶ崎から鎌倉を攻め落としたのは？", choices:["新田義貞","足利尊氏","楠木正成","北条高時"], answerIndex:0, explanation:"足利尊氏とともに後醍醐天皇の挙兵に呼応しました。" }
+        ]},
+        { id:8, name:"第9巻：立ち上がる民衆（室町時代後期）", boss:{name:'足利義政',hp:100,emoji:'👹'}, timeline:["室町後期"], enemies:[{name:'一揆衆',hp:40,emoji:'🌾'}], quizData:[
+            { category:"文化", question:"八代将軍・足利義政が京都東山に建てた、書院造の先駆けとなる別荘は？", choices:["銀閣","金閣","桂離宮","大徳寺"], answerIndex:0, explanation:"質素で気品のある東山文化の代表です。" },
+            { category:"出来事", question:"室町時代に、農民らが借金の帳消しなどを求めて起こした反乱は？", choices:["土一揆（正長の土一揆など）","島原の乱","米騒動","一向一揆"], answerIndex:0, explanation:"年貢の引き下げや借金の破棄を要求し、土倉や酒屋を襲いました。" },
+            { category:"出来事", question:"1467年に始まり、室町幕府の衰退と戦国時代への突入を決定づけた大乱は？", choices:["応仁の乱","壬申の乱","保元の乱","平治の乱"], answerIndex:0, explanation:"京都が焼け野原となりました。" },
+            { category:"社会", question:"室町時代、農民たちが村の自治を行うために作った組織を何というか？", choices:["惣（惣村）","座","株仲間","五人組"], answerIndex:0, explanation:"寄合（会議）を開いて村の掟を決め、団結を深めました。" },
+            { category:"出来事", question:"山城国（京都）で、国人や農民が守護大名を追い出して約8年間自治を行った出来事は？", choices:["山城国一揆","加賀の一向一揆","島原の乱","大塩平八郎の乱"], answerIndex:0, explanation:"応仁の乱の後、農民たちが主体となって起こしました。" },
+            { category:"出来事", question:"加賀国（石川県）で、浄土真宗の信者たちが守護大名を倒して約100年の自治を行ったのは？", choices:["加賀の一向一揆","山城国一揆","土一揆","島原の乱"], answerIndex:0, explanation:"「百姓の持ちたる国」と呼ばれるほど勢力を保ちました。" },
+            { category:"文化", question:"東山文化の時期に、墨の濃淡だけで自然を表現する水墨画を大成させた人物は？", choices:["雪舟","狩野永徳","葛飾北斎","菱川師宣"], answerIndex:0, explanation:"明に渡って絵を学び、日本の自然をダイナミックに描きました。" },
+            { category:"社会", question:"身分の低い者が実力によって上の者を打ち倒し、権力を握る風潮を何というか？", choices:["下剋上","御恩と奉公","一向一揆","専制律令制"], answerIndex:0, explanation:"この風潮により守護大名が倒され、戦国大名が誕生していきます。" }
+        ]},
+        { id:9, name:"第10巻：戦国大名の争い（戦国時代）", boss:{name:'武田信玄',hp:105,emoji:'👺'}, timeline:["戦国"], enemies:[{name:'野盗',hp:35,emoji:'🤺'}], quizData:[
+            { category:"出来事", question:"1543年、種子島に漂着したポルトガル人によって伝えられた武器は？", choices:["鉄砲","大砲","西洋弓","刀剣"], answerIndex:0, explanation:"戦術を中心に戦国時代の戦い方を一変させました。" },
+            { category:"人物", question:"1549年、鹿児島に上陸してキリスト教を伝えた宣教師は？", choices:["フランシスコ・ザビエル","ペリー","マルコ・ポーロ","フロイス"], answerIndex:0, explanation:"イエズス会の宣教師として布教しました。" },
+            { category:"政治", question:"戦国大名が、自分の領国を支配するために独自に定めた法律を何というか？", choices:["分国法","御成敗式目","武家諸法度","十七条の憲法"], answerIndex:0, explanation:"喧嘩両成敗など、領地内の厳しい秩序維持を目的としました。" },
+            { category:"経済", question:"ポルトガルやスペインの船が来航し、鉄砲や火薬などを輸入した貿易は？", choices:["南蛮貿易","勘合貿易","朱印船貿易","日宋貿易"], answerIndex:0, explanation:"長崎や平戸が貿易港として栄えました。" },
+            { category:"人物", question:"甲斐（山梨県）の戦国大名で、「風林火山」の旗で知られる強力な武将は？", choices:["武田信玄","上杉謙信","毛利元就","伊達政宗"], answerIndex:0, explanation:"川中島の戦いで上杉謙信と何度も激突しました。" },
+            { category:"人物", question:"越後（新潟県）の戦国大名で、義を重んじ信玄とライバル関係にあったのは？", choices:["上杉謙信","武田信玄","北条氏康","今川義元"], answerIndex:0, explanation:"「敵に塩を送る」の語源にもなりました。" },
+            { category:"建築", question:"戦国時代、防衛拠点の役割だけでなく、大名の権力を象徴するために巨大化していった建築物は？", choices:["城（天守）","寺院","神社の本殿","書院造"], answerIndex:0, explanation:"鉄砲に対抗するため、石垣や堀りが堅固に造られました。" }
+        ]},
+        { id:10, name:"第11巻：天下の統一（安土・桃山時代）", boss:{name:'豊臣秀吉',hp:110,emoji:'👺'}, timeline:["安土桃山"], enemies:[{name:'鉄砲隊',hp:45,emoji:'🔫'}], quizData:[
+            { category:"経済", question:"織田信長が商工業を発展させるため、関所や座の特権を廃止した政策は？", choices:["楽市・楽座","太閤検地","刀狩","惣無事令"], answerIndex:0, explanation:"自由な商売を認め、城下町を繁栄させました。" },
+            { category:"政治", question:"豊臣秀吉が全国の田畑の広さや収穫量を統一された基準で調べた政策は？", choices:["太閤検地","刀狩","班田収授法","地租改正"], answerIndex:0, explanation:"石高を基準にした支配体制の基礎を作りました。" },
+            { category:"政治", question:"豊臣秀吉が農民から武器を取り上げ、農業に専念させた政策は？", choices:["刀狩","兵農分離","廃刀令","治安維持法"], answerIndex:0, explanation:"一揆を防ぎ、武士と農民の身分の違いを明確にしました。" },
+            { category:"出来事", question:"1560年、織田信長が少数の兵で今川義元を奇襲し、一躍名を上げた戦いは？", choices:["桶狭間の戦い","長篠の戦い","本能寺の変","関ヶ原の戦い"], answerIndex:0, explanation:"信長の天下布武への第一歩となりました。" },
+            { category:"出来事", question:"1575年、織田・徳川連合軍が鉄砲を大量に使った新戦術で、武田軍の騎馬隊を破った戦いは？", choices:["長篠の戦い","桶狭間の戦い","関ヶ原の戦い","大坂の陣"], answerIndex:0, explanation:"馬防柵と鉄砲の三段撃ちが大威力を発揮しました。" },
+            { category:"出来事", question:"1582年、天下統一を目前にした織田信長が、家臣の明智光秀に裏切られて自害した寺は？", choices:["本能寺","延暦寺","東大寺","石山本願寺"], answerIndex:0, explanation:"「敵は本能寺にあり」という言葉が有名です。" },
+            { category:"城", question:"豊臣秀吉が天下統一の拠点として築き、豪壮華麗な桃山文化の中心となった城は？", choices:["大坂城","安土城","江戸城","姫路城"], answerIndex:0, explanation:"天守閣には金箔瓦が使われ、圧倒的な権力を示しました。" },
+            { category:"文化", question:"豊臣秀吉に仕え、茶室で静かに茶を点てる「わび茶」を大成させた人物は？", choices:["千利休","雪舟","狩野永徳","出雲阿国"], answerIndex:0, explanation:"豪華さを競う桃山文化のなかで、静かな精神性を追求しました。" }
+        ]}
     ];
 
-    const ENEMY_LIBRARY = {
-        ashigaru: { name: '足軽', hp: 36, atk: [6, 10], intro: '雑兵の突撃！' },
-        samurai: { name: '甲冑武者', hp: 48, atk: [8, 12], intro: '鍛え抜かれた武将。' },
-        teppo: { name: '鉄砲隊', hp: 55, atk: [10, 13], intro: '火縄銃を構えている。' },
-        ninja: { name: '忍者', hp: 42, atk: [7, 14], intro: '素早い影が迫る。' }
-    };
+    const stagesData2 = [
+        { id:11, name:"第12巻：江戸幕府ひらく（江戸初期）", boss:{name:'徳川家康',hp:115,emoji:'🏯'}, timeline:["江戸初期"], enemies:[{name:'旗本',hp:40,emoji:'🐎'}], quizData:[
+            { category:"政治", question:"1603年、徳川家康が征夷大将軍に任命され開いた幕府は？", choices:["江戸幕府","鎌倉幕府","室町幕府","明治政府"], answerIndex:0, explanation:"江戸（現在の東京）を中心に約260年続く平和な時代の始まりです。" },
+            { category:"出来事", question:"1600年、徳川家康の東軍と、石田三成らの西軍が天下を分けて戦った戦いは？", choices:["関ヶ原の戦い","大坂の陣","長篠の戦い","桶狭間の戦い"], answerIndex:0, explanation:"この戦いに勝利した家康が天下の実権を握りました。" },
+            { category:"出来事", question:"1614年と1615年の二度にわたる戦いで、徳川氏が豊臣氏を滅ぼした戦いは？", choices:["大坂の陣","関ヶ原の戦い","長篠の戦い","島原の乱"], answerIndex:0, explanation:"冬の陣と夏の陣があり、豊臣秀頼らが自害しました。" },
+            { category:"政治", question:"1615年、大名を取り締まるために幕府が定めた法律は？", choices:["武家諸法度","御成敗式目","公事方御定書","禁中並公家諸法度"], answerIndex:0, explanation:"城の無断修理や勝手な婚姻を禁じました。" },
+            { category:"政治", question:"幕府が朝廷や公家の行動を制限・統制するために定めた法律は？", choices:["禁中並公家諸法度","武家諸法度","御成敗式目","公事方御定書"], answerIndex:0, explanation:"天皇の第一の務めは学問であると規定しました。" },
+            { category:"外交", question:"オランダやイギリスとの貿易のため、幕府が発行した渡航許可証は？", choices:["朱印状","勘合符","通行手形","鑑札"], answerIndex:0, explanation:"朱印船貿易が東南アジアで盛んに行われ、日本町もできました。" },
+            { category:"人物", question:"家康の死後、二代将軍となり、武家諸法度を大名にきびしく守らせたのは？", choices:["徳川秀忠","徳川家光","徳川綱吉","徳川慶喜"], answerIndex:0, explanation:"違反した大名は容赦なく領地を減らされたり取りあげられたりしました。" }
+        ]},
+        { id:12, name:"第13巻：士農工商（江戸前期）", boss:{name:'徳川家光',hp:115,emoji:'🏯'}, timeline:["江戸前期"], enemies:[{name:'同心',hp:45,emoji:'🏮'}], quizData:[
+            { category:"政治", question:"三代将軍家光が定めた、大名に原則1年ごとに江戸と領地を往復させる制度は？", choices:["参勤交代","地租改正","班田収授法","四民平等"], answerIndex:0, explanation:"大名の経済力を削ぎ、反乱を防ぐ狙いがありました。" },
+            { category:"外交", question:"キリスト教の禁止と貿易の統制のため、日本人の海外渡航を禁じた政策は？", choices:["鎖国","開国","海禁","攘夷"], answerIndex:0, explanation:"オランダと清（中国）だけは長崎の出島で貿易が許されました。" },
+            { category:"出来事", question:"1637年、過酷な年貢の取り立てとキリスト教弾圧に対し、天草四郎を大将に起こった一揆は？", choices:["島原・天草一揆（島原の乱）","大塩平八郎の乱","シャクシャインの戦い","米騒動"], answerIndex:0, explanation:"幕府に鎮圧され、直後にポルトガル船の来航が禁止されて鎖国が完成しました。" },
+            { category:"社会", question:"江戸時代の身分制度で、最も高い特権を持った支配階級は？", choices:["武士","百姓","町人","えみし"], answerIndex:0, explanation:"士農工商のうち「士」にあたります。" },
+            { category:"社会", question:"農民を５軒ほどで一つの組にし、年貢の納入や犯罪の防止を共同で責任負わせた制度は？", choices:["五人組","隣組","座","株仲間"], answerIndex:0, explanation:"農民が逃げたり犯罪を起こしたりするのを防ぎました。" },
+            { category:"出来事", question:"1669年、松前藩の不当な交易に対して、アイヌの人々が蜂起した戦いは？", choices:["シャクシャインの戦い","コシャマインの戦い","島原の乱","大塩平八郎の乱"], answerIndex:0, explanation:"松前藩によって鎮圧され、アイヌの人々はさらに従属させられました。" },
+            { category:"外交", question:"鎖国中、幕府に海外の様子を伝えるためにオランダ商館長が提出した報告書は？", choices:["オランダ風説書","朝鮮通信使","出島日記","解体新書"], answerIndex:0, explanation:"幕府が世界の情勢を知るための重要な情報源でした。" }
+        ]},
+        { id:13, name:"第14巻：幕府の改革（江戸中期）", boss:{name:'徳川吉宗',hp:120,emoji:'🦅'}, timeline:["江戸中期"], enemies:[{name:'町奉行',hp:40,emoji:'📜'}], quizData:[
+            { category:"政治", question:"八代将軍・徳川吉宗が行った、質素倹約や新田開発を進めた政治改革は？", choices:["享保の改革","寛政の改革","天保の改革","大化の改新"], answerIndex:0, explanation:"吉宗は「米将軍」と呼ばれました。" },
+            { category:"政治", question:"五代将軍・徳川綱吉が出した、極端な動物愛護の法令は？", choices:["生類憐れみの令","武家諸法度","公事方御定書","異国船打払令"], answerIndex:0, explanation:"特に犬が保護され、人々の生活を苦しめました。" },
+            { category:"法", question:"吉宗が定めた、裁判の基準となる法律は？", choices:["公事方御定書","武家諸法度","御成敗式目","大宝律令"], answerIndex:0, explanation:"公平な裁判を行うための基準にしました。" },
+            { category:"社会", question:"庶民の意見を聞くため、江戸城の門前に置かれた箱は？", choices:["目安箱","投書箱","意見箱","訴状箱"], answerIndex:0, explanation:"小石川養生所などもこの投書から実現しました。" },
+            { category:"文化", question:"綱吉の時代に上方（大阪・京都）を中心に栄えた、町人中心の華やかな文化は？", choices:["元禄文化","化政文化","東山文化","北山文化"], answerIndex:0, explanation:"近松門左衛門の人形浄瑠璃や松尾芭蕉の俳諧などが生まれました。" },
+            { category:"政治", question:"六代将軍に仕えた学者・新井白石が行った、文治政治（学問に基づく政治）を何と呼ぶか？", choices:["正徳の治","享保の改革","寛政の改革","天保の改革"], answerIndex:0, explanation:"金銀の質を良くして物価を安定させようとしました。" },
+            { category:"文化", question:"元禄文化の時期に「奥の細道」などを記し、俳諧を芸術に高めた人物は？", choices:["松尾芭蕉","近松門左衛門","井原西鶴","菱川師宣"], answerIndex:0, explanation:"全国を旅して優れた句を残しました。" }
+        ]},
+        { id:14, name:"第15巻：ゆきづまる幕府（江戸後期）", boss:{name:'松平定信',hp:120,emoji:'🏯'}, timeline:["江戸後期"], enemies:[{name:'異国船',hp:50,emoji:'🚢'}], quizData:[
+            { category:"政治", question:"老中・松平定信が、飢饉に備えて米を蓄えさせるなど厳格に行った改革は？", choices:["寛政の改革","享保の改革","天保の改革","建武の新政"], answerIndex:0, explanation:"あまりに厳しかったため人々の不満を買いました。" },
+            { category:"政治", question:"老中・田沼意次が、幕府の財政を立て直すために奨励した商人の組合（特権を与えて税を取る）は？", choices:["株仲間","座","惣村","五人組"], answerIndex:0, explanation:"商業の発展を目指しましたが、賄賂が横行しました。" },
+            { category:"文化", question:"化政文化の時期に、伊能忠敬が日本全国を歩いて作ったものは？", choices:["大日本沿海輿地全図","解体新書","古事記","風土記"], answerIndex:0, explanation:"正確な日本地図を完成させました。" },
+            { category:"学問", question:"杉田玄白らが、オランダ語の解剖書「ターヘル・アナトミア」を翻訳して出版した本は？", choices:["解体新書","蘭学事始","風土記","日本書紀"], answerIndex:0, explanation:"蘭学（オランダ語を通して西洋の学問を学ぶこと）が発展するきっかけになりました。" },
+            { category:"学問", question:"本居宣長が「古事記伝」を著し大成させた、日本古来の精神を研究する学問は？", choices:["国学","蘭学","朱子学","洋学"], answerIndex:0, explanation:"尊王攘夷運動にも影響を与えました。" },
+            { category:"政治", question:"老中・水野忠邦が、株仲間の解散などを命じた江戸時代最後の改革は？", choices:["天保の改革","寛政の改革","享保の改革","大化の改新"], answerIndex:0, explanation:"効果は上がらず、幕府の権威は大きく落ちました。" },
+            { category:"出来事", question:"1837年、天保の飢饉で苦しむ人々を救うため、元・大阪町奉行所の役人が起こした反乱は？", choices:["大塩平八郎の乱","島原の乱","シャクシャインの戦い","米騒動"], answerIndex:0, explanation:"元役人が乱を起こしたことは幕府に大きな衝撃を与えました。" }
+        ]},
+        { id:15, name:"第16巻：幕末の風雲（江戸末期）", boss:{name:'徳川慶喜',hp:125,emoji:'🚢'}, timeline:["幕末"], enemies:[{name:'新撰組',hp:55,emoji:'⚔️'}], quizData:[
+            { category:"外交", question:"1853年、浦賀に来航して幕府に開国を求めたアメリカの使節は？", choices:["ペリー","ハリス","プチャーチン","ザビエル"], answerIndex:0, explanation:"4隻の黒船でやってきて、日本に衝撃を与えました。" },
+            { category:"条約", question:"1854年に結ばれ、日本の鎖国体制を終わらせた条約は？", choices:["日米和親条約","日米修好通商条約","下関条約","ポーツマス条約"], answerIndex:0, explanation:"下田と函館の2港を開きました。" },
+            { category:"条約", question:"1858年、大老の井伊直弼が朝廷の許可を得ずに結んだ不平等な条約は？", choices:["日米修好通商条約","日米和親条約","下関条約","日米安全保障条約"], answerIndex:0, explanation:"関税自主権がないなど、日本に不利な条約でした。" },
+            { category:"政治", question:"井伊直弼が、条約の調印や将軍の跡継ぎ問題に反対する大名や志士を厳しく処罰した出来事は？", choices:["安政の大獄","桜田門外の変","大塩平八郎の乱","蛮社の獄"], answerIndex:0, explanation:"これに怒った水戸藩士などにより、井伊直弼は暗殺（桜田門外の変）されます。" },
+            { category:"運動", question:"天皇（朝廷）を尊び、外国勢力を打ち払おうとする幕末の運動を何というか？", choices:["尊王攘夷運動","自由民権運動","大正デモクラシー","護憲運動"], answerIndex:0, explanation:"長州藩や薩摩藩を中心に激しくなりました。" },
+            { category:"出来事", question:"1866年、対立していた薩摩藩と長州藩が、坂本龍馬らの仲立ちで手を結んだ出来事は？", choices:["薩長同盟","大政奉還","王政復古の大号令","五箇条の御誓文"], answerIndex:0, explanation:"倒幕への決定的な力となりました。" },
+            { category:"出来事", question:"第15代将軍・徳川慶喜が政権を朝廷に返還した出来事は？", choices:["大政奉還","王政復古の大号令","廃藩置県","版籍奉還"], answerIndex:0, explanation:"1867年、これにより約260年続いた江戸幕府が滅亡しました。" }
+        ]},
+        { id:16, name:"第17巻：明治維新（明治前期）", boss:{name:'西郷隆盛',hp:130,emoji:'👔'}, timeline:["明治前期"], enemies:[{name:'不平士族',hp:50,emoji:'🗡️'}], quizData:[
+            { category:"出来事", question:"1868年、新政府軍と旧幕府軍の間で始まり、約1年半続いた内戦は？", choices:["戊辰戦争","西南戦争","日清戦争","日露戦争"], answerIndex:0, explanation:"鳥羽・伏見の戦いから始まり、北海道の五稜郭の戦いで終わりました。" },
+            { category:"政治", question:"明治天皇が神に誓う形で発表された、新しい政治の基本方針は？", choices:["五箇条の御誓文","大日本帝国憲法","教育勅語","十七条の憲法"], answerIndex:0, explanation:"「広く会議を興し、万機公論に決すべし」で始まります。" },
+            { category:"政治", question:"明治政府が、藩を廃止して新たに県を置き、中央から知事を派遣した政策は？", choices:["廃藩置県","版籍奉還","地租改正","富国強兵"], answerIndex:0, explanation:"中央集権体制を整えるための重要な政策でした。" },
+            { category:"社会", question:"身分制度が改められ、皇族以外はすべて平等とされた四字熟語は？", choices:["四民平等","士農工商","一視同仁","五公五民"], answerIndex:0, explanation:"武士などの特権が廃止されました。" },
+            { category:"税制", question:"1873年、土地の所有者に地券を渡し、地価の3％を現金で納めさせた税の制度は？", choices:["地租改正","班田収授法","太閤検地","租庸調"], answerIndex:0, explanation:"政府の収入を安定させるため、米から現金納税に変わりました。" },
+            { category:"産業", question:"近代的な産業を育てるため、政府が官営模範工場（富岡製糸場など）を建てて産業を奨励した政策は？", choices:["殖産興業","富国強兵","文明開化","地租改正"], answerIndex:0, explanation:"西欧の進んだ技術を導入しました。" },
+            { category:"外交", question:"不平等条約の改正を目指し、岩倉具視を大使として欧米へ派遣された使節団は？", choices:["岩倉使節団","遣唐使","遣欧少年使節","朝鮮通信使"], answerIndex:0, explanation:"大久保利通や木戸孝允、伊藤博文なども参加しました。" },
+            { category:"出来事", question:"1877年、新政府に不満を持つ士族らが西郷隆盛をリーダーとして起こした内乱は？", choices:["西南戦争","戊辰戦争","島原の乱","大塩平八郎の乱"], answerIndex:0, explanation:"近代の徴兵軍が勝利し、武力による士族の反乱は終わりました。" }
+        ]},
+        { id:17, name:"第18巻：近代国家の発展（明治後期）", boss:{name:'伊藤博文',hp:130,emoji:'👔'}, timeline:["明治後期"], enemies:[{name:'帝国軍人',hp:55,emoji:'🎖️'}], quizData:[
+            { category:"政治", question:"板垣退助らが中心となり、国民が選んだ議員で国会を開くよう求めた運動は？", choices:["自由民権運動","尊王攘夷運動","護憲運動","大正デモクラシー"], answerIndex:0, explanation:"言論によって政府を批判し、国会開設を求めました。" },
+            { category:"憲法", question:"1889年に発布された、アジアで最初の近代的な憲法は？", choices:["大日本帝国憲法","日本国憲法","五箇条の御誓文","教育勅語"], answerIndex:0, explanation:"天皇が国の元首として強い権限を持つと定められていました。" },
+            { category:"政治", question:"内閣制度が創設され、日本の初代内閣総理大臣になったのは？", choices:["伊藤博文","大隈重信","板垣退助","福沢諭吉"], answerIndex:0, explanation:"ヨーロッパ（ドイツ）で憲法を学び、大日本帝国憲法の草案を作成しました。" },
+            { category:"外交", question:"明治時代の不平等条約改正において、イギリスとの間で「領事裁判権の撤廃」に成功した外務大臣は？", choices:["陸奥宗光","小村寿太郎","井上馨","大隈重信"], answerIndex:0, explanation:"日清戦争の直前に成功させました。" },
+            { category:"戦争", question:"1894年、朝鮮半島をめぐって起こり、日本が清（中国）に勝利した戦争は？", choices:["日清戦争","日露戦争","第一次世界大戦","太平洋戦争"], answerIndex:0, explanation:"下関条約が結ばれ、台湾や多額の賠償金を得ました。" },
+            { category:"外交", question:"日清戦争後、ロシア・ドイツ・フランスが日本に対し、遼東半島を清に返すよう圧力をかけた出来事は？", choices:["三国干渉","日英同盟","ポツダム宣言","ハル・ノート"], answerIndex:0, explanation:"日本はこれに屈して半島を返し、ロシアへの敵対心を強めました（臥薪嘗胆）。" },
+            { category:"産業", question:"日清戦争の賠償金を資金の一部として、福岡県に建設された官営の鉄鋼工場は？", choices:["八幡製鉄所","富岡製糸場","横須賀造船所","生野銀山"], answerIndex:0, explanation:"日本の重化学工業発展の基礎となりました。" }
+        ]},
+        { id:18, name:"第19巻：戦争への道（大正・昭和前期）", boss:{name:'犬養毅',hp:135,emoji:'👔'}, timeline:["大正","昭和前期"], enemies:[{name:'青年将校',hp:60,emoji:'🔫'}], quizData:[
+            { category:"戦争", question:"1904年、満州（中国東北部）や朝鮮韓国の支配権をめぐって起こった戦争は？", choices:["日露戦争","日清戦争","第一次世界大戦","太平洋戦争"], answerIndex:0, explanation:"アメリカの仲介によりポーツマス条約が結ばれました。" },
+            { category:"外交", question:"日露戦争の講和条約（ポーツマス条約）で「関税自主権の回復」に成功した外務大臣は？", choices:["小村寿太郎","陸奥宗光","伊藤博文","桂太郎"], answerIndex:0, explanation:"これで明治初期からの不平等条約の改正が完全に終わりました。" },
+            { category:"出来事", question:"1910年、日本が軍事力を背景に韓国を完全な支配下に置いた出来事は？", choices:["韓国併合","満州事変","台湾出兵","シベリア出兵"], answerIndex:0, explanation:"これ以降、朝鮮総督府を置いて植民地支配を行いました。" },
+            { category:"戦争", question:"1914年、ヨーロッパを主戦場として起こり、日本が日英同盟を理由に参戦した大戦は？", choices:["第一次世界大戦","第二次世界大戦","日露戦争","太平洋戦争"], answerIndex:0, explanation:"日本は中国のドイツの拠点を攻め、二十一か条の要求を突きつけました。" },
+            { category:"政治", question:"1918年、シベリア出兵を見越した商人らの米の買い占めにより、米の安売りを求める暴動が全国に広がった事件は？", choices:["米騒動","大塩平八郎の乱","秩父事件","一向一揆"], answerIndex:0, explanation:"富山県の漁村の女性たちの行動が発端でした。" },
+            { category:"政治", question:"大正時代に高まった、政党政治と憲法に基づく政治を守ろうとする運動（民主主義の風潮）は？", choices:["大正デモクラシー","自由民権運動","護憲運動","尊王攘夷運動"], answerIndex:0, explanation:"この流れから、1925年に普通選挙法（25歳以上の男子）が成立しました。" },
+            { category:"出来事", question:"1923（大正12）年に起きた、関東地方を襲った甚大な被害をもたらした大災害は？", choices:["関東大震災","阪神・淡路大震災","東日本大震災","濃尾地震"], answerIndex:0, explanation:"火災により10万人以上の死者・行方不明者が出ました。" },
+            { category:"出来事", question:"1932年、海軍の青年将校らが犬養毅首相を暗殺し、政党内閣が終わった事件は？", choices:["五・一五事件","二・二六事件","桜田門外の変","大津事件"], answerIndex:0, explanation:"「話せばわかる」「問答無用」のやりとりが有名です。" }
+        ]},
+        { id:19, name:"第20巻：アジアと太平洋の戦い（昭和中期）", boss:{name:'東條英機',hp:140,emoji:'🎖️'}, timeline:["昭和中期"], enemies:[{name:'特高警察',hp:60,emoji:'🕵️'}], quizData:[
+            { category:"出来事", question:"1931年、関東軍が南満州鉄道を爆破し、それを中国のせいにして軍事行動を起こした事件は？", choices:["満州事変","日中戦争","太平洋戦争","第一次上海事変"], answerIndex:0, explanation:"翌年、「満州国」の建国を宣言しました。" },
+            { category:"出来事", question:"1936年、陸軍の青年将校らが首相らを襲撃し、東京の中心部を占拠した事件は？", choices:["二・二六事件","五・一五事件","桜田門外の変","血盟団事件"], answerIndex:0, explanation:"この事件後、軍部の政治に対する発言力がさらに強まりました。" },
+            { category:"戦争", question:"1937年、北京郊外の盧溝橋での武力衝突をきっかけに始まり、泥沼化した戦争は？", choices:["日中戦争","満州事変","日清戦争","太平洋戦争"], answerIndex:0, explanation:"日本は蒋介石率いる国民政府などと長期戦になりました。" },
+            { category:"政治", question:"1938年、戦争を遂行するために、政府が議会の承認なしに人や物を動員できるとした法律は？", choices:["国家総動員法","治安維持法","大政翼賛会","戒厳令"], answerIndex:0, explanation:"国民生活のすべてが戦争優先に変更されました。" },
+            { category:"戦争", question:"1941年12月8日、日本がハワイの真珠湾（パールハーバー）を奇襲して始まった戦争は？", choices:["太平洋戦争","日中戦争","日露戦争","第一次世界大戦"], answerIndex:0, explanation:"アメリカやイギリスを相手に宣戦布告しました。" },
+            { category:"社会", question:"太平洋戦争中、空襲の被害から守るため、都市の小学生（国民学校児童）を農村の寺などに集団で避難させたことは？", choices:["学童疎開","学徒出陣","勤労動員","集団就職"], answerIndex:0, explanation:"親元を離れ、ひもじい思いをする子供が多くいました。" },
+            { category:"出来事", question:"1945年8月6日と9日、世界で初めて日本に対して投下された大量破壊兵器は？", choices:["原子爆弾（原爆）","水素爆弾","焼夷弾","毒ガス"], answerIndex:0, explanation:"広島と長崎に投下され、一瞬にして多くの命が奪われました。" },
+            { category:"条約", question:"1945年8月15日、昭和天皇の玉音放送により国民に知らされた、日本が受け入れた降伏宣言は？", choices:["ポツダム宣言","カイロ宣言","サンフランシスコ平和条約","日米安全保障条約"], answerIndex:0, explanation:"これにより第二次世界大戦が終結しました。" }
+        ]},
+        { id:20, name:"第21巻：現代の日本（昭和後期）", boss:{name:'吉田茂',hp:140,emoji:'👔'}, timeline:["昭和後期"], enemies:[{name:'GHQ兵',hp:60,emoji:'🪖'}], quizData:[
+            { category:"政治", question:"戦後の日本を占領し、民主化を進めた連合国軍最高司令官総司令部（マッカーサー最高司令官）の略称は？", choices:["GHQ","WHO","UNESCO","UNICEF"], answerIndex:0, explanation:"農地改革や財閥解体など、日本の民主化を指導しました。" },
+            { category:"憲法", question:"現在の「日本国憲法」の三大原則は「国民主権」「基本的人権の尊重」ともう一つは？", choices:["平和主義","天皇主権","三権分立","地方自治"], answerIndex:0, explanation:"戦争の放棄などを定めています。" },
+            { category:"出来事", question:"1950年に隣の朝鮮半島で勃発し、日本の経済が「特需」によって潤うきっかけとなった戦争は？", choices:["朝鮮戦争","ベトナム戦争","湾岸戦争","日清戦争"], answerIndex:0, explanation:"このときGHQの指示で現在の自衛隊の前身「警察予備隊」が作られました。" },
+            { category:"条約", question:"1951年、吉田茂首相が48か国と結び、日本が独立を回復した条約は？", choices:["サンフランシスコ平和条約","日米安全保障条約","日ソ共同宣言","日中共同声明"], answerIndex:0, explanation:"同時に、アメリカ軍が日本に駐留し続ける「日米安全保障条約」も結ばれました。" },
+            { category:"外交", question:"1956年、日本がソビエト連邦（現在のロシアなど）と国交を回復し、これにより国際連合への加盟が実現した宣言は？", choices:["日ソ共同宣言","日中共同声明","日韓基本条約","ポツダム宣言"], answerIndex:0, explanation:"北方領土問題は解決されないまま国交回復がなされました。" },
+            { category:"経済", question:"1950年代半ばから約20年間続いた、日本の経済が世界の中でも稀にみる急成長を遂げた時期は？", choices:["高度経済成長","バブル経済","オイルショック","平成不況"], answerIndex:0, explanation:"1964年の東京オリンピックや東海道新幹線開通が象徴的です。" },
+            { category:"外交", question:"1972年、佐藤栄作首相のもとで、アメリカから日本へ返還された領土は？", choices:["沖縄","小笠原諸島","北方領土","千島列島"], answerIndex:0, explanation:"沖縄の日本復帰が実現し、核抜き本土並みの返還となりました。" }
+        ]},
+        { id:21, name:"第22巻：平成の30年（平成時代）", boss:{name:'平成',hp:150,emoji:'🇯🇵'}, timeline:["平成"], enemies:[{name:'不況の波',hp:65,emoji:'📉'}], quizData:[
+            { category:"経済", question:"1980年代後半から1990年代初頭にかけて起こった、土地や株の値段が異常に上がり続けた経済状態は？", choices:["バブル経済","高度経済成長","オイルショック","リーマン・ショック"], answerIndex:0, explanation:"この崩壊後、日本は「失われた20年」と呼ばれる長い不況へと突入しました。" },
+            { category:"出来事", question:"1995年1月17日に発生した、関西地方を中心に未曾有の被害をもたらした大地震は？", choices:["阪神・淡路大震災","東日本大震災","関東大震災","新潟県中越地震"], answerIndex:0, explanation:"ボランティア元年とも呼ばれるほど多くの支援が集まりました。" },
+            { category:"出来事", question:"2011年3月11日に発生し、巨大津波や福島第一原子力発電所の事故を引き起こした大地震は？", choices:["東日本大震災","阪神・淡路大震災","関東大震災","熊本地震"], answerIndex:0, explanation:"国内観測史上最大のM9.0を記録しました。" },
+            { category:"社会", question:"1989年に税率3％で初めて導入され、のちに5％、8％、10％と引き上げられていった税金は？", choices:["消費税","所得税","法人税","地租"], answerIndex:0, explanation:"高齢化などによる社会保障費を補うために導入されました。" },
+            { category:"社会", question:"現在の日本で進行している、子どもが減り、お年寄りの割合が増える社会問題を何というか？", choices:["少子高齢化","過疎化","ドーナツ化現象","情報化社会"], answerIndex:0, explanation:"社会保障制度をどう維持するかが大きな課題となっています。" },
+            { category:"外交", question:"1989年、ベルリンの壁崩壊やマルタ会談によって終結が宣言された、アメリカとソ連を二極とする緊張状態は？", choices:["冷戦","熱戦","世界恐慌","地域紛争"], answerIndex:0, explanation:"直接戦火を交えない対立状態のことです。" },
+            { category:"外交", question:"冷戦後、日本が国際的な平和維持活動に参加するため、1992年に自衛隊をカンボジアなどに派遣できるようにした法律は？", choices:["PKO協力法","周辺事態法","テロ対策特別措置法","安保関連法"], answerIndex:0, explanation:"国連平和維持活動（PKO）に自衛隊が参加できるようになりました。" }
+        ]}
+    ];
 
-    const SKILLS = {
-        1: { name: '斬り込み', type: 'attack', power: 14, text: '小攻撃' },
-        2: { name: '鉄壁の構え', type: 'guard', guard: 0.6, text: '防御', missGuard: 0.3 },
-        3: { name: '連撃', type: 'multi', power: 9, hits: 2, text: '連続攻撃' },
-        4: { name: '兵糧回復', type: 'heal', heal: 18, text: '回復' },
-        5: { name: '奇襲策', type: 'special', power: 18, weaken: 4, text: '特殊' },
-        6: { name: '天下一閃', type: 'attack', power: 32, text: '必殺' }
-    };
+    const stagesData = [...stagesData1, ...stagesData2];
 
-    const STAGES = {
-        sengoku: {
-            id: 'sengoku',
-            name: '戦国時代',
-            timelinePhase: 'sengoku',
-            intro: '室町幕府の力が衰え、下剋上の気風が日本全土に広がった。各地の戦国大名を打ち破り、時代の流れをつかもう。',
-            clearText: '織田信長を退け、天下布武への道を切り開いた。戦国の学びを胸に、次なる時代へ進もう。',
-            baseHP: 70,
-            summary: '戦国大名の台頭と織田信長の改革で、日本は中央集権へ向かい始めた。',
-            highlights: ['下剋上と分国法', '鉄砲伝来とキリスト教', '長篠の戦い', '織田信長と天下布武'],
-            enemyPool: ['ashigaru', 'samurai', 'teppo', 'ninja'],
-            boss: { name: '織田信長', hp: 110, atk: [12, 18], intro: '天下布武を掲げる第六天魔王。', special: '二段攻撃' },
-            tiles: [
-                { type: 'quiz', label: '国人衆との盟約', icon: '📜', description: '地侍と協力して勢力拡大。' },
-                { type: 'battle', label: '足軽との小競り合い', icon: '⚔️', enemy: 'ashigaru' },
-                { type: 'heal', label: '寺社で療養', icon: '♨️', value: 20 },
-                { type: 'battle', label: '甲冑武者の奇襲', icon: '🛡️', enemy: 'samurai' },
-                { type: 'quiz', label: '分国法を定める', icon: '📘', description: '統治方針を確認。' },
-                { type: 'boost', label: '鍛冶場を抑える', icon: '⛏️', value: 6 },
-                { type: 'battle', label: '鉄砲隊との試練', icon: '🔥', enemy: 'teppo' },
-                { type: 'event', subtype: 'bossprep', label: '軍備を整える', icon: '🎌', description: '最終決戦の前哨。' },
-                { type: 'battle', label: '忍びの妨害', icon: '🌀', enemy: 'ninja' },
-                { type: 'boss', label: '天下布武の頂', icon: '👑' }
-            ],
-            questions: [
-                { id: 'sq1', text: '戦国大名が領国統治のために独自に定めた法令を何という？', choices: ['御成敗式目', '分国法', '公地公民', '太政官令'], answer: 1, explain: '分国法は各戦国大名が家臣統制や領内支配のために作った法令集。', genre: '制度' },
-                { id: 'sq2', text: '1467年の応仁の乱をきっかけに始まった約100年の戦乱期を何という？', choices: ['戦国時代', '南北朝時代', '江戸時代', '幕末'], answer: 0, explain: '応仁の乱後、各地で下剋上が頻発した時代が「戦国時代」。', genre: '時代' },
-                { id: 'sq3', text: '1543年、種子島に伝わった新兵器はどれ？', choices: ['鉄砲', '羅針盤', '蒸気機関', '活版印刷'], answer: 0, explain: 'ポルトガル人が鉄砲を伝え、戦い方が一変した。', genre: '出来事' },
-                { id: 'sq4', text: '1549年に鹿児島へ来日しキリスト教を広めた宣教師は？', choices: ['ルター', 'マテオ・リッチ', 'フランシスコ・ザビエル', 'コロンブス'], answer: 2, explain: 'ザビエルは鹿児島で布教を始め、九州の大名にも影響を与えた。', genre: '人物' },
-                { id: 'sq5', text: '織田信長が楽市楽座を実施した目的として最も適切なのは？', choices: ['農民を保護するため', '商工業の自由な発展を促すため', '年貢を免除するため', '寺社勢力を守るため'], answer: 1, explain: '座や関所を廃し、市場を開放して経済力を強めた。', genre: '制度' },
-                { id: 'sq6', text: '1575年の長篠の戦いで信長・家康連合軍が用いたとされる戦法は？', choices: ['火牛の計', '三段撃ち', '桶狭間奇襲', '水攻め'], answer: 1, explain: '鉄砲を三列で交互に撃つことで武田騎馬軍を撃破したと伝わる。', genre: '出来事' },
-                { id: 'sq7', text: '武田信玄が家臣統制のために定めた法律は？', choices: ['御成敗式目', '甲州法度次第', '武家諸法度', '公事方御定書'], answer: 1, explain: '甲州法度次第は武田家の家臣統制や裁判の基準を示した。', genre: '制度' },
-                { id: 'sq8', text: '越後国で「軍神」と呼ばれた上杉謙信の本拠地は？', choices: ['春日山城', '駿府城', '小田原城', '大坂城'], answer: 0, explain: '上杉謙信は春日山城を拠点に北陸・関東へ進出した。', genre: '人物' },
-                { id: 'sq9', text: '伊豆を拠点として関東に勢力を広げ、のちの後北条氏の基礎を築いた人物は？', choices: ['北条早雲', '毛利元就', '島津義弘', '今川義元'], answer: 0, explain: '北条早雲は伊豆から相模へ進出し、関東支配の足場を作った。', genre: '人物' },
-                { id: 'sq10', text: '加賀国では農民や僧が主導して守護大名を追い出した運動が続いた。これを何という？', choices: ['一向一揆', '生類憐み令', '打ちこわし', '島原の乱'], answer: 0, explain: '本願寺門徒が中心となった一向一揆で、加賀は「百姓の持ちたる国」と呼ばれた。', genre: '出来事' },
-                { id: 'sq11', text: '南蛮貿易とキリスト教を積極的に受け入れた豊後の大名は？', choices: ['浅井長政', '朝倉義景', '大友宗麟', '真田昌幸'], answer: 2, explain: '大友宗麟はポルトガルとの貿易で銀を得て、カトリックにも改宗した。', genre: '人物' },
-                { id: 'sq12', text: '織田信長が室町幕府を事実上終わらせた出来事は？', choices: ['桶狭間の戦い', '足利義昭の追放', '明智光秀の謀反', '島津征伐'], answer: 1, explain: '1573年に第15代将軍足利義昭を京都から追放し、幕府が滅んだ。', genre: '出来事' },
-                { id: 'sq13', text: '石垣と天主からなる近世城郭の先駆けとなった信長の城は？', choices: ['安土城', '姫路城', '名古屋城', '熊本城'], answer: 0, explain: '琵琶湖畔に築いた安土城は豪華な天主で知られる。', genre: '文化' },
-                { id: 'sq14', text: '織田信長が勢力拡大の障害とみなして焼き討ちにした寺院は？', choices: ['東大寺', '比叡山延暦寺', '金剛峯寺', '浅草寺'], answer: 1, explain: '延暦寺は武装し周辺に影響力を持っていたため、信長は徹底的に攻撃した。', genre: '出来事' },
-                { id: 'sq15', text: '本能寺の変後、信長の後を継いで全国統一を進めた武将は？', choices: ['徳川家康', '豊臣秀吉', '北条氏政', '伊達政宗'], answer: 1, explain: '明智光秀を討った羽柴（豊臣）秀吉が主導権を握った。', genre: '人物' },
-                { id: 'sq16', text: '刀や鉄砲を農民から没収し身分を固定しようとした政策は？', choices: ['刀狩', '廃仏毀釈', '朱印船貿易', '鎖国'], answer: 0, explain: '秀吉の刀狩令で農民の武装を禁じ、兵農分離が進んだ。', genre: '制度' }
-            ]
-        }
-    };
+    const mapNodesDefault = [
+        { type: 'start', label: '出発' },
+        { type: 'quiz', label: '道中(クイズ)' },
+        { type: 'event', label: '村の茶屋(回復)' },
+        { type: 'battle', label: '敵との遭遇' },
+        { type: 'quiz', label: '野営地(クイズ)' },
+        { type: 'battle', label: '関所番' },
+        { type: 'rest', label: '温泉(大回復)' },
+        { type: 'quiz', label: '峠道(クイズ)' },
+        { type: 'battle', label: '強敵' },
+        { type: 'quiz', label: '街道(クイズ)' },
+        { type: 'event', label: '一服(回復)' },
+        { type: 'battle', label: '忍び寄る影' },
+        { type: 'quiz', label: '防衛線(クイズ)' },
+        { type: 'rest', label: '宿場町(大回復)' },
+        { type: 'battle', label: '精鋭部隊' },
+        { type: 'quiz', label: '城下(クイズ)' },
+        { type: 'event', label: '兵糧(回復)' },
+        { type: 'battle', label: '最後の砦' },
+        { type: 'quiz', label: '本陣前(クイズ)' },
+        { type: 'rest', label: '決戦前夜(大回復)' },
+        { type: 'boss', label: 'ボス' }
+    ];
 
-    const state = {
-        stageId: null,
-        stage: null,
+    // --- State & Save Logic ---
+    let state = {
+        hp: 100, maxHp: 100,
+        currentStageId: 0,
         pos: 0,
-        hp: 0,
-        maxHp: 0,
-        powerBonus: 0,
-        correct: 0,
-        wrong: 0,
-        combo: 0,
-        maxCombo: 0,
-        questionQueue: [],
-        currEnemy: null,
-        guardPercent: 0,
-        enemyWeaken: 0,
-        inBattle: false,
-        pendingAdvance: false
+        correct: 0, wrong: 0,
+        learned: [],
+        currentEnemy: null,
+        battleParams: { turn: 0, defending: false },
+        diceMode: 'map',
+        currentSkill: null,
+        clearedStages: {} // format: { 0: true, 1: true ... }
     };
 
-    let weakList = [];
-    let messageCallback = null;
-    let activeQuiz = null;
+    function saveGame() {
+        const minimalState = {
+            clearedStages: state.clearedStages,
+            currentStageId: state.currentStageId,
+            hp: state.hp, pos: state.pos, correct: state.correct, 
+            wrong: state.wrong, learned: state.learned
+        };
+        localStorage.setItem('historyDiceState2', JSON.stringify(minimalState));
+    }
 
-    // DOM refs
-    const screens = {
-        title: document.getElementById('screen-title'),
-        era: document.getElementById('screen-era'),
-        map: document.getElementById('screen-map'),
-        battle: document.getElementById('screen-battle'),
-        result: document.getElementById('screen-result')
-    };
-
-    const timelineBar = document.getElementById('timeline-bar');
-    const mapTilesEl = document.getElementById('map-tiles');
-    const mapContext = document.getElementById('map-context');
-    const mapTileInfo = document.getElementById('map-tile-info');
-    const mapActionBtn = document.getElementById('map-action');
-    const mapStatus = document.getElementById('map-status');
-
-    const battleLog = document.getElementById('battle-log');
-    const battleDice = document.getElementById('battle-dice');
-    const skillName = document.getElementById('skill-name');
-
-    const quizOverlay = document.getElementById('quiz-overlay');
-    const weakOverlay = document.getElementById('weak-overlay');
-    const messageOverlay = document.getElementById('message-overlay');
-
-    weakList = loadWeakList();
-
-    renderEraList();
-    updateContinueButton();
-
-    document.getElementById('btn-start').addEventListener('click', () => {
-        showScreen('era');
-    });
-
-    document.getElementById('btn-continue').addEventListener('click', () => {
-        const stored = loadProgress();
-        if(!stored) {
-            alert('保存データがありません。');
-            return;
+    function loadGame() {
+        const saved = localStorage.getItem('historyDiceState2');
+        if(saved) {
+            const parsed = JSON.parse(saved);
+            state = { ...state, ...parsed };
+            return true;
         }
-        restoreProgress(stored);
-    });
+        return false;
+    }
 
-    document.getElementById('btn-weak').addEventListener('click', () => {
-        renderWeakList();
-        weakOverlay.classList.add('active');
-    });
+    function resetSave() {
+        showConfirm('確認', '本当にセーブデータを消去しますか？\n（クリア状況もリセットされます）', () => {
+            localStorage.removeItem('historyDiceState2');
+            state.clearedStages = {};
+            showMessage('完了', 'データを消去しました。');
+        });
+    }
 
-    document.getElementById('btn-reset').addEventListener('click', () => {
-        if(confirm('進行状況と苦手帳を削除します。よろしいですか？')) {
-            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-            localStorage.removeItem(STORAGE_KEYS.WEAK);
-            localStorage.removeItem(STORAGE_KEYS.CLEARS);
-            weakList = [];
-            updateContinueButton();
-            alert('データをリセットしました。');
-        }
-    });
+    function saveAndQuit() {
+        saveGame();
+        changeScreen('title-screen');
+    }
 
-    document.getElementById('btn-era-back').addEventListener('click', () => showScreen('title'));
-    document.getElementById('btn-weak-close').addEventListener('click', () => weakOverlay.classList.remove('active'));
-    document.getElementById('btn-message-close').addEventListener('click', () => {
-        messageOverlay.classList.remove('active');
-        if(typeof messageCallback === 'function') {
-            const cb = messageCallback;
-            messageCallback = null;
-            cb();
-        }
-    });
-
-    mapActionBtn.addEventListener('click', () => handleTile());
-    document.getElementById('btn-roll').addEventListener('click', rollBattleDice);
-    document.getElementById('btn-battle-leave').addEventListener('click', () => {
-        if(state.hp <= 0) {
-            showResult(false);
+    function continueGame() {
+        if(loadGame() && state.pos >= 0 && state.pos < 20 && state.hp > 0) {
+            // Restore active stage
+            renderMap();
+            updateMapUI();
+            updateTimelineUI();
+            changeScreen('map-screen');
         } else {
-            alert('戦闘中は戻れません！');
+            showMessage('お知らせ', '再開できるセーブデータがありません。\n（「はじめる」からステージを選んでください）');
         }
-    });
+    }
 
-    document.getElementById('btn-retry').addEventListener('click', () => {
-        if(state.stageId) {
-            startStage(state.stageId, true);
-        } else {
-            showScreen('title');
-        }
-    });
+    // --- Scene Logic ---
+    function changeScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
 
-    document.getElementById('btn-result-title').addEventListener('click', () => {
-        showScreen('title');
-    });
-
-    document.getElementById('btn-start').focus();
-
-    function renderEraList() {
-        const container = document.getElementById('era-list');
-        container.innerHTML = '';
-        ERAS.forEach(era => {
+    function openStageSelect() {
+        loadGame();
+        const listDiv = document.getElementById('stage-list');
+        listDiv.innerHTML = '';
+        
+        stagesData.forEach((s, idx) => {
+            const isUnlocked = idx === 0 || state.clearedStages[idx - 1];
+            const isCleared = state.clearedStages[idx];
+            
             const card = document.createElement('div');
-            card.className = 'era-card' + (era.stageId ? ' ready' : '');
+            card.className = `stage-card ${isUnlocked ? '' : 'locked'} ${isCleared ? 'cleared' : ''}`;
+            
+            const lockIcon = isUnlocked ? (isCleared ? '✅' : '▶️') : '🔒';
             card.innerHTML = `
                 <div>
-                    <div class="era-name">${era.name}</div>
-                    <div class="era-note">${era.note}</div>
+                    <h3>${s.name}</h3>
+                    <div style="font-size:12px; color:#555; margin-top:5px;">${lockIcon} ボス: ${s.boss.name}</div>
                 </div>
+                <div class="boss-emoji">${s.boss.emoji}</div>
             `;
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            if(era.stageId) {
-                btn.classList.add('btn-gold');
-                btn.textContent = '進入';
-                btn.addEventListener('click', () => startStage(era.stageId, true));
-            } else {
-                btn.textContent = '準備中';
-                btn.disabled = true;
+            
+            if(isUnlocked) {
+                card.onclick = () => startStage(idx);
             }
-            card.appendChild(btn);
-            container.appendChild(card);
+            listDiv.appendChild(card);
         });
+        changeScreen('stage-select-screen');
     }
 
-    function startStage(stageId, fresh) {
-        const stage = STAGES[stageId];
-        if(!stage) return;
-        state.stageId = stageId;
-        state.stage = stage;
+    function startStage(stageId) {
+        state.currentStageId = stageId;
+        state.hp = 100;
         state.pos = 0;
-        state.hp = stage.baseHP;
-        state.maxHp = stage.baseHP;
-        state.powerBonus = 0;
         state.correct = 0;
         state.wrong = 0;
-        state.combo = 0;
-        state.maxCombo = 0;
-        state.guardPercent = 0;
-        state.enemyWeaken = 0;
-        state.questionQueue = shuffle(stage.questions.slice());
-        state.currEnemy = null;
-        showStageMessage(stage.intro, () => {
-            renderMap();
-            saveProgress();
-        });
-    }
-
-    function restoreProgress(data) {
-        const stage = STAGES[data.stageId];
-        if(!stage) {
-            alert('ステージデータが見つかりません。');
-            return;
-        }
-        Object.assign(state, {
-            stageId: data.stageId,
-            stage,
-            pos: data.pos,
-            hp: data.hp,
-            maxHp: data.maxHp,
-            powerBonus: data.powerBonus || 0,
-            correct: data.correct || 0,
-            wrong: data.wrong || 0,
-            combo: data.combo || 0,
-            maxCombo: data.maxCombo || 0
-        });
-        state.guardPercent = 0;
-        state.enemyWeaken = 0;
-        state.questionQueue = shuffle(stage.questions.slice());
-        state.currEnemy = null;
+        state.learned = [];
+        
+        saveGame();
         renderMap();
+        updateMapUI();
+        updateTimelineUI();
+        changeScreen('map-screen');
     }
 
-    function renderMap() {
-        if(!state.stage) return;
-        if(state.pos >= state.stage.tiles.length) {
-            stageCleared();
-            return;
-        }
-        showScreen('map');
-        updateTimeline(state.stage.timelinePhase);
-        document.getElementById('map-stage-title').textContent = `${state.stage.name}マップ`;
-        mapContext.textContent = state.stage.summary;
-        const tiles = state.stage.tiles;
-        mapTilesEl.innerHTML = '';
-        tiles.forEach((tile, idx) => {
-            const div = document.createElement('div');
-            const cleared = idx < state.pos;
-            const current = idx === state.pos;
-            div.className = 'tile';
-            if(cleared) div.classList.add('cleared');
-            if(current) div.classList.add('current');
-            if(tile.type === 'boss' && cleared) div.classList.add('complete');
-            div.innerHTML = `<span>${tile.icon || '⬜'}</span>${tile.label}`;
-            if(current) {
-                const token = document.createElement('div');
-                token.id = 'player-token';
-                token.textContent = '▲';
-                div.appendChild(token);
-            }
-            mapTilesEl.appendChild(div);
-        });
-        const tile = tiles[state.pos];
-        mapTileInfo.textContent = tile.description || actionDescription(tile.type);
-        mapActionBtn.textContent = actionLabel(tile.type);
-        mapActionBtn.disabled = false;
-        state.pendingAdvance = false;
-        mapStatus.textContent = 'マスのイベントを実行しよう。';
-        document.getElementById('map-hp').textContent = `${state.hp} / ${state.maxHp}`;
-        document.getElementById('map-bonus').textContent = `+${state.powerBonus}`;
-        document.getElementById('map-correct').textContent = state.correct;
-        document.getElementById('map-wrong').textContent = state.wrong;
-    }
-
-    function handleTile() {
-        if(!state.stage) return;
-        const tile = state.stage.tiles[state.pos];
-        if(!tile) return;
-        mapActionBtn.disabled = true;
-        switch(tile.type) {
-            case 'quiz':
-                startMapQuiz();
-                break;
-            case 'battle':
-                startBattle(tile.enemy || randomPick(state.stage.enemyPool), false);
-                break;
-            case 'heal':
-                state.hp = Math.min(state.maxHp, state.hp + (tile.value || 20));
-                mapStatus.textContent = `HPが${tile.value || 20}回復した！`;
-                setTimeout(() => advanceTile(), 800);
-                break;
-            case 'boost':
-                state.powerBonus += tile.value || 5;
-                mapStatus.textContent = `攻撃力が+${tile.value || 5}強化された！`;
-                setTimeout(() => advanceTile(), 800);
-                break;
-            case 'event':
-                if(tile.subtype === 'bossprep') {
-                    showStageMessage('軍備を整え、士気が上がった。ボス戦に備えよう。', () => {
-                        mapStatus.textContent = '士気が高まった！HPが少し回復。';
-                        state.hp = Math.min(state.maxHp, state.hp + 15);
-                        advanceTile();
-                    });
-                } else {
-                    advanceTile();
-                }
-                break;
-            case 'boss':
-                startBattle('boss', true);
-                break;
-            default:
-                advanceTile();
-        }
-    }
-
-    function startMapQuiz() {
-        const question = drawQuestion();
-        openQuiz(question, { kind: 'map' }, (result) => {
-            if(result.correct) {
-                mapStatus.textContent = '正解！士気が上がった。';
+    function updateTimelineUI() {
+        const currentStage = stagesData[state.currentStageId];
+        const tlDiv = document.getElementById('map-timeline');
+        tlDiv.innerHTML = '';
+        currentStage.timeline.forEach((era, idx) => {
+            if (idx === Math.floor(currentStage.timeline.length / 2)) {
+                tlDiv.innerHTML += `<span class="current-era">${era}</span>`;
             } else {
-                mapStatus.textContent = '不正解…先を急ごう。';
+                tlDiv.innerHTML += `<span>${era}</span>`;
             }
-            setTimeout(() => advanceTile(), 700);
         });
     }
 
-    function advanceTile() {
-        state.pos += 1;
-        saveProgress();
-        renderMap();
-    }
-
-    function stageCleared() {
-        showStageMessage(state.stage.clearText, () => {
-            recordClear(state.stageId);
-            saveProgress(true);
-            showResult(true);
+    // --- Map Logic ---
+    function renderMap() {
+        const board = document.getElementById('map-board');
+        board.innerHTML = '';
+        
+        const currentStage = stagesData[state.currentStageId];
+        
+        mapNodesDefault.forEach((node, idx) => {
+            const el = document.createElement('div');
+            el.className = `map-node type-${node.type}`;
+            el.id = `node-${idx}`;
+            
+            let labelText = node.label;
+            if (idx === 20) labelText = `ボス: ${currentStage.boss.name}`;
+            
+            el.innerHTML = `<span>${20 - idx}マス前</span> <span>${labelText}</span>`;
+            
+            if (idx === state.pos) {
+                const playerIcon = document.createElement('div');
+                playerIcon.className = 'player-icon';
+                playerIcon.id = 'player-icon';
+                playerIcon.innerHTML = '武';
+                el.appendChild(playerIcon);
+            }
+            board.appendChild(el);
         });
     }
 
-    function startBattle(enemyKey, isBoss) {
-        state.inBattle = true;
-        let enemyData;
-        if(isBoss) {
-            enemyData = Object.assign({}, state.stage.boss);
-        } else {
-            const base = enemyKey === 'boss' ? state.stage.boss : ENEMY_LIBRARY[enemyKey];
-            enemyData = Object.assign({}, base);
-        }
-        enemyData.currentHp = enemyData.hp;
-        state.currEnemy = enemyData;
-        battleLog.innerHTML = `<div>${enemyData.intro || '敵が現れた。'}</div>`;
-        document.getElementById('battle-subtitle').textContent = isBoss ? '最終決戦！クイズに勝って大技を決めろ。' : 'クイズに正解して攻撃しよう。';
-        battleDice.textContent = '?';
-        skillName.textContent = 'サイコロを振って技を決めよう';
-        document.getElementById('enemy-name').textContent = enemyData.name;
-        updateBattleUI();
-        showScreen('battle');
-        enableRoll(true);
-    }
-
-    function rollBattleDice() {
-        enableRoll(false);
-        const roll = Math.floor(Math.random() * 6) + 1;
-        battleDice.textContent = roll;
-        const skill = SKILLS[roll];
-        state.currentSkill = skill;
-        skillName.textContent = `${skill.name}（${skill.text}）`;
-        const question = drawQuestion();
-        openQuiz(question, { kind: 'battle' }, (result) => {
-            resolveBattleTurn(result.correct);
-        });
-    }
-
-    function resolveBattleTurn(isCorrect) {
-        const enemy = state.currEnemy;
-        const skill = state.currentSkill;
-        if(!enemy || !skill) return;
-        const logLines = [];
-        let dmg = 0;
-        switch(skill.type) {
-            case 'attack':
-                dmg = applyDamage(skill.power, isCorrect);
-                enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
-                logLines.push(`⚔️ ${skill.name}！${enemy.name}に${dmg}ダメージ`);
-                break;
-            case 'multi':
-                const perHit = applyDamage(skill.power, isCorrect);
-                const hits = isCorrect ? skill.hits : 1;
-                dmg = perHit * hits;
-                enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
-                logLines.push(`⚔️ ${skill.name}！${hits}回の斬撃で${dmg}ダメージ`);
-                break;
-            case 'heal':
-                const heal = isCorrect ? skill.heal : Math.floor(skill.heal / 2);
-                state.hp = Math.min(state.maxHp, state.hp + heal);
-                logLines.push(`✨ ${skill.name}！HPが${heal}回復`);
-                break;
-            case 'guard':
-                state.guardPercent = isCorrect ? skill.guard : (skill.missGuard || 0.2);
-                logLines.push(`🛡️ ${skill.name}！次の被ダメージを軽減`);
-                break;
-            case 'special':
-                dmg = applyDamage(skill.power, isCorrect);
-                enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
-                state.enemyWeaken = isCorrect ? skill.weaken : Math.floor(skill.weaken / 2);
-                logLines.push(`🎯 ${skill.name}！${dmg}ダメージ＋敵の攻撃力低下`);
-                break;
-            default:
-                break;
-        }
-        battleLog.innerHTML += `<div>${logLines.join(' ')}</div>`;
-        battleLog.scrollTop = battleLog.scrollHeight;
-        updateBattleUI();
-        if(enemy.currentHp <= 0) {
-            finishBattle(true);
-            return;
-        }
-        if(isCorrect) {
-            battleLog.innerHTML += `<div style="color:var(--gold)">好機！敵の反撃を許さない。</div>`;
-            battleLog.scrollTop = battleLog.scrollHeight;
-            enableRoll(true);
-        } else {
-            enemyAttack();
+    function updateMapUI() {
+        document.getElementById('map-hp').innerText = `${state.hp}/${state.maxHp}`;
+        document.getElementById('map-remain').innerText = 20 - state.pos;
+        
+        const oldIcon = document.getElementById('player-icon');
+        if(oldIcon) oldIcon.remove();
+        
+        const targetNode = document.getElementById(`node-${state.pos}`);
+        if(targetNode) {
+            const playerIcon = document.createElement('div');
+            playerIcon.className = 'player-icon';
+            playerIcon.id = 'player-icon';
+            playerIcon.innerHTML = '武';
+            targetNode.appendChild(playerIcon);
+            
+            // Auto-scroll to keep the player in view
+            targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
 
-    function applyDamage(base, isCorrect) {
-        const bonus = state.powerBonus;
-        let power = base + bonus;
-        if(!isCorrect) power = Math.max(1, Math.floor(power / 2));
-        return power;
+    // --- Dice Logic ---
+    function openDiceForMap() {
+        state.diceMode = 'map';
+        document.getElementById('dice-title').innerText = '進むマスを決めるぞ！';
+        document.getElementById('dice-skill-name').style.display = 'none';
+        showDiceModal();
     }
 
-    function enemyAttack() {
-        const enemy = state.currEnemy;
-        if(!enemy) return;
-        const range = enemy.atk || [8, 12];
-        let dmg = randomRange(range[0], range[1]);
-        if(state.enemyWeaken > 0) {
-            dmg = Math.max(1, dmg - state.enemyWeaken);
-            state.enemyWeaken = 0;
-        }
-        if(state.guardPercent > 0) {
-            const reduced = Math.max(1, Math.floor(dmg * (1 - state.guardPercent)));
-            battleLog.innerHTML += `<div>🛡️ 防御成功！${dmg}→${reduced}に軽減。</div>`;
-            dmg = reduced;
-            state.guardPercent = 0;
-        }
-        state.hp = Math.max(0, state.hp - dmg);
-        battleLog.innerHTML += `<div style="color:var(--accent)">💥 ${enemy.name}の反撃！${dmg}ダメージ</div>`;
-        battleLog.scrollTop = battleLog.scrollHeight;
-        updateBattleUI();
-        if(state.hp <= 0) {
-            state.hp = 0;
-            finishBattle(false);
-        } else {
-            enableRoll(true);
-        }
+    function openDiceForBattle() {
+        state.diceMode = 'battle';
+        document.getElementById('dice-title').innerText = '技を決めるぞ！';
+        document.getElementById('dice-skill-name').style.display = 'block';
+        document.getElementById('dice-skill-name').innerText = '何を出す？';
+        showDiceModal();
     }
 
-    function finishBattle(win) {
-        enableRoll(false);
-        const cleanup = () => {
-            state.inBattle = false;
-            state.currEnemy = null;
-            state.currentSkill = null;
-            state.guardPercent = 0;
-            state.enemyWeaken = 0;
-        };
-        if(win) {
-            battleLog.innerHTML += '<div style="color:var(--gold)">勝利！</div>';
+    let diceInterval;
+    function showDiceModal() {
+        const modal = document.getElementById('dice-modal');
+        modal.classList.add('active');
+        const btn = document.getElementById('btn-roll-dice');
+        btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+
+        const dNum = document.getElementById('dice-number');
+        dNum.classList.add('dice-rolling');
+        let count = 1;
+        diceInterval = setInterval(() => {
+            count = count >= 6 ? 1 : count + 1;
+            dNum.innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][count-1];
+            if(state.diceMode === 'battle') {
+                const skills = ['', '小攻撃', '防御', '連続攻撃', '回復', '特殊技', '必殺技'];
+                document.getElementById('dice-skill-name').innerText = skills[count];
+            }
+        }, 100);
+    }
+
+    function rollDiceAction() {
+        const btn = document.getElementById('btn-roll-dice');
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.style.pointerEvents = 'none';
+
+        clearInterval(diceInterval);
+        document.getElementById('dice-number').classList.remove('dice-rolling');
+        const num = Math.floor(Math.random() * 6) + 1;
+        document.getElementById('dice-number').innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][num-1];
+        
+        setTimeout(() => {
+            document.getElementById('dice-modal').classList.remove('active');
+            if(state.diceMode === 'map') proceedMap(num);
+            else proceedBattleDice(num);
+        }, 1000);
+    }
+
+    // --- Map Events ---
+    function proceedMap(diceNum) {
+        showMessage('マップ進行', `${diceNum}マス進んだ！`, () => {
+            state.pos += diceNum;
+            if(state.pos > 20) state.pos = 20;
+            updateMapUI();
+            saveGame();
+            
             setTimeout(() => {
-                cleanup();
-                advanceTile();
-            }, 600);
-        } else {
-            battleLog.innerHTML += '<div style="color:#ff6961">敗北…</div>';
-            setTimeout(() => {
-                cleanup();
-                showResult(false);
+                triggerCellEvent();
             }, 800);
+        });
+    }
+
+    function triggerCellEvent() {
+        const cell = mapNodesDefault[state.pos];
+        if(!cell) return;
+        
+        if(cell.type === 'quiz') {
+            startQuizMode(() => {
+                showMessage('正解！', 'そのまま次のターンへ進む。', () => changeScreen('map-screen'));
+            }, () => {
+                showMessage('不正解...', 'HPが「10」減ってしまった...', () => {
+                    playAnim('game-container', 'anim-damage');
+                    state.hp -= 10;
+                    if(state.hp <= 0) return gameOver();
+                    updateMapUI();
+                    changeScreen('map-screen');
+                });
+            });
+        } else if(cell.type === 'event' || cell.type === 'rest') {
+            const heal = cell.type === 'rest' ? 30 : 10;
+            state.hp = Math.min(state.maxHp, state.hp + heal);
+            playAnim('game-container', 'anim-heal');
+            showMessage('休憩', `体力が ${heal} 回復した！`, () => {
+                updateMapUI();
+                saveGame();
+            });
+        } else if(cell.type === 'battle') {
+            const currentStage = stagesData[state.currentStageId];
+            const enemy = currentStage.enemies[Math.floor(Math.random()*currentStage.enemies.length)];
+            initBattle(enemy);
+        } else if(cell.type === 'boss') {
+            const boss = stagesData[state.currentStageId].boss;
+            initBattle({ ...boss, isBoss: true });
         }
+    }
+
+    // --- Quiz Logic ---
+    function startQuizMode(onCorrect, onWrong) {
+        changeScreen('quiz-screen');
+        const qData = stagesData[state.currentStageId].quizData;
+        const q = qData[Math.floor(Math.random() * qData.length)];
+        
+        document.getElementById('quiz-question').innerText = q.question;
+        const choicesDiv = document.getElementById('quiz-choices');
+        choicesDiv.innerHTML = '';
+        
+        let shuffledChoices = q.choices.map((choice, index) => ({ choice, originalIndex: index }));
+        shuffledChoices.sort(() => Math.random() - 0.5);
+        
+        shuffledChoices.forEach((item, displayIdx) => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = `${displayIdx+1}. ${item.choice}`;
+            btn.onclick = () => {
+                document.querySelectorAll('.choice-btn').forEach(b => {
+                    b.disabled = true;
+                    b.style.pointerEvents = 'none';
+                });
+                
+                const isCorrect = item.originalIndex === q.answerIndex;
+                if(isCorrect) state.correct++; else state.wrong++;
+                
+                if(!state.learned.includes(q.category)) state.learned.push(q.category);
+                
+                const title = isCorrect ? '⭕ 正解！' : '❌ 不正解...';
+                showMessage(title, q.explanation, () => {
+                    isCorrect ? onCorrect() : onWrong();
+                });
+            };
+            choicesDiv.appendChild(btn);
+        });
+    }
+
+    // --- Battle Logic ---
+    function initBattle(enemyData) {
+        state.currentEnemy = { ...enemyData, hp: enemyData.hp, maxHp: enemyData.hp };
+        state.battleParams = { turn: 0, defending: false };
+        
+        document.getElementById('enemy-emoji-disp').innerText = enemyData.emoji || '👾';
+        document.getElementById('enemy-name-disp').innerText = enemyData.name;
+        
+        const spr = document.getElementById('enemy-sprite');
+        if(enemyData.isBoss) {
+            spr.style.borderColor = 'var(--primary)';
+            spr.style.background = '#8e44ad';
+            spr.style.boxShadow = '0 0 20px rgba(200,0,0,0.5)';
+        } else {
+            spr.style.borderColor = 'var(--secondary)';
+            spr.style.background = 'var(--dark)';
+            spr.style.boxShadow = 'none';
+        }
+        
+        updateBattleUI();
+        document.getElementById('battle-log').innerHTML = `${enemyData.name} が現れた！<br>サイコロを振って技を決めろ！`;
+        changeScreen('battle-screen');
     }
 
     function updateBattleUI() {
-        if(!state.currEnemy) return;
-        const enemy = state.currEnemy;
-        document.getElementById('enemy-hp-text').textContent = `${enemy.currentHp} / ${enemy.hp}`;
-        document.getElementById('player-hp-text').textContent = `${state.hp} / ${state.maxHp}`;
-        document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.currentHp / enemy.hp) * 100)}%`;
-        document.getElementById('player-hp-bar').style.width = `${Math.max(0, (state.hp / state.maxHp) * 100)}%`;
+        document.getElementById('battle-player-hp').innerText = state.hp;
+        const enemy = state.currentEnemy;
+        const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+        const fill = document.getElementById('enemy-hp-fill');
+        fill.style.width = hpPercent + '%';
+        if(hpPercent <= 30) fill.classList.add('danger'); else fill.classList.remove('danger');
+        document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
     }
 
-    function enableRoll(flag) {
-        document.getElementById('btn-roll').disabled = !flag;
+    function logBattle(msg) {
+        const log = document.getElementById('battle-log');
+        log.innerHTML = msg + '<br>' + log.innerHTML;
     }
 
-    function drawQuestion() {
-        if(state.questionQueue.length === 0) {
-            state.questionQueue = shuffle(state.stage.questions.slice());
-        }
-        return state.questionQueue.pop();
-    }
-
-    function openQuiz(question, meta, callback) {
-        activeQuiz = { question, callback, meta, resolved: false };
-        document.getElementById('quiz-title').textContent = meta && meta.kind === 'battle' ? '戦闘クイズ' : 'マスクイズ';
-        document.getElementById('quiz-question').textContent = question.text;
-        const choiceBox = document.getElementById('quiz-choices');
-        choiceBox.innerHTML = '';
-        question.choices.forEach((choice, idx) => {
-            const btn = document.createElement('button');
-            btn.textContent = choice;
-            btn.addEventListener('click', () => submitQuiz(idx));
-            choiceBox.appendChild(btn);
-        });
-        document.getElementById('quiz-feedback').textContent = '';
-        quizOverlay.classList.add('active');
-    }
-
-    function submitQuiz(selectIdx) {
-        if(!activeQuiz) return;
-        if(activeQuiz.resolved) return;
-        activeQuiz.resolved = true;
-        const { question, callback, meta } = activeQuiz;
-        const correct = question.answer === selectIdx;
-        const buttons = Array.from(document.getElementById('quiz-choices').children);
-        buttons.forEach((btn, idx) => {
-            btn.disabled = true;
-            if(idx === question.answer) btn.classList.add('correct');
-            if(idx === selectIdx && !correct) btn.classList.add('wrong');
-        });
-        document.getElementById('quiz-feedback').textContent = `${correct ? '正解！' : '不正解…'} ${question.explain}`;
-        if(meta && meta.kind === 'battle') {
-            if(correct) {
-                state.combo += 1;
-                state.maxCombo = Math.max(state.maxCombo, state.combo);
-            } else {
-                state.combo = 0;
-            }
-        }
-        if(correct) {
-            state.correct += 1;
-        } else {
-            state.wrong += 1;
-            addWeakEntry(question, selectIdx);
-        }
+    function proceedBattleDice(diceNum) {
+        const skills = [
+            { id: 1, name: '小攻撃', desc: '確実な一撃', dmg: 10 },
+            { id: 2, name: '防御', desc: '次の被ダメージを0にする', type: 'defend' },
+            { id: 3, name: '連続攻撃', desc: '2回攻撃！', dmg: 20 },
+            { id: 4, name: '回復', desc: 'HPを20回復', type: 'heal' },
+            { id: 5, name: '特殊技', desc: '強烈な一撃', dmg: 30 },
+            { id: 6, name: '必殺技', desc: '最大ダメージ', dmg: 45 }
+        ];
+        state.currentSkill = skills[diceNum-1];
+        
+        logBattle(`【技決定】 ${state.currentSkill.name}！ クイズに正解して発動しろ！`);
+        
         setTimeout(() => {
-            quizOverlay.classList.remove('active');
-            const cb = callback;
-            activeQuiz = null;
-            cb({ correct, question, selected: selectIdx });
+            startQuizMode(() => executePlayerTurn(true), () => executePlayerTurn(false));
         }, 1200);
     }
 
-    function renderWeakList() {
-        const listEl = document.getElementById('weak-list');
-        if(weakList.length === 0) {
-            listEl.innerHTML = '<p>まだ苦手問題はありません。</p>';
+    function executePlayerTurn(quizCorrect) {
+        changeScreen('battle-screen');
+        if(!quizCorrect) {
+            logBattle(`【失敗】 クイズ不正解！ 技が発動しなかった...`);
+            setTimeout(executeEnemyTurn, 1500);
             return;
         }
-        listEl.innerHTML = '';
-        weakList.slice().reverse().forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'weak-item';
-            div.innerHTML = `
-                <strong>Q. ${item.question}</strong>
-                <small>あなたの解答: ${item.yourAnswer}</small>
-                <small>正解: ${item.correctAnswer}</small>
-                <p style="margin-top:6px;">${item.explain}</p>
-            `;
-            listEl.appendChild(div);
-        });
+
+        const skill = state.currentSkill;
+        logBattle(`【成功】 ${skill.name} 発動！`);
+        
+        if(skill.dmg) {
+            state.currentEnemy.hp -= skill.dmg;
+            logBattle(`敵に ${skill.dmg} のダメージを与えた！`);
+            playAnim('enemy-sprite', 'anim-damage');
+        } else if(skill.type === 'defend') {
+            state.battleParams.defending = true;
+            logBattle(`守りを固めた！次の敵の攻撃を防ぐ。`);
+        } else if(skill.type === 'heal') {
+            state.hp = Math.min(state.maxHp, state.hp + 20);
+            logBattle(`HPが20回復した！`);
+            playAnim('game-container', 'anim-heal');
+        }
+        
+        updateBattleUI();
+        
+        if(state.currentEnemy.hp <= 0) {
+            setTimeout(() => {
+                showMessage('勝利！', `見事 ${state.currentEnemy.name} を倒した！`, () => {
+                    if(state.currentEnemy.isBoss) {
+                        gameClear();
+                    } else {
+                        changeScreen('map-screen');
+                    }
+                });
+            }, 1000);
+        } else {
+            document.getElementById('btn-battle-dice').style.display = 'none';
+            setTimeout(executeEnemyTurn, 1500);
+        }
     }
 
-    function addWeakEntry(question, selectedIdx) {
-        const entry = {
-            question: question.text,
-            yourAnswer: question.choices[selectedIdx] || '未回答',
-            correctAnswer: question.choices[question.answer],
-            explain: question.explain,
-            at: Date.now()
-        };
-        weakList.push(entry);
-        saveWeakList();
+    function executeEnemyTurn() {
+        const enemy = state.currentEnemy;
+        const eDmg = enemy.isBoss ? Math.floor(Math.random()*15) + 10 : Math.floor(Math.random()*10) + 5;
+        
+        logBattle(`【敵のターン】 ${enemy.name} の攻撃！`);
+        
+        setTimeout(() => {
+            if(state.battleParams.defending) {
+                logBattle(`防御成功！ ダメージを受けなかった。`);
+                state.battleParams.defending = false;
+            } else {
+                state.hp -= eDmg;
+                logBattle(`${eDmg} のダメージを受けた...`);
+                playAnim('game-container', 'anim-damage');
+            }
+            updateBattleUI();
+            
+            if(state.hp <= 0) {
+                setTimeout(gameOver, 1000);
+            } else {
+                document.getElementById('btn-battle-dice').style.display = 'block';
+            }
+        }, 1000);
     }
 
-    function showStageMessage(text, cb) {
-        messageCallback = cb;
-        document.getElementById('message-text').textContent = text;
-        messageOverlay.classList.add('active');
+    // --- Endings & Utils ---
+    function gameOver() {
+        state.hp = 0;
+        document.getElementById('result-title').innerText = 'ゲームオーバー...';
+        document.getElementById('result-title').style.color = 'var(--dark)';
+        showResult();
     }
 
-    function showResult(clear) {
-        showScreen('result');
-        document.getElementById('result-title').textContent = clear ? 'ステージクリア！' : 'ゲームオーバー';
-        document.getElementById('result-correct').textContent = state.correct;
-        document.getElementById('result-wrong').textContent = state.wrong;
-        document.getElementById('result-combo').textContent = state.maxCombo;
-        document.getElementById('result-message').textContent = clear ? '戦国の知識が身についた！次の時代も攻略しよう。' : '力尽きてしまった…クイズで鍛えて再挑戦しよう。';
-        const list = document.getElementById('result-highlights');
-        list.innerHTML = '';
-        state.stage.highlights.forEach(item => {
+    function gameClear() {
+        document.getElementById('result-title').innerText = 'ステージクリア！';
+        document.getElementById('result-title').style.color = 'var(--primary)';
+        
+        // Mark stage as cleared
+        state.clearedStages[state.currentStageId] = true;
+        saveGame();
+        
+        showResult();
+    }
+
+    function showResult() {
+        document.getElementById('result-era').innerText = stagesData[state.currentStageId].name;
+        document.getElementById('result-correct').innerText = state.correct;
+        document.getElementById('result-wrong').innerText = state.wrong;
+        document.getElementById('result-pos').innerText = state.pos;
+        
+        const learnedUl = document.getElementById('result-learned');
+        learnedUl.innerHTML = '';
+        state.learned.forEach(l => {
             const li = document.createElement('li');
-            li.textContent = `・${item}`;
-            list.appendChild(li);
+            li.innerText = l + "について学んだ";
+            learnedUl.appendChild(li);
         });
-        if(clear) {
-            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-            updateContinueButton();
-        }
+        
+        changeScreen('result-screen');
     }
 
-    function updateTimeline(phase) {
-        Array.from(timelineBar.children).forEach(el => {
-            el.classList.toggle('active', el.dataset.era === phase);
-        });
+    function playAnim(elementId, animClass) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        el.classList.remove(animClass);
+        void el.offsetWidth;
+        el.classList.add(animClass);
+        setTimeout(() => el.classList.remove(animClass), 500);
     }
 
-    function actionLabel(type) {
-        switch(type) {
-            case 'quiz': return '📝 クイズに挑む';
-            case 'battle': return '⚔️ 戦闘開始';
-            case 'heal': return '♨️ 休息する';
-            case 'boost': return '⛏️ 強化する';
-            case 'event': return '📜 イベント';
-            case 'boss': return '👑 ボス戦';
-            default: return '進む';
-        }
-    }
-
-    function actionDescription(type) {
-        switch(type) {
-            case 'quiz': return '歴史クイズで士気を高めよう。';
-            case 'battle': return 'クイズ→技で敵を倒せ。';
-            case 'heal': return '兵を休ませてHP回復。';
-            case 'boost': return '兵装を整えて攻撃力アップ。';
-            case 'event': return '特別イベント。';
-            case 'boss': return '織田信長との最終決戦！';
-            default: return '';
-        }
-    }
-
-    function saveProgress(clear = false) {
-        if(clear) {
-            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-            return;
-        }
-        const data = {
-            stageId: state.stageId,
-            pos: state.pos,
-            hp: state.hp,
-            maxHp: state.maxHp,
-            powerBonus: state.powerBonus,
-            correct: state.correct,
-            wrong: state.wrong,
-            combo: state.combo,
-            maxCombo: state.maxCombo
+    function showMessage(title, text, callback) {
+        document.getElementById('msg-title').innerText = title;
+        document.getElementById('msg-text').innerText = text;
+        const modal = document.getElementById('message-modal');
+        modal.classList.add('active');
+        
+        const container = document.getElementById('msg-btn-container');
+        container.innerHTML = '<button class="btn" id="msg-btn-main">次へ</button>';
+        const btn = document.getElementById('msg-btn-main');
+        
+        btn.onclick = () => {
+            modal.classList.remove('active');
+            if(callback) callback();
         };
-        localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(data));
-        updateContinueButton();
     }
 
-    function loadProgress() {
-        const raw = localStorage.getItem(STORAGE_KEYS.PROGRESS);
-        if(!raw) return null;
-        try { return JSON.parse(raw); } catch(e) { return null; }
+    function showConfirm(title, text, onYes) {
+        document.getElementById('msg-title').innerText = title;
+        document.getElementById('msg-text').innerText = text;
+        const modal = document.getElementById('message-modal');
+        modal.classList.add('active');
+        
+        const container = document.getElementById('msg-btn-container');
+        container.innerHTML = `
+            <button class="btn btn-secondary" id="msg-btn-no" style="margin-right:10px;">やめる</button>
+            <button class="btn" id="msg-btn-yes">はい</button>
+        `;
+        
+        document.getElementById('msg-btn-no').onclick = () => {
+            modal.classList.remove('active');
+        };
+        document.getElementById('msg-btn-yes').onclick = () => {
+            modal.classList.remove('active');
+            if(onYes) onYes();
+        };
     }
-
-    function updateContinueButton() {
-        const btn = document.getElementById('btn-continue');
-        btn.disabled = !localStorage.getItem(STORAGE_KEYS.PROGRESS);
-        btn.style.opacity = btn.disabled ? 0.5 : 1;
-    }
-
-    function saveWeakList() {
-        localStorage.setItem(STORAGE_KEYS.WEAK, JSON.stringify(weakList));
-    }
-
-    function loadWeakList() {
-        const raw = localStorage.getItem(STORAGE_KEYS.WEAK);
-        if(!raw) return [];
-        try { return JSON.parse(raw); } catch(e) { return []; }
-    }
-
-    function recordClear(stageId) {
-        let clears = {};
-        try {
-            const raw = localStorage.getItem(STORAGE_KEYS.CLEARS);
-            clears = raw ? JSON.parse(raw) : {};
-        } catch (e) {
-            clears = {};
-        }
-        clears[stageId] = true;
-        try {
-            localStorage.setItem(STORAGE_KEYS.CLEARS, JSON.stringify(clears));
-        } catch (e) {
-            console.warn('clear history could not be saved', e);
-        }
-    }
-
-    function showScreen(name) {
-        Object.values(screens).forEach(el => el.classList.remove('active'));
-        if(screens[name]) screens[name].classList.add('active');
-    }
-
-    function shuffle(arr) {
-        for(let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr;
-    }
-
-    function randomPick(list) {
-        return list[Math.floor(Math.random() * list.length)];
-    }
-
-    function randomRange(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-})();
 </script>
 </body>
 </html>
