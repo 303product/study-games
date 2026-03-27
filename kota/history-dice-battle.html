@@ -90,16 +90,33 @@
         .timeline-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #333, var(--gold)); transition: width 0.5s; }
         .timeline-labels { display: flex; justify-content: space-between; font-size: 0.7rem; padding: 0 5px; margin-top: -38px; position: relative; z-index: 2; pointer-events: none; }
 
-        .map-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
-        .map-tile { 
-            aspect-ratio: 1; border: 2px solid var(--border); border-radius: 10px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            background: #1a1a1a; position: relative; 
+        .map-grid { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 15px; 
+            margin-top: 20px; 
+            overflow-x: auto; 
+            padding: 30px 15px;
+            scroll-behavior: smooth;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            border-bottom: 4px dotted var(--gold);
         }
-        .map-tile.active { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); background: #2a1a00; }
-        .map-tile.cleared { opacity: 0.6; }
+        .map-tile { 
+            flex: 0 0 100px;
+            height: 120px;
+            border: 2px solid var(--border); border-radius: 10px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background: var(--clay); position: relative; 
+            transition: all 0.3s;
+        }
+        .map-tile.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); background: #2a1a00; transform: translateY(-10px); }
+        .map-tile.cleared { opacity: 0.7; border-color: #444; }
         .map-tile.boss { border-color: var(--accent); animation: pulseRed 1s infinite alternate; }
         @keyframes pulseRed { from { box-shadow: 0 0 5px var(--red); } to { box-shadow: 0 0 20px var(--red); } }
+        /* Hide scrollbar */
+        .map-grid::-webkit-scrollbar { display: none; }
+        .map-grid { -ms-overflow-style: none; scrollbar-width: none; }
         .tile-icon { font-size: 1.5rem; margin-bottom: 5px; }
         .tile-label { font-size: 0.7rem; color: #aaa; }
         .player-token { position: absolute; font-size: 2rem; z-index: 10; transform: translate(-50%, -50%); transition: all 0.5s ease-in-out; }
@@ -432,6 +449,12 @@
         document.getElementById("map-pts").textContent = state.pts;
         document.getElementById("tl-fill").style.width = ((state.pos + 1) / TILES.length * 100) + "%";
         
+        // --- AUTO SCROLL ---
+        setTimeout(() => {
+            const activeTile = grid.querySelector('.active');
+            if(activeTile) activeTile.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }, 100);
+
         if(state.pos === TILES.length - 1) {
             document.getElementById("btn-roll").textContent = "👹 Final Boss!";
         } else {
