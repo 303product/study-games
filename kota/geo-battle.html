@@ -238,6 +238,25 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .snack-title{font-size:1.5rem;font-weight:900;color:var(--gold);margin-bottom:.5rem;}
 .snack-cost{font-size:1.2rem;color:var(--accent);margin-bottom:1.5rem;}
 .ticket-box{background:linear-gradient(135deg,#fff,#f0f0f0);color:#000;border:2px dashed #333;border-radius:8px;padding:1rem;margin-top:1rem;font-weight:bold;display:none;}
+
+/* === FINAL BOSS === */
+.final-boss-card{grid-column:1/-1;background:linear-gradient(135deg,#2a0000,#1a0000,#2a0a00);border:3px solid #ff2020;border-radius:20px;padding:1.5rem;text-align:center;cursor:pointer;touch-action:manipulation;position:relative;overflow:hidden;animation:finalBossCardPulse 1.5s infinite alternate;}
+.final-boss-card::before{content:'';position:absolute;inset:-2px;background:linear-gradient(45deg,#ff0000,#ff4400,#ffaa00,#ff4400,#ff0000);opacity:.3;filter:blur(15px);z-index:0;animation:finalBossAura 3s linear infinite;}
+@keyframes finalBossCardPulse{from{box-shadow:0 0 15px rgba(255,0,0,.4),inset 0 0 30px rgba(255,0,0,.1);}to{box-shadow:0 0 40px rgba(255,0,0,.8),inset 0 0 60px rgba(255,0,0,.2);}}
+@keyframes finalBossAura{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.final-boss-card-title{font-size:1.5rem;font-weight:900;color:#ff4444;text-shadow:0 0 20px rgba(255,0,0,.8);position:relative;z-index:1;}
+.final-boss-card-sub{font-size:.85rem;color:#ffaa88;margin-top:.3rem;position:relative;z-index:1;}
+.final-boss-card-emoji{font-size:3rem;position:relative;z-index:1;margin-bottom:.3rem;}
+.enemy-flag.final-boss{font-size:clamp(6rem,20vw,12rem)!important;filter:drop-shadow(0 0 40px rgba(255,0,0,.7)) drop-shadow(0 0 80px rgba(255,100,0,.4))!important;animation:finalBossFloat 2.5s ease-in-out infinite,finalBossBreath 4s ease-in-out infinite!important;}
+@keyframes finalBossFloat{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-12px) scale(1.03);}}
+@keyframes finalBossBreath{0%,100%{filter:drop-shadow(0 0 40px rgba(255,0,0,.7)) drop-shadow(0 0 80px rgba(255,100,0,.4));}50%{filter:drop-shadow(0 0 60px rgba(255,0,0,1)) drop-shadow(0 0 100px rgba(255,200,0,.6));}}
+.enemy-flag.final-boss.hit{animation:finalBossHit .6s ease!important;}
+@keyframes finalBossHit{0%{transform:scale(1);}15%{transform:scale(1.15) rotate(-3deg);filter:brightness(3);}30%{transform:translateX(-15px) scale(.95);}45%{transform:translateX(15px) scale(.95);}60%{transform:translateX(-8px) scale(1);}80%{transform:scale(1);}100%{transform:scale(1);}}
+.final-boss-defeated-badge{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border-radius:12px;padding:.6rem 1rem;font-size:.9rem;font-weight:900;text-align:center;grid-column:1/-1;animation:bossGlow 1s infinite alternate;}
+.final-victory-overlay{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#1a0a00 0%,#000 70%);}
+.final-victory-text{font-size:clamp(2rem,6vw,4rem);font-weight:900;background:linear-gradient(135deg,#ffd700,#ff4444,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;animation:victoryPulse 2s infinite;}
+@keyframes victoryPulse{0%,100%{filter:drop-shadow(0 0 10px rgba(255,215,0,.5));transform:scale(1);}50%{filter:drop-shadow(0 0 30px rgba(255,215,0,.8));transform:scale(1.05);}}
+.final-victory-sub{color:#ffaa66;font-size:1.2rem;margin-top:.5rem;text-align:center;}
 </style>
 
 
@@ -7991,11 +8010,11 @@ const REWARDS = [];
 // STATE
 // =====================================================================
 let state = {
-  cleared: [], wrongQ: [], points: 0, ptsHistory: [], bossClears: 0,
+  cleared: [], wrongQ: [], points: 0, ptsHistory: [], bossClears: 0, finalBossDefeated: false,
   currentCountry: null, questions: [], qIdx: 0,
   enemyHp: 100, enemyMaxHp: 100, combo: 0, battlePts: 0,
   correctCount: 0, timerInterval: null, timerLeft: 0,
-  answered: false, isBoss: false,
+  answered: false, isBoss: false, isFinalBoss: false,
 };
 
 function saveState(){ try{ localStorage.setItem("geoBattle", JSON.stringify(state)); }catch(e){} }
@@ -8057,8 +8076,23 @@ function renderMap(){
   }
 
 
+  // === FINAL BOSS CHECK ===
+  const allCleared = state.cleared.length >= COUNTRIES.length;
+  if(allCleared && !state.finalBossDefeated){
+    const fbc=document.createElement("div"); fbc.className="final-boss-card";
+    fbc.innerHTML=`<div class="final-boss-card-emoji">🐲</div><div class="final-boss-card-title">👹 最終ボス出現！— 世界の魔王</div><div class="final-boss-card-sub">全ての国を征服した者よ…最後の試練だ！ 50問に正解して世界を救え！</div>`;
+    fbc.addEventListener("click",()=>startFinalBoss());
+    fbc.addEventListener("touchend",(e)=>{e.preventDefault();startFinalBoss();});
+    grid.appendChild(fbc);
+  }
+  if(state.finalBossDefeated){
+    const badge=document.createElement("div"); badge.className="final-boss-defeated-badge";
+    badge.textContent="🎖️ 世界の魔王を撃破！全世界完全制覇達成！";
+    grid.appendChild(badge);
+  }
+
   const bossThreshold = (state.bossClears + 1) * 5;
-  const bossReady = state.cleared.length >= bossThreshold;
+  const bossReady = !allCleared && state.cleared.length >= bossThreshold;
 
   if(bossReady){
     const bc=document.createElement("div"); bc.className="boss-card";
@@ -8084,7 +8118,14 @@ function renderMap(){
 // =====================================================================
 // BATTLE
 // =====================================================================
-function buildQuestions(country, isBoss){
+function buildQuestions(country, isBoss, isFinalBoss){
+  if(isFinalBoss){
+    const pool=[];
+    COUNTRIES.forEach(cc=>{
+      cc.questions.forEach(q=>pool.push({...q,countryName:cc.name}));
+    });
+    return shuffle(pool).slice(0,50).map(q=>({...q,text:(q.countryName?`[${q.countryName}] `:"")+q.text}));
+  }
   if(isBoss){
     const pool=[];
     const wrongs = state.wrongQ || [];
@@ -8112,13 +8153,13 @@ const MONSTERS = {
 function getMonster(country){ return MONSTERS[country.region]||"👾"; }
 
 function startBattle(country){
-  state.currentCountry=country; state.isBoss=false;
-  state.questions=buildQuestions(country,false);
+  state.currentCountry=country; state.isBoss=false; state.isFinalBoss=false;
+  state.questions=buildQuestions(country,false,false);
   state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
   state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
   const flagEl = document.getElementById("bFlag");
   flagEl.textContent=getMonster(country);
-  flagEl.classList.remove("dead");
+  flagEl.classList.remove("dead","final-boss");
   document.getElementById("bName").textContent=country.name;
   document.getElementById("bName").classList.remove("hidden-for-flag");
   document.getElementById("bTitle").textContent=`⚔️ vs ${country.name}`;
@@ -8126,16 +8167,32 @@ function startBattle(country){
 }
 
 function startBoss(){
-  state.isBoss=true; state.currentCountry={name:"復習ボス",flag:"👾",id:"boss"};
-  state.questions=buildQuestions(null,true);
+  state.isBoss=true; state.isFinalBoss=false; state.currentCountry={name:"復習ボス",flag:"👾",id:"boss"};
+  state.questions=buildQuestions(null,true,false);
   if(state.questions.length===0){alert("復習問題がありません！");return;}
   state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
   state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
   const flagEl = document.getElementById("bFlag");
   flagEl.textContent="👾";
-  flagEl.classList.remove("dead");
+  flagEl.classList.remove("dead","final-boss");
   document.getElementById("bName").textContent="記憶の守護者";
   document.getElementById("bTitle").textContent="⚔️ ボス戦！";
+  showScreen("battleScreen"); renderBattleHp(); showQuestion();
+}
+
+function startFinalBoss(){
+  state.isBoss=false; state.isFinalBoss=true;
+  state.currentCountry={name:"世界の魔王",flag:"🐲",id:"final_boss"};
+  state.questions=buildQuestions(null,false,true);
+  state.qIdx=0; state.enemyMaxHp=state.questions.length*20;
+  state.enemyHp=state.enemyMaxHp; state.combo=0; state.battlePts=0; state.correctCount=0;
+  const flagEl = document.getElementById("bFlag");
+  flagEl.textContent="🐲";
+  flagEl.classList.remove("dead");
+  flagEl.classList.add("final-boss");
+  document.getElementById("bName").textContent="世界の魔王";
+  document.getElementById("bName").classList.remove("hidden-for-flag");
+  document.getElementById("bTitle").textContent="👹 最終決戦！vs 世界の魔王";
   showScreen("battleScreen"); renderBattleHp(); showQuestion();
 }
 
@@ -8284,12 +8341,16 @@ function endBattle(won){
   const perfect=state.correctCount===state.questions.length;
 
   if(won){
-    if(!state.isBoss&&!state.cleared.includes(c.id)){
+    if(!state.isBoss&&!state.isFinalBoss&&!state.cleared.includes(c.id)){
       state.cleared.push(c.id); 
     }
     if(perfect){state.points += 2000; earned += 2000; bonuses.push({label:"🏯 初回制覇",val:"+2000pt"});}
     if(state.isBoss){
       state.bossClears++; state.points += 3000; earned += 3000; bonuses.push({label:"🌸 完全勝利",val:"+3000pt"});
+    }
+    if(state.isFinalBoss){
+      state.finalBossDefeated=true; state.points += 10000; earned += 10000;
+      bonuses.push({label:"👹 最終ボス撃破",val:"+10000pt"});
     }
   }
   saveState(); showResult(won,c,earned,bonuses,perfect);
@@ -8298,11 +8359,12 @@ function endBattle(won){
 function showResult(won,country,earned,bonuses,perfect){
   showScreen("resultScreen");
   const isBoss=state.isBoss;
-  document.getElementById("rIcon").textContent=won?(isBoss?"👾":(perfect?"🏆":"✅")):"💀";
+  const isFinalBoss=state.isFinalBoss;
+  document.getElementById("rIcon").textContent=won?(isFinalBoss?"🐲":isBoss?"👾":(perfect?"🏆":"✅")):"💀";
   const rTitle=document.getElementById("rTitle");
-  rTitle.className="result-title "+(won?(isBoss?"boss":"win"):"lose");
-  rTitle.textContent=won?(isBoss?"ボス撃破！":(perfect?"完全制覇！":"征服成功！")):"撃退された…";
-  document.getElementById("rSubtitle").textContent=won?`${country.name} を征服した！`:"また挑戦しよう！";
+  rTitle.className="result-title "+(won?(isFinalBoss?"boss":isBoss?"boss":"win"):"lose");
+  rTitle.textContent=won?(isFinalBoss?"世界の魔王を撃破！！":isBoss?"ボス撃破！":(perfect?"完全制覇！":"征服成功！")):"撃退された…";
+  document.getElementById("rSubtitle").textContent=won?(isFinalBoss?"全世界を救った！キミは真の世界チャンピオンだ！":`${country.name} を征服した！`):"また挑戦しよう！";
 
   document.getElementById("rStats").innerHTML=`
     <div class="rs-row"><span>正解数</span><span class="rs-val">${state.correctCount} / ${state.questions.length}</span></div>
@@ -8324,9 +8386,10 @@ function showResult(won,country,earned,bonuses,perfect){
   };
   if(won){
     addBtn("🗺️ 地図に戻る",openMap);
-    if(!state.isBoss)addBtn("🔄 もう一度",()=>startBattle(country),"btn-secondary");
+    if(!state.isBoss&&!state.isFinalBoss)addBtn("🔄 もう一度",()=>startBattle(country),"btn-secondary");
   } else {
-    addBtn("🔄 再挑戦",()=>startBattle(country));
+    if(state.isFinalBoss) addBtn("🔄 再挑戦",()=>startFinalBoss());
+    else addBtn("🔄 再挑戦",()=>startBattle(country));
     addBtn("🗺️ 地図に戻る",openMap,"btn-secondary");
   }
 }
