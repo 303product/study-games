@@ -217,7 +217,7 @@
 
         <div style="margin-top: auto; padding: 10px 0;">
             <div style="text-align: center; margin-bottom: 5px; font-size: 0.9rem;" id="map-msg">サイコロを振って進め！</div>
-            <button id="btn-roll" class="btn" style="width: 100%;" onclick="rollMove()">🎲 サイコロを振る</button>
+            <button id="btn-roll" class="btn" style="width: 100%;" onclick="moveStep()">➡️ 次のマスへ進む</button>
         </div>
     </div>
 
@@ -435,11 +435,11 @@
         if(state.pos === TILES.length - 1) {
             document.getElementById("btn-roll").textContent = "👹 Final Boss!";
         } else {
-            document.getElementById("btn-roll").textContent = "🎲 サイコロを振る";
+            document.getElementById("btn-roll").textContent = "➡️ 次のマスへ進む";
         }
     }
 
-    function rollMove() {
+    function moveStep() {
         if(state.diceRolling) return;
         if(state.pos === TILES.length - 1) { startBoss(); return; }
 
@@ -447,16 +447,15 @@
         const btn = document.getElementById("btn-roll");
         btn.disabled = true;
 
-        let roll = Math.floor(Math.random() * 6) + 1;
-        document.getElementById("map-msg").textContent = `サイコロの目: ${roll}！`;
+        document.getElementById("map-msg").textContent = `次のマスへ移動中...`;
 
         setTimeout(() => {
-            state.pos = Math.min(TILES.length - 1, state.pos + roll);
+            state.pos = Math.min(TILES.length - 1, state.pos + 1);
             renderMap();
             state.diceRolling = false;
             btn.disabled = false;
             setTimeout(() => handleTile(), 500);
-        }, 800);
+        }, 600);
     }
 
     function handleTile() {
@@ -617,8 +616,15 @@
         setTimeout(() => {
             if(state.currEnemy.hp <= 0) {
                 winBattle();
-            } else {
+            } else if (!state.isCorrect) {
+                // 不正解の時だけ反撃
                 enemyTurn();
+            } else {
+                // 正解時は反撃を受けず、次のターンへ
+                log.innerHTML += `<div style="color:var(--gold)">✨ 攻撃を回避した！ 続けて攻撃のチャンスだ！</div>`;
+                document.getElementById("btn-roll-btl").disabled = false;
+                document.getElementById("battle-dice").textContent = "?";
+                document.getElementById("skill-name").textContent = "???";
             }
         }, 1000);
     }
