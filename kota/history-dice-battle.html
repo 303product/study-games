@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>日本史ダイスバトル — 戦国編</title>
+    <title>日本史ダイスバトル</title>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -192,23 +192,34 @@
 
     <!-- 1. TITLE SCREEN -->
     <div id="screen-title" class="screen active">
-        <div class="subtitle">日本史学数ゲーム</div>
+        <div class="subtitle">日本史学習ゲーム</div>
         <h1>日本史<br>ダイスバトル</h1>
         <div class="title-img">⚔️</div>
-        <button class="btn" onclick="showIntro()">⚡ はじめる</button>
+        <button class="btn" onclick="showEraSelect()">⚡ はじめる</button>
         <button class="btn btn-gold" onclick="toggleNigacho()">📖 苦手帳</button>
         <div style="margin-top: auto; font-size: 0.7rem; color: #555; text-align: center;">© 2026 日本史ダイスバトル製作委員会</div>
     </div>
 
+    <!-- 1.5 ERA SELECT SCREEN -->
+    <div id="screen-era-select" class="screen">
+        <h1>時代を選択</h1>
+        <div class="subtitle">どの時代を攻略する？</div>
+        <div id="era-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn btn-gold" onclick="prepareStage('nara')">🦌 奈良時代</button>
+            <button class="btn btn-gold" onclick="prepareStage('heian')">🌸 平安時代</button>
+            <button class="btn btn-gold" onclick="prepareStage('kamakura')">⚔️ 鎌倉時代</button>
+            <button class="btn btn-gold" onclick="prepareStage('sengoku')">🔥 戦国時代</button>
+            <button class="btn btn-gold" onclick="prepareStage('edo')">🏯 江戸時代</button>
+        </div>
+        <button class="btn" style="margin-top: 20px; background: #333;" onclick="showScreen('screen-title')">戻る</button>
+    </div>
+
     <!-- 2. INTRO (YEAR TABLE) -->
     <div id="screen-intro" class="screen">
-        <h1>戦国時代の幕開け</h1>
-        <div class="subtitle">室町時代から戦国時代へ…</div>
-        <ul class="year-table">
-            <li class="year-item"><div class="year-date">1467年</div><div class="year-content">応仁の乱<br><small>戦国時代の始まりとされる大乱</small></div></li>
-            <li class="year-item year-highlight"><div class="year-date">戦国時代</div><div class="year-content">下剋上の世<br><small>実力のある者が上位者を倒す時代</small></div></li>
-            <li class="year-item"><div class="year-date">1560年</div><div class="year-content">桶狭間の戦い<br><small>織田信長が頭角を現す</small></div></li>
-            <li class="year-item"><div class="year-date">1573年</div><div class="year-content">室町幕府滅亡<br><small>安土桃山時代への橋渡し</small></div></li>
+        <h1 id="intro-title">戦国時代の幕開け</h1>
+        <div id="intro-sub" class="subtitle">室町時代から戦国時代へ…</div>
+        <ul id="intro-years" class="year-table">
+            <!-- Dynamic -->
         </ul>
         <button class="btn btn-gold" onclick="startGame()">合戦開始！</button>
     </div>
@@ -223,9 +234,9 @@
             <div id="tl-fill" class="timeline-fill"></div>
         </div>
         <div class="timeline-labels">
-            <span>室町</span>
-            <span style="color:var(--gold);">戦国時代</span>
-            <span>安土桃山</span>
+            <span id="label-prev">室町</span>
+            <span id="label-curr" style="color:var(--gold);">戦国時代</span>
+            <span id="label-next">安土桃山</span>
         </div>
 
         <div id="map-grid" class="map-grid">
@@ -319,45 +330,116 @@
 
 <script>
     // --- DATA ---
-    const QUESTIONS = [
-        { id: "s01", cat: "人物", q: "1582年、本能寺の変で明智光秀に倒された戦国大名は？", choice: ["武田信玄", "豊臣秀吉", "織田信長", "今川義元"], ans: 2, exp: "織田信長は天下統一を目前にして、家臣の明智光秀に襲われました。" },
-        { id: "s02", cat: "政策", q: "織田信長が行った、商工業を自由にするための政策は？", choice: ["刀狩", "楽市楽座", "墾田永年私財法", "班田収授法"], ans: 1, exp: "市場の税を免除し、誰でも商売ができるようにして城下町を活気づけました。" },
-        { id: "s03", cat: "人物", q: "織田信長の後を継ぎ、1590年に全国統一を成し遂げた人物は？", choice: ["徳川家康", "豊臣秀吉", "上杉謙信", "明智光秀"], ans: 1, exp: "秀吉は信長の敵を討ち、小田原の北条氏を滅ぼして天下統一を達成しました。" },
-        { id: "s04", cat: "政策", q: "豊臣秀吉が農民から武器を取り上げ、兵農分離を進めた政策は？", choice: ["刀狩", "太閤検地", "御成敗式目", "参勤交代"], ans: 0, exp: "一揆を防ぎ、農民を耕作に専念させるために行われました。" },
-        { id: "s05", cat: "出来事", q: "1600年、徳川家康率いる東軍が石田三成の西軍を破った戦いは？", choice: ["長篠の戦い", "川中島の戦い", "関ヶ原の戦い", "壇ノ浦の戦い"], ans: 2, exp: "「天下分け目の戦い」と呼ばれ、これにより江戸幕府の基礎が築かれました。" },
-        { id: "s06", cat: "文化", q: "豊臣秀吉に仕えた茶人で、わび茶を完成させた人物は？", choice: ["雪舟", "近松門左衛門", "千利休", "松尾芭蕉"], ans: 2, exp: "簡素な美しさを尊ぶ「わび茶」の精神は、現代の茶道にも受け継がれています。" },
-        { id: "s07", cat: "政策", q: "豊臣秀吉が全国の土地の広さや質を調査し、収穫量を「石高」で表したものは？", choice: ["検地杖", "太閤検地", "目安箱", "踏絵"], ans: 1, exp: "これにより、荘園制度が完全に崩壊し、農民の土地保有が認められました。" },
-        { id: "s08", cat: "出来事", q: "1575年、織田・徳川連合軍が鉄砲を用いて武田勝頼の騎馬隊を破った戦いは？", choice: ["姉川の戦い", "桶狭間の戦い", "長篠の戦い", "本能寺の変"], ans: 2, exp: "信長は3000挺の鉄砲を組織的に使ったといわれています。" },
-        { id: "s09", cat: "人物", q: "「越後の虎」と呼ばれ、武田信玄と川中島で何度も戦った大名は？", choice: ["上杉謙信", "伊達政宗", "毛利元就", "北条氏康"], ans: 0, exp: "軍神とも称され、強い義の精神を持っていたことで有名です。" },
-        { id: "s10", cat: "文化", q: "戦国時代末期に流行した、豪華で壮麗な文化を何と呼ぶ？", choice: ["天平文化", "桃山文化", "元禄文化", "化政文化"], ans: 1, exp: "安土城や大阪城などの障壁画や、狩野永徳の屏風などが代表的です。" },
-        { id: "s11", cat: "人物", q: "1543年に種子島へ来航したポルトガル人が伝えた武器は？", choice: ["大砲", "弓矢", "鉄砲", "日本刀"], ans: 2, exp: "この伝来により、戦い方が一変し、城の構造にも影響を与えました。" },
-        { id: "s12", cat: "流れ", q: "次の戦国時代の出来事を古い順に並べた時、正しいものは？", choice: ["応仁の乱→鉄砲伝来→本能寺の変", "本能寺の変→応仁の乱→鉄砲伝来", "鉄砲伝来→本能寺の変→応仁の乱", "応仁の乱→本能寺の変→鉄砲伝来"], ans: 0, exp: "1467年（応仁の乱）、1543年（鉄砲）、1582年（本能寺）の順です。" },
-        { id: "s13", cat: "人物", q: "1549年、鹿児島に来航してキリスト教を伝えた宣教師は？", choice: ["ペリー", "マルコ・ポーロ", "フランシスコ・ザビエル", "マゼラン"], ans: 2, exp: "イエズス会の創設メンバーの一人で、日本に初めてキリスト教を広めました。" },
-        { id: "s14", cat: "政策", q: "キリシタン大名らによってヨーロッパへ派遣された使節団は？", choice: ["遣隋使", "天正遣欧少年使節", "岩倉使節団", "遣遣欧使節"], ans: 1, exp: "4人の少年たちがローマ教皇のもとを訪れ、注目を集めました。" },
-        { id: "s15", cat: "人物", q: "「三本の矢」の教えで知られる、中国地方を支配した戦国大名は？", choice: ["毛利元就", "柴田勝家", "前田利家", "島津義久"], ans: 0, exp: "息子たちに協力の大切さを説き、毛利家を大きく発展させました。" }
-    ];
+    const STAGES = {
+        nara: {
+            name: "奈良時代",
+            sub: "平城京、大仏、そして律令国家の完成...",
+            years: [
+                { date: "710年", txt: "平城京遷都", desc: "奈良に新しい都が造られました。" },
+                { date: "743年", txt: "墾田永年私財法", desc: "開墾した土地の永代私有が認められました。" },
+                { date: "752年", txt: "大仏開眼供養", desc: "東大寺に大仏が完成しました。" }
+            ],
+            boss: { name: "聖武天皇", icon: "👑", hp: 150 },
+            enemies: [{ name: "貴族の兵", icon: "💂", hp: 40 }, { name: "僧兵", icon: "📿", hp: 50 }],
+            labels: ["飛鳥", "奈良時代", "平安"],
+            questions: [
+                { id: "n01", cat: "政治", q: "710年、唐の長安をモデルに奈良に造られた都は？", choice: ["平安京", "平城京", "難波京", "藤原京"], ans: 1, exp: "平城京はシルクロードの終着点とも呼ばれ、国際色豊かな文化が栄えました。" },
+                { id: "n02", cat: "宗教", q: "聖武天皇が国の平和を願って東大寺に造らせた巨大な像は？", choice: ["金剛力士像", "阿修羅像", "奈良の大仏", "弥勒菩薩"], ans: 2, exp: "仏教の力で国を治めようとする「鎮護国家」の思想に基づいています。" },
+                { id: "n03", cat: "制度", q: "開墾した土地の永遠の私有を認めた、743年の法律は？", choice: ["墾田永年私財法", "三世一身の法", "公地公民", "地租改正"], ans: 0, exp: "これにより公地公民の原則が崩れ、後に荘園が広がるきっかけとなりました。" },
+                { id: "n04", cat: "人物", q: "唐から5度の失敗を乗り越えて来日し、唐招提寺を建てた僧は？", choice: ["空海", "最澄", "鑑真", "行基"], ans: 2, exp: "来日時には失明していましたが、正しい仏教の戒律を日本に伝えました。" },
+                { id: "n05", cat: "文化", q: "聖武天皇の遺品などが納められている、東大寺にある倉は？", choice: ["法隆寺", "正倉院", "金閣", "銀閣"], ans: 1, exp: "校倉造で作られており、世界各地から伝わった宝物が数多く残っています。" }
+            ]
+        },
+        heian: {
+            name: "平安時代",
+            sub: "平安京への遷都、華やかな国風文化...",
+            years: [
+                { date: "794年", txt: "平安京遷都", desc: "「鳴くよウグイス平安京」で有名。" },
+                { date: "894年", txt: "遣唐使の廃止", desc: "菅原道真の提案により廃止。" },
+                { date: "1016年", txt: "藤原道長の摂政就任", desc: "摂関政治の全盛期。" }
+            ],
+            boss: { name: "藤原道長", icon: "🤴", hp: 180 },
+            enemies: [{ name: "検非違使", icon: "👮", hp: 50 }, { name: "下級貴族", icon: "👘", hp: 40 }],
+            labels: ["奈良", "平安時代", "鎌倉"],
+            questions: [
+                { id: "h01", cat: "政治", q: "794年、平安京に都を移した天皇は？", choice: ["聖武天皇", "桓武天皇", "推古天皇", "天智天皇"], ans: 1, exp: "平城京での仏教勢力の影響を避けるため、山背国（京都）へ都を移しました。" },
+                { id: "h02", cat: "政治", q: "藤原氏が行った、娘を天皇の后にして政治の実権を握る手法は？", choice: ["院政", "摂関政治", "武家政治", "執権政治"], ans: 1, exp: "藤原道長や頼通の親子がその全盛期を築きました。" },
+                { id: "h03", cat: "文化", q: "平安時代中期、遣唐使の廃止をきっかけに発達した日本独自の文化は？", choice: ["飛鳥文化", "国風文化", "桃山文化", "元禄文化"], ans: 1, exp: "かな文字の発達により、物語や随筆など優れた文学作品が生まれました。" },
+                { id: "h04", cat: "文化", q: "世界最古の長編小説ともいわれる『源氏物語』の作者は？", choice: ["清少納言", "紫式部", "持統天皇", "和泉式部"], ans: 1, exp: "光源氏を主人公とする、平安貴族の生活を描いた長編小説です。" },
+                { id: "h05", cat: "制度", q: "894年、菅原道真の提案で中止になった中国への使節は？", choice: ["遣隋使", "遣唐使", "遣新羅使", "遣明使"], ans: 1, exp: "唐の衰退と往復の危険を理由に中止されました。" }
+            ]
+        },
+        kamakura: {
+            name: "鎌倉時代",
+            sub: "武士の台頭、源平合戦、そして幕府の誕生...",
+            years: [
+                { date: "1185年", txt: "鎌倉幕府の実質的成立", desc: "源頼朝が守護・地頭を設置。" },
+                { date: "1232年", txt: "御成敗式目", desc: "武士のための最初の法律。" },
+                { date: "1274年", txt: "元寇（文永の役）", desc: "元軍が北九州に襲来。" }
+            ],
+            boss: { name: "北条時宗", icon: "🏯", hp: 220 },
+            enemies: [{ name: "平氏の残党", icon: "⚔️", hp: 60 }, { name: "元軍兵士", icon: "🏹", hp: 70 }],
+            labels: ["平安", "鎌倉時代", "室町"],
+            questions: [
+                { id: "k01", cat: "政治", q: "鎌倉幕府を開き、1192年に征夷大将軍となった人物は？", choice: ["源義経", "源頼朝", "平清盛", "北条時政"], ans: 1, exp: "武士による本格的な政権を鎌倉に築きました。" },
+                { id: "k02", cat: "制度", q: "将軍が御家人の領地を保証し、御家人が軍役を果たす関係を何という？", choice: ["下剋上", "御恩と奉公", "刀狩", "参勤交代"], ans: 1, exp: "土地を仲立ちとした、将軍と部下の主従関係です。" },
+                { id: "k03", cat: "政治", q: "北条泰時が制定した、武士社会の慣習をまとめた法律は？", choice: ["十七条の憲法", "御成敗式目", "武家諸法度", "公事方御定書"], ans: 1, exp: "裁判の基準を明確にするために作られた日本初の武家法です。" },
+                { id: "k04", cat: "外交", q: "13世紀後半、2度にわたって日本を襲撃した巨大帝国は？", choice: ["元", "宋", "明", "清"], ans: 0, exp: "フビライ・ハンの命により、北九州に大軍が押し寄せました。" },
+                { id: "k05", cat: "生活", q: "鎌倉時代の定期市で、ひと月に3回開かれたものを何という？", choice: ["六斎市", "三斎市", "十客市", "楽市"], ans: 1, exp: "物資の流通が盛んになり、地域の中心地で定期的に市が開かれました。" }
+            ]
+        },
+        sengoku: {
+            name: "戦国・安土桃山",
+            sub: "下剋上の世、織田信長と豊臣秀吉の天下統一...",
+            years: [
+                { date: "1467年", txt: "応仁の乱", desc: "戦国時代の始まり。" },
+                { date: "1582年", txt: "本能寺の変", desc: "織田信長が討たれる。" },
+                { date: "1590年", txt: "豊臣秀吉の天下統一", desc: "小田原北条氏を滅ぼす。" }
+            ],
+            boss: { name: "第六天魔王 織田信長", icon: "👹", hp: 200 },
+            enemies: [{ name: "足軽", icon: "🪖", hp: 40 }, { name: "鉄砲隊", icon: "🔫", hp: 50 }],
+            labels: ["室町", "戦国時代", "安土桃山"],
+            questions: [
+                { id: "s01", cat: "人物", q: "1582年、本能寺の変で明智光秀に倒された戦国大名は？", choice: ["武田信玄", "豊臣秀吉", "織田信長", "今川義元"], ans: 2, exp: "織田信長は天下統一を目前にして、家臣の明智光秀に襲われました。" },
+                { id: "s02", cat: "政策", q: "織田信長が行った、商工業を自由にするための政策は？", choice: ["刀狩", "楽市楽座", "墾田永年私財法", "班田収授法"], ans: 1, exp: "市場の税を免除し、誰でも商売ができるようにして城下町を活気づけました。" },
+                { id: "s03", cat: "人物", q: "織田信長の後を継ぎ、1590年に全国統一を成し遂げた人物は？", choice: ["徳川家康", "豊臣秀吉", "上杉謙信", "明智光秀"], ans: 1, exp: "秀吉は信長の敵を討ち、小田原の北条氏を滅ぼして天下統一を達成しました。" },
+                { id: "s04", cat: "政策", q: "豊臣秀吉が農民から武器を取り上げ、兵農分離を進めた政策は？", choice: ["刀狩", "太閤検地", "御成敗式目", "参勤交代"], ans: 0, exp: "一揆を防ぎ、農民を耕作に専念させるために行われました。" },
+                { id: "s05", cat: "出来事", q: "1600年、徳川家康率いる東軍が石田三成の西軍を破った戦いは？", choice: ["長篠の戦い", "川中島の戦い", "関ヶ原の戦い", "壇ノ浦の戦い"], ans: 2, exp: "「天下分け目の戦い」と呼ばれ、これにより江戸幕府の基礎が築かれました。" }
+            ]
+        },
+        edo: {
+            name: "江戸時代",
+            sub: "徳川将軍家による260年の泰平の世...",
+            years: [
+                { date: "1603年", txt: "江戸幕府創設", desc: "徳川家康が征夷大将軍に。" },
+                { date: "1635年", txt: "参勤交代の義務化", desc: "3代将軍家光による法制化。" },
+                { date: "1853年", txt: "ペリー来航", desc: "幕末の動乱の始まり。" }
+            ],
+            boss: { name: "将軍 徳川家康", icon: "🍱", hp: 250 },
+            enemies: [{ name: "道場破り", icon: "🤺", hp: 60 }, { name: "奉行所の同心", icon: "🏮", hp: 50 }],
+            labels: ["戦国", "江戸時代", "明治"],
+            questions: [
+                { id: "e01", cat: "政治", q: "1603年、征夷大将軍となり江戸に幕府を開いた人物は？", choice: ["豊臣秀吉", "徳川家康", "織田信長", "足利尊氏"], ans: 1, exp: "関ヶ原の戦いに勝利し、長く続く安定政権を築きました。" },
+                { id: "e02", cat: "制度", q: "大名に1年おきに江戸と自領を往復させる、幕府への忠誠を示す制度は？", choice: ["刀狩", "参勤交代", "座", "禁中並公家諸法度"], ans: 1, exp: "莫大な費用をかけさせることで、大名の財力を削ぐ目的もありました。" },
+                { id: "e03", cat: "外交", q: "キリスト教を禁止し、貿易を制限した江戸幕府の政策を何という？", choice: ["鎖国", "文明開化", "富国強兵", "神仏分離"], ans: 0, exp: "オランダ、清、朝鮮、琉球、アイヌ民族以外との交流を断ちました。" },
+                { id: "e04", cat: "人物", q: "1853年、4隻の黒船を率いて浦賀に来航したアメリカの司令官は？", choice: ["ペリー", "マッカーサー", "ハリス", "ザビエル"], ans: 0, exp: "開国を要求し、日本を長い眠りから目覚めさせました。" },
+                { id: "e05", cat: "文化", q: "本居宣長が完成させた、日本古来の精神を研究する学問は？", choice: ["朱子学", "蘭学", "国学", "心学"], ans: 2, exp: "『古事記伝』を著し、記紀などの古典研究を大成させました。" }
+            ]
+        }
+    };
 
-    const TILES = [
-        { type: "start", icon: "🏠", label: "始まりの城" },
-        { type: "event", icon: "🌾", label: "農村" },
+    const TILES_TEMPLATE = [
+        { type: "start", icon: "🏠", label: "始まりの場所" },
+        { type: "event", icon: "🌾", label: "周辺の村" },
         { type: "battle", icon: "⚔️", label: "関所" },
-        { type: "quiz", icon: "📜", label: "寺子屋" },
-        { type: "event", icon: "🍵", label: "茶室" },
+        { type: "quiz", icon: "📜", label: "学び舎" },
+        { type: "event", icon: "🍵", label: "茶処" },
         { type: "battle", icon: "💥", label: "荒野" },
         { type: "heal", icon: "♨️", label: "温泉" },
         { type: "quiz", icon: "🏯", label: "古戦場" },
         { type: "event", icon: "🗺️", label: "峠" },
-        { type: "boss", icon: "👹", label: "魔王の城" }
+        { type: "boss", icon: "👹", label: "ボスの居城" }
     ];
-
-    const ENEMIES = [
-        { name: "足軽", icon: "🪖", hp: 40 },
-        { name: "甲冑武者", icon: "⚔️", hp: 60 },
-        { name: "鉄砲隊", icon: "🔫", hp: 50 },
-        { name: "忍び", icon: "🐱‍👤", hp: 30 }
-    ];
-
-    const BOSS = { name: "第六天魔王 織田信長", icon: "👹", hp: 200 };
 
     const SKILLS = {
         1: { name: "小攻撃", desc: "敵にダメージを与える", power: 10 },
@@ -370,6 +452,7 @@
 
     // --- STATE ---
     let state = {
+        currentEra: "sengoku",
         pos: 0, hp: 100, maxHp: 100, pts: 0,
         wrongQ: [], correct: 0, total: 0,
         currEnemy: null, currSkill: null,
@@ -377,10 +460,36 @@
         inBattle: false
     };
 
+    function showEraSelect() { showScreen("screen-era-select"); }
+
+    function prepareStage(eraId) {
+        state.currentEra = eraId;
+        const stage = STAGES[eraId];
+        
+        // Update Intro Screen
+        document.getElementById("intro-title").textContent = stage.name + "の幕開け";
+        document.getElementById("intro-sub").textContent = stage.sub;
+        const list = document.getElementById("intro-years");
+        list.innerHTML = stage.years.map(y => `
+            <li class="year-item"><div class="year-date">${y.date}</div><div class="year-content">${y.txt}<br><small>${y.desc}</small></div></li>
+        `).join("");
+
+        // Update Map Labels
+        document.getElementById("label-prev").textContent = stage.labels[0];
+        document.getElementById("label-curr").textContent = stage.labels[1];
+        document.getElementById("label-next").textContent = stage.labels[2];
+        
+        showScreen("screen-intro");
+    }
+
     // --- SYSTEM ---
-    function save() { localStorage.setItem("histDiceSengoku", JSON.stringify(state)); }
+    function save() {
+        const data = { ...state };
+        delete data.qPool; // Don't save transient pool
+        localStorage.setItem("histDiceGlobal", JSON.stringify(data)); 
+    }
     function load() {
-        const d = localStorage.getItem("histDiceSengoku");
+        const d = localStorage.getItem("histDiceGlobal");
         if(d) state = Object.assign(state, JSON.parse(d));
     }
 
@@ -424,30 +533,38 @@
     function showIntro() { showScreen("screen-intro"); }
 
     function startGame() {
+        const stage = STAGES[state.currentEra];
         state.pos = 0; state.hp = 100; state.pts = 0; state.correct = 0; state.total = 0;
-        state.qPool = [...QUESTIONS].sort(() => Math.random() - 0.5);
+        state.qPool = [...stage.questions].sort(() => Math.random() - 0.5);
         state.qIdx = 0;
         showScreen("screen-map");
         renderMap();
     }
 
     function renderMap() {
+        const stage = STAGES[state.currentEra];
         const grid = document.getElementById("map-grid");
         grid.innerHTML = "";
-        TILES.forEach((t, i) => {
+        TILES_TEMPLATE.forEach((t, i) => {
             const div = document.createElement("div");
             div.className = "map-tile";
             if(i === state.pos) div.classList.add("active");
             if(i < state.pos) div.classList.add("cleared");
             if(t.type === "boss") div.classList.add("boss");
-            div.innerHTML = `<div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div>`;
+            
+            // Use stage-specific icons if needed, or default
+            let icon = t.icon;
+            let label = t.label;
+            if(t.type === "boss") { icon = stage.boss.icon; label = stage.boss.name; }
+            
+            div.innerHTML = `<div class="tile-icon">${icon}</div><div class="tile-label">${label}</div>`;
             grid.appendChild(div);
         });
 
         document.getElementById("map-hp").textContent = `${state.hp}/${state.maxHp}`;
         document.getElementById("map-hp").className = "hp-val" + (state.hp < 30 ? " hp-low" : "");
         document.getElementById("map-pts").textContent = state.pts;
-        document.getElementById("tl-fill").style.width = ((state.pos + 1) / TILES.length * 100) + "%";
+        document.getElementById("tl-fill").style.width = ((state.pos + 1) / TILES_TEMPLATE.length * 100) + "%";
         
         // --- AUTO SCROLL ---
         setTimeout(() => {
@@ -455,8 +572,8 @@
             if(activeTile) activeTile.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }, 100);
 
-        if(state.pos === TILES.length - 1) {
-            document.getElementById("btn-roll").textContent = "👹 Final Boss!";
+        if(state.pos === TILES_TEMPLATE.length - 1) {
+            document.getElementById("btn-roll").textContent = `👹 ${stage.boss.name}!`;
         } else {
             document.getElementById("btn-roll").textContent = "➡️ 次のマスへ進む";
         }
@@ -464,7 +581,7 @@
 
     function moveStep() {
         if(state.diceRolling) return;
-        if(state.pos === TILES.length - 1) { startBoss(); return; }
+        if(state.pos === TILES_TEMPLATE.length - 1) { handleTile(); return; }
 
         state.diceRolling = true;
         const btn = document.getElementById("btn-roll");
@@ -473,7 +590,7 @@
         document.getElementById("map-msg").textContent = `次のマスへ移動中...`;
 
         setTimeout(() => {
-            state.pos = Math.min(TILES.length - 1, state.pos + 1);
+            state.pos = Math.min(TILES_TEMPLATE.length - 1, state.pos + 1);
             renderMap();
             state.diceRolling = false;
             btn.disabled = false;
@@ -483,8 +600,8 @@
 
     function handleTile() {
         if(state.pos === 0) return;
-        const tile = TILES[state.pos];
-        if(tile.type === "boss") {
+        const t = TILES_TEMPLATE[state.pos];
+        if(t.type === "boss") {
             startBoss();
         } else {
             startBattle();
@@ -504,14 +621,16 @@
     }
 
     function startBattle() {
-        const e = ENEMIES[Math.floor(Math.random() * ENEMIES.length)];
+        const stage = STAGES[state.currentEra];
+        const e = stage.enemies[Math.floor(Math.random() * stage.enemies.length)];
         state.currEnemy = { ...e, maxHp: e.hp };
         state.inBattle = true;
         initBattle();
     }
 
     function startBoss() {
-        state.currEnemy = { ...BOSS, maxHp: BOSS.hp };
+        const stage = STAGES[state.currentEra];
+        state.currEnemy = { ...stage.boss, maxHp: stage.boss.hp };
         state.inBattle = true;
         initBattle();
     }
@@ -593,7 +712,7 @@
             document.getElementById("q-fb-text").style.color = "#00ff00";
         } else {
             btn.classList.add("wrong");
-            document.getElementById("q-fb-text").textContent = "💀 不正解… 威力が落ちる！";
+            document.getElementById("q-fb-text").textContent = "💀 不正解… 技は失敗だ！";
             document.getElementById("q-fb-text").style.color = "#ff0000";
             if(!state.wrongQ.includes(q.id)) {
                 state.wrongQ.push(q.id);
@@ -668,14 +787,14 @@
     function winBattle() {
         state.pts += state.pos * 200 + (state.currEnemy.maxHp * 2);
         
-        const tile = TILES[state.pos];
-        if(tile.type === "heal") {
+        const t = TILES_TEMPLATE[state.pos];
+        if(t.type === "heal") {
             state.hp = Math.min(state.maxHp, state.hp + 30);
             alert(`勝利！ ♨️ 温泉で ${state.currEnemy.name} を退け、HPが30回復した！`);
-        } else if(tile.type === "event") {
+        } else if(t.type === "event") {
             alert(`勝利！ ${state.currEnemy.name} を討ち取った！ さらに...`);
             handleEvent();
-        } else if(tile.type === "quiz") {
+        } else if(t.type === "quiz") {
             state.pts += 500;
             alert(`勝利！ 📚 ${state.currEnemy.name} を退け、学問の功績で500pt獲得！`);
         } else {
@@ -683,7 +802,7 @@
         }
 
         showScreen("screen-map");
-        if(state.pos === TILES.length - 1) {
+        if(state.pos === TILES_TEMPLATE.length - 1) {
             gameClear();
         } else {
             renderMap();
@@ -691,12 +810,13 @@
     }
 
     function gameClear() {
+        const stage = STAGES[state.currentEra];
         showScreen("screen-result");
         document.getElementById("res-icon").textContent = "🏆";
-        document.getElementById("res-title").textContent = "天下統一！";
+        document.getElementById("res-title").textContent = stage.name + "制覇！";
         document.getElementById("res-correct").textContent = `${state.correct} / ${state.total}`;
         document.getElementById("res-pts").textContent = state.pts + " pt";
-        document.getElementById("res-summary").textContent = "戦国時代を見事駆け抜けた！織田信長を倒し、天下泰平の世へ一歩近づいた。君こそが真の天下人だ！";
+        document.getElementById("res-summary").textContent = `${stage.name}を見事駆け抜けた！${stage.boss.name}を倒し、歴史に名を刻んだ。君こそが真の歴史マスターだ！`;
     }
 
     function gameOver() {
