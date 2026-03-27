@@ -482,18 +482,12 @@
     }
 
     function handleTile() {
+        if(state.pos === 0) return;
         const tile = TILES[state.pos];
-        switch(tile.type) {
-            case "battle": startBattle(); break;
-            case "quiz": startQuiz(); break;
-            case "event": handleEvent(); break;
-            case "heal":
-                state.hp = Math.min(state.maxHp, state.hp + 20);
-                alert("♨️ 温泉でリフレッシュ！ HPが20回復した。");
-                renderMap();
-                break;
-            case "boss": startBoss(); break;
-            default: renderMap(); break;
+        if(tile.type === "boss") {
+            startBoss();
+        } else {
+            startBattle();
         }
     }
 
@@ -673,7 +667,21 @@
 
     function winBattle() {
         state.pts += state.pos * 200 + (state.currEnemy.maxHp * 2);
-        alert(`勝利！ ${state.currEnemy.name} を退けた！`);
+        
+        const tile = TILES[state.pos];
+        if(tile.type === "heal") {
+            state.hp = Math.min(state.maxHp, state.hp + 30);
+            alert(`勝利！ ♨️ 温泉で ${state.currEnemy.name} を退け、HPが30回復した！`);
+        } else if(tile.type === "event") {
+            alert(`勝利！ ${state.currEnemy.name} を討ち取った！ さらに...`);
+            handleEvent();
+        } else if(tile.type === "quiz") {
+            state.pts += 500;
+            alert(`勝利！ 📚 ${state.currEnemy.name} を退け、学問の功績で500pt獲得！`);
+        } else {
+            alert(`勝利！ ${state.currEnemy.name} を退けた！`);
+        }
+
         showScreen("screen-map");
         if(state.pos === TILES.length - 1) {
             gameClear();
