@@ -596,19 +596,21 @@
         
         const log = document.getElementById("battle-log");
         const skill = state.currSkill;
-        let pwr = skill.power || 0;
-        if(!state.isCorrect) pwr = Math.floor(pwr / 3);
-
-        if(skill.heal) {
-            const h = state.isCorrect ? skill.heal : 5;
-            state.hp = Math.min(state.maxHp, state.hp + h);
-            log.innerHTML += `<div>⚔️ <b>${skill.name}</b>！ 自軍のHPが ${h} 回復した！</div>`;
+        if(!state.isCorrect) {
+            log.innerHTML += `<div style="color:#aaa">💨 <b>${skill.name}</b> 失敗！ 効果なし！</div>`;
         } else {
-            let totalDmg = pwr;
-            if(skill.double && state.isCorrect) totalDmg *= 2;
-            state.currEnemy.hp = Math.max(0, state.currEnemy.hp - totalDmg);
-            log.innerHTML += `<div>⚔️ <b>${skill.name}</b>！ 敵に ${totalDmg} ダメージ！</div>`;
-            flash("hit");
+            if(skill.heal) {
+                const h = skill.heal;
+                state.hp = Math.min(state.maxHp, state.hp + h);
+                log.innerHTML += `<div>⚔️ <b>${skill.name}</b>！ 自軍のHPが ${h} 回復した！</div>`;
+            } else {
+                let pwr = skill.power || 0;
+                let totalDmg = pwr;
+                if(skill.double) totalDmg *= 2;
+                state.currEnemy.hp = Math.max(0, state.currEnemy.hp - totalDmg);
+                log.innerHTML += `<div>⚔️ <b>${skill.name}</b>！ 敵に ${totalDmg} ダメージ！</div>`;
+                flash("hit");
+            }
         }
 
         updateBattleUI();
