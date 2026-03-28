@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>カタカナシューティングバトル</title>
+  <style>
+    :root{
+      --bg:#0b1020; --text:#f4f7ff; --muted:#b8c4e6; --good:#59d98e; --bad:#ff7676; --warn:#ffd166; --accent:#73b7ff;
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+    html,body{margin:0; padding:0; width:100%; height:100%; background:linear-gradient(180deg,#09101d 0%, #0e1730 100%); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; overflow:hidden;}
+    #app{width:100vw; height:100vh; display:flex; flex-direction:column;}
+    
+    .topbar{flex:0 0 auto; display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:6px; padding:8px; background:rgba(4,8,18,.35); backdrop-filter: blur(8px); border-bottom:1px solid rgba(255,255,255,.08);}
+    .card{background:linear-gradient(180deg, rgba(26,35,68,.92), rgba(16,22,43,.92)); border:1px solid rgba(115,183,255,.18); border-radius:14px; padding:6px 10px; min-height:46px; box-shadow: 0 4px 12px rgba(0,0,0,.18);}
+    .label{font-size:10px; color:var(--muted); margin-bottom:2px; font-weight:700;}
+    .value{font-size:16px; font-weight:700;}
+    .hearts{letter-spacing:1px;}
+    
+    .layout{flex:1 1 auto; display:grid; grid-template-columns: 1.2fr 0.8fr; gap:10px; padding:10px; min-height:0;}
+    .game-panel{position:relative; overflow:hidden; border-radius:18px; border:1px solid rgba(255,255,255,.08); background:radial-gradient(circle at 50% 10%, rgba(115,183,255,.18), transparent 30%), linear-gradient(180deg, #101832 0%, #0c1326 60%, #0a1020 100%); min-height:0;}
+    canvas{ width:100%; height:100%; display:block; touch-action:none; }
+    
+    .quiz-panel{display:flex; flex-direction:column; gap:8px; min-height:0;}
+    .question-box,.message{background:linear-gradient(180deg, rgba(28,39,75,.95), rgba(18,25,46,.95)); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:12px 14px; box-shadow: 0 8px 22px rgba(0,0,0,.18);}
+    .unit{font-size:14px; color:var(--warn); margin-bottom:4px; font-weight:800;}
+    .question{font-size:26px; line-height:1.2; font-weight:900; margin-bottom:6px;}
+    .sub,.message{font-size:14px; color:var(--muted); font-weight:700;}
+    
+    .choices{display:grid; grid-template-columns:1fr; gap:10px;}
+    .choice{border:1px solid rgba(115,183,255,.18); background:linear-gradient(180deg, rgba(23,32,60,.95), rgba(15,21,39,.95)); color:#fff; border-radius:16px; padding:20px 10px; font-size:42px; font-weight:900; text-align:center;}
+    .choice:disabled{ opacity:.6;}
+    .choice.good{ border-color:rgba(89,217,142,.7); box-shadow: inset 0 0 0 2px rgba(89,217,142,.4); color:#59d98e; background:rgba(89,217,142,.1);}
+    .choice.bad{ border-color:rgba(255,118,118,.7); box-shadow: inset 0 0 0 2px rgba(255,118,118,.4); color:#ff7676; background:rgba(255,118,118,.1);}
+    
+    .controls{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+    .bigbtn{border:none; border-radius:16px; padding:14px; font-size:20px; font-weight:900; color:var(--text); background:linear-gradient(180deg, #26427e, #1d3360); box-shadow:0 6px 16px rgba(0,0,0,.25); cursor:pointer;}
+    .bigbtn:active{transform:scale(0.98);}
+    .bigbtn.secondary{ background:linear-gradient(180deg, #4c5a7b, #37425d);}
+    
+    .overlay{position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5,10,20,.8); padding:18px; z-index:100; backdrop-filter:blur(4px);}
+    .overlay.show{display:flex;}
+    .modal{width:min(600px, 100%); background:linear-gradient(180deg,#1a2442,#11182d); border:1px solid rgba(255,255,255,.12); border-radius:24px; padding:24px; box-shadow:0 24px 70px rgba(0,0,0,.45);}
+    .modal h1{font-size:28px; margin:0 0 10px; font-weight:900;}
+    .modal p{color:var(--muted); line-height:1.5; font-size:16px; font-weight:700;}
+    .stats{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:14px 0;}
+    .stat{background:rgba(255,255,255,.04); border-radius:14px; padding:10px;}
+    .miss-list{max-height:160px; overflow:auto; margin-top:12px; font-size:15px; font-weight:700;}
+    .miss-item{padding:8px 0; border-top:1px solid rgba(255,255,255,.08);}
+    
+    @media (max-width: 980px){ 
+      .layout{grid-template-columns:1fr; grid-template-rows: 40vh auto;} 
+      .topbar{grid-template-columns:1fr 1fr;} 
+      .choice{padding:14px; font-size:36px;}
+      .question{font-size:22px;}
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="card"><div class="label">じぶんのハート</div><div class="value hearts" id="playerHpText" style="color:#ff7676">♥♥♥♥♥</div></div>
+    <div class="card"><div class="label">てきのハート</div><div class="value hearts" id="bossHpText" style="color:#73b7ff">♥♥♥♥♥</div></div>
+    <div class="card"><div class="label">たま / れんぞく</div><div class="value" id="ammoText">0 / 0</div></div>
+    <div class="card"><div class="label">もんだい</div><div class="value" id="progressText">0 / 10</div></div>
+  </div>
+  <div class="layout">
+    <div class="game-panel">
+      <canvas id="gameCanvas" width="900" height="520"></canvas>
+      <div class="overlay show" id="startOverlay">
+        <div class="modal">
+          <h1>カタカナシューティングバトル</h1>
+          <p>クイズに <strong>せいかい</strong> すると たまが もらえるよ。したの <strong>ボタンで うごいて</strong> 発射(はっしゃ)で てきを やっつけよう！</p>
+          <div class="stats">
+            <div class="stat"><div class="label">たいしょう</div><div class="value">6さい〜</div></div>
+            <div class="stat"><div class="label">もんだい</div><div class="value">カタカナ・ことば</div></div>
+          </div>
+          <button class="bigbtn secondary" id="soundBtn" style="width:100%; margin-bottom:12px; border:2px solid #59d98e; color:#59d98e;">🔈 音をだす (ON)</button>
+          <div class="controls">
+            <button class="bigbtn" id="startBtn">スタート</button>
+            <button class="bigbtn secondary" id="howBtn">あそびかた</button>
+          </div>
+        </div>
+      </div>
+      <div class="overlay" id="resultOverlay">
+        <div class="modal">
+          <h1 id="resultTitle">けっか</h1>
+          <p id="resultSummary"></p>
+          <div class="stats">
+            <div class="stat"><div class="label">せいかい</div><div class="value" id="correctCountText">0</div></div>
+            <div class="stat"><div class="label">うった かず</div><div class="value" id="firedCountText">0</div></div>
+          </div>
+          <div class="controls">
+            <button class="bigbtn" id="restartBtn">もう一回</button>
+            <button class="bigbtn secondary" id="reviewBtn">まちがえたクイズ</button>
+          </div>
+          <div class="miss-list" id="missList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="quiz-panel">
+      <div class="question-box">
+        <div class="unit" id="unitText">じゅんびちゅう</div>
+        <div class="question" id="questionText">スタートを おしてね</div>
+        <div class="sub" id="subText">あたると「たま」が 3こ もらえるよ！</div>
+      </div>
+      <div class="choices" id="choicesBox"></div>
+      <div class="controls">
+        <button class="bigbtn" id="leftBtn" style="font-size:26px;">← 左</button>
+        <button class="bigbtn" id="rightBtn" style="font-size:26px;">右 →</button>
+        <button class="bigbtn" id="fireBtn" style="background:linear-gradient(180deg,#d94444,#a32020); grid-column:1 / -1; font-size:24px;">🔥 発射 (はっしゃ)！</button>
+      </div>
+      <div class="message" id="messageBox">クイズにこたえると「たま」がチャージされるよ。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 音声管理
+let soundEnabled = false;
+let voiceUnlocked = false;
+
+function unlockVoice() {
+  if (voiceUnlocked || !soundEnabled) return;
+  const u = new SpeechSynthesisUtterance('');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+  voiceUnlocked = true;
+  window.removeEventListener('click', unlockVoice);
+  window.removeEventListener('touchstart', unlockVoice);
+}
+
+document.getElementById('soundBtn').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('soundBtn');
+  if (soundEnabled) {
+    btn.textContent = '🔊 音をだす (ON)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#fff';
+    btn.style.background = 'linear-gradient(180deg,#59d98e,#2e9b5f)';
+    unlockVoice();
+  } else {
+    btn.textContent = '🔈 音をだす (OFF)';
+    btn.style.color = '#59d98e';
+    btn.style.borderColor = '#59d98e';
+    btn.style.background = 'transparent';
+  }
+});
+
+function playVoice(text, rate = 0.9) {
+  if (!soundEnabled) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = rate; // 少しゆっくり
+  speechSynthesis.speak(u);
+}
+
+// カタカナ専用問題
+const QUESTION_BANK = [
+  { unit:"文字の形 (1)", text:"シ を えらんでね", question:"「し」は どれ？", choices:["ツ","シ","ン"], answerIndex:1, explanation:"シ は 下から上にはねるよ。" },
+  { unit:"文字の形 (1)", text:"ツ を えらんでね", question:"「つ」は どれ？", choices:["ツ","シ","ソ"], answerIndex:0, explanation:"ツ は 上から下にはねるよ。" },
+  { unit:"文字の形 (1)", text:"ソ を えらんでね", question:"「そ」は どれ？", choices:["ン","ソ","ツ"], answerIndex:1, explanation:"ソ は 上から下にはねるよ。" },
+  { unit:"文字の形 (1)", text:"ン を えらんでね", question:"「ん」は どれ？", choices:["ン","ソ","シ"], answerIndex:0, explanation:"ン は 下から上にはねるよ。" },
+  
+  { unit:"文字の形 (2)", text:"ク を えらんでね", question:"「く」は どれ？", choices:["ワ","ケ","ク"], answerIndex:2, explanation:"く は ク。" },
+  { unit:"文字の形 (2)", text:"ケ を えらんでね", question:"「け」は どれ？", choices:["ケ","ク","タ"], answerIndex:0, explanation:"け は ケ。" },
+  { unit:"文字の形 (2)", text:"コ を えらんでね", question:"「こ」は どれ？", choices:["コ","ユ","ニ"], answerIndex:0, explanation:"こ は コ。" },
+  { unit:"文字の形 (2)", text:"ユ を えらんでね", question:"「ゆ」は どれ？", choices:["ユ","コ","ヨ"], answerIndex:0, explanation:"ゆ は ユ。" },
+  
+  { unit:"文字の形 (3)", text:"ア を えらんでね", question:"「あ」は どれ？", choices:["マ","ア","ヤ"], answerIndex:1, explanation:"あ は ア。" },
+  { unit:"文字の形 (3)", text:"マ を えらんでね", question:"「ま」は どれ？", choices:["マ","ア","ム"], answerIndex:0, explanation:"ま は マ。" },
+  { unit:"文字の形 (3)", text:"ル を えらんでね", question:"「る」は どれ？", choices:["ル","レ","ハ"], answerIndex:0, explanation:"る は ル。" },
+  { unit:"文字の形 (3)", text:"レ を えらんでね", question:"「れ」は どれ？", choices:["レ","ル","ス"], answerIndex:0, explanation:"れ は レ。" },
+  
+  { unit:"言葉づくり", text:"りんご。り、ん、ご。", question:"「リ〇ゴ」", choices:["ン","ソ","シ"], answerIndex:0, explanation:"リ・ン・ゴ だね。" },
+  { unit:"言葉づくり", text:"すいか。す、い、か。", question:"「〇イカ」", choices:["ス","ヌ","メ"], answerIndex:0, explanation:"ス・イ・カ だね。" },
+  { unit:"言葉づくり", text:"れもん。れ、も、ん。", question:"「レ〇ン」", choices:["モ","マ","ム"], answerIndex:0, explanation:"レ・モ・ン だね。" },
+  { unit:"言葉づくり", text:"ばなな。ば、な、な。", question:"「バナ〇」", choices:["ナ","チ","メ"], answerIndex:0, explanation:"バ・ナ・ナ だね。" },
+  { unit:"言葉づくり", text:"いちご。い、ち、ご。", question:"「イ〇ゴ」", choices:["チ","テ","ナ"], answerIndex:0, explanation:"イ・チ・ゴ だね。" },
+  { unit:"言葉づくり", text:"めろん。め、ろ、ん。", question:"「〇ロン」", choices:["メ","ナ","ヌ"], answerIndex:0, explanation:"メ・ロ・ン だね。" },
+  
+  { unit:"濁音・半濁音", text:"ボ を えらんでね", question:"「ぼ」は どれ？", choices:["ボ","ポ","ホ"], answerIndex:0, explanation:"ぼ は ボ。" },
+  { unit:"濁音・半濁音", text:"ペ を えらんでね", question:"「ぺ」は どれ？", choices:["ペ","ベ","ヘ"], answerIndex:0, explanation:"ぺ は ペ。" },
+  { unit:"濁音・半濁音", text:"ダ を えらんでね", question:"「だ」は どれ？", choices:["ダ","タ","ハ"], answerIndex:0, explanation:"だ は ダ。" },
+  { unit:"濁音・半濁音", text:"ガ を えらんでね", question:"「が」は どれ？", choices:["ガ","カ","ワ"], answerIndex:0, explanation:"が は ガ。" }
+];
+
+const MAX_QUESTIONS = 10, PLAYER_MAX_HP = 5, BOSS_MAX_HP = 5;
+const state = { playerHp:PLAYER_MAX_HP, bossHp:BOSS_MAX_HP, ammo:0, streak:0, questionIndex:0, correctCount:0, firedCount:0, currentQuestion:null, questions:[], answeredCurrent:false, gameOver:false, missed:[] };
+const el = {
+  playerHpText: document.getElementById("playerHpText"), bossHpText: document.getElementById("bossHpText"),
+  ammoText: document.getElementById("ammoText"), progressText: document.getElementById("progressText"),
+  unitText: document.getElementById("unitText"), questionText: document.getElementById("questionText"),
+  subText: document.getElementById("subText"), choicesBox: document.getElementById("choicesBox"),
+  messageBox: document.getElementById("messageBox"), leftBtn: document.getElementById("leftBtn"),
+  rightBtn: document.getElementById("rightBtn"), fireBtn: document.getElementById("fireBtn"),
+  startOverlay: document.getElementById("startOverlay"),
+  resultOverlay: document.getElementById("resultOverlay"), startBtn: document.getElementById("startBtn"),
+  howBtn: document.getElementById("howBtn"), restartBtn: document.getElementById("restartBtn"),
+  reviewBtn: document.getElementById("reviewBtn"), resultTitle: document.getElementById("resultTitle"),
+  resultSummary: document.getElementById("resultSummary"), correctCountText: document.getElementById("correctCountText"),
+  firedCountText: document.getElementById("firedCountText"), missList: document.getElementById("missList")
+};
+
+const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
+const player = { x:450, y:470, speed:8 }, boss = { x:450, y:90, dir:1, t:0, shield:0 };
+const bullets = [], enemyShots = [], particles = [];
+const keys = { left:false, right:false };
+let shake = 0;
+
+function shuffle(arr){ return arr.slice().sort(() => Math.random() - 0.5); }
+function hearts(current, max){ return "♥".repeat(current) + "♡".repeat(Math.max(0, max-current)); }
+function updateHud(){ 
+  el.playerHpText.textContent = hearts(state.playerHp, PLAYER_MAX_HP); 
+  el.bossHpText.textContent = hearts(state.bossHp, BOSS_MAX_HP); 
+  el.ammoText.textContent = `${state.ammo}こ / ${state.streak}れんぞく`; 
+  el.progressText.textContent = `${Math.min(state.questionIndex, MAX_QUESTIONS)} / ${MAX_QUESTIONS}`; 
+}
+function setMessage(text){ el.messageBox.textContent = text; }
+function disableChoices(){ [...el.choicesBox.querySelectorAll(".choice")].forEach(btn => btn.disabled = true); }
+
+function loadQuestion(){
+  if(state.questionIndex >= state.questions.length){ endGame(state.bossHp <= 0 ? "win" : "finish"); return; }
+  state.currentQuestion = state.questions[state.questionIndex]; state.answeredCurrent = false;
+  
+  el.unitText.textContent = `もんだい: ${state.currentQuestion.unit}`;
+  el.questionText.textContent = state.currentQuestion.question;
+  el.subText.textContent = "あたると「たま」が 2こ もらえるよ！";
+  
+  playVoice(state.currentQuestion.text);
+  
+  el.choicesBox.innerHTML = "";
+  // シャッフルして配置
+  const indices = [0, 1, 2];
+  shuffle(indices).forEach(realIndex => {
+    const choiceString = state.currentQuestion.choices[realIndex];
+    const btn = document.createElement("button");
+    btn.className = "choice"; btn.textContent = choiceString;
+    btn.addEventListener("click", () => answerQuestion(realIndex, btn));
+    el.choicesBox.appendChild(btn);
+  });
+  
+  updateHud();
+}
+
+function answerQuestion(index, button){
+  if(state.answeredCurrent || state.gameOver) return;
+  state.answeredCurrent = true; disableChoices();
+  const correct = index === state.currentQuestion.answerIndex;
+  
+  // いい色の表示
+  const btns = [...el.choicesBox.querySelectorAll(".choice")];
+  btns.find(b => b.textContent === state.currentQuestion.choices[state.currentQuestion.answerIndex]).classList.add("good");
+  
+  if(!correct) button.classList.add("bad");
+  
+  if(correct){
+    playVoice("せいかい！" + state.currentQuestion.explanation, 1.1);
+    state.correctCount++; state.streak++;
+    const gained = state.streak >= 3 ? 3 : 2; // シンプルに2発か3発
+    state.ammo += gained; 
+    spawnBurst(player.x, player.y-18, state.streak >= 3 ? "#ffd166" : "#59d98e", 18);
+    setMessage(`ピンポーン！「たま」を ${gained}こ ゲットしたよ！`);
+  } else {
+    playVoice("ざんねん、ちがうよ！", 1.1);
+    state.streak = 0; state.playerHp--; shake = 10; state.missed.push(state.currentQuestion);
+    enemyShots.push({ x: boss.x, y: boss.y+30, vy: 5, r: 8, color:"#ff7676" });
+    setMessage(`ざんねん！ ${state.currentQuestion.explanation}`);
+    if(state.playerHp <= 0){ updateHud(); endGame("lose"); return; }
+  }
+  state.questionIndex++; updateHud();
+  setTimeout(() => { if (!state.gameOver) nextQuestion(); }, 1600);
+}
+
+function nextQuestion(){ 
+  if(state.answeredCurrent && !state.gameOver) loadQuestion(); 
+}
+
+function movePlayer(dx){ player.x = Math.max(40, Math.min(canvas.width-40, player.x + dx)); }
+
+function fire(){ 
+  if(state.gameOver) return; 
+  if(state.ammo <= 0){ 
+    playVoice("たまがないよ");
+    setMessage("たまが ないよ。クイズに せいかいしてね。"); 
+    return; 
+  } 
+  bullets.push({ x: player.x, y: player.y-18, vy:-10, r:7 }); 
+  state.ammo--; state.firedCount++; updateHud(); 
+}
+
+function spawnBurst(x,y,color,count){ 
+  for(let i=0;i<count;i++) particles.push({ x, y, vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8, life:20+Math.random()*15, color }); 
+}
+
+function hitBoss(){ 
+  state.bossHp--; 
+  shake = 8; boss.shield = 10; 
+  spawnBurst(boss.x, boss.y, "#73b7ff", 30); 
+  updateHud(); 
+  playVoice("ヒット！");
+  
+  if(state.bossHp <= 0) endGame("win"); 
+  else setMessage(`ボスに あたった！ ボスのハート のこり ${state.bossHp}`); 
+}
+
+function takePlayerHit(){ 
+  state.playerHp--; shake = 10; state.streak = 0; 
+  spawnBurst(player.x, player.y, "#ff7676", 24); 
+  updateHud(); 
+  playVoice("ダメージ！");
+  if(state.playerHp <= 0) endGame("lose"); 
+}
+
+function renderMissList(){
+  if(!state.missed.length){ el.missList.innerHTML = '<div class="miss-item">ミスなし。すごーい！</div>'; return; }
+  el.missList.innerHTML = state.missed.map(q => `<div class="miss-item"><strong>${q.question}</strong><br><span style="color:#b8c4e6">こたえ：${q.choices[q.answerIndex]}</span></div>`).join("");
+}
+
+function endGame(type){
+  state.gameOver = true; el.resultOverlay.classList.add("show");
+  el.correctCountText.textContent = String(state.correctCount); 
+  el.firedCountText.textContent = String(state.firedCount);
+  if(type === "win"){ 
+    el.resultTitle.textContent = "おめでとう！"; 
+    el.resultTitle.style.color = "#ffd166";
+    el.resultSummary.textContent = "ボスをやっつけたよ！カタカナ めいじんだね！"; 
+    playVoice("おめでとう！ボスをやっつけたよ！");
+  } else if(type === "lose"){ 
+    el.resultTitle.textContent = "ゲームオーバー"; 
+    el.resultTitle.style.color = "#ff7676";
+    el.resultSummary.textContent = "ハートが なくなった。もういっかい チャレンジしよう。"; 
+    playVoice("ざんねん、ゲームオーバー。");
+  } else { 
+    el.resultTitle.textContent = "もんだい おわり"; 
+    el.resultTitle.style.color = "#b8c4e6";
+    el.resultSummary.textContent = "さいごまで セイカイしたけど ボスが たおせなかった。つぎは もっと よーくねらおう。"; 
+    playVoice("もんだい おわり。ボスが たおせなかったね。");
+  }
+  renderMissList();
+}
+
+function resetGame(review=false){
+  window.addEventListener('click', unlockVoice);
+  window.addEventListener('touchstart', unlockVoice);
+  
+  state.playerHp=PLAYER_MAX_HP; state.bossHp=BOSS_MAX_HP; state.ammo=0; state.streak=0; state.questionIndex=0; state.correctCount=0; state.firedCount=0; state.currentQuestion=null;
+  state.questions = review && state.missed.length ? shuffle(state.missed).slice(0, Math.min(MAX_QUESTIONS, state.missed.length)) : shuffle(QUESTION_BANK).slice(0, MAX_QUESTIONS);
+  state.answeredCurrent=false; state.gameOver=false; if(!review) state.missed=[];
+  bullets.length=0; enemyShots.length=0; particles.length=0; player.x=canvas.width/2; boss.x=canvas.width/2;
+  updateHud(); el.resultOverlay.classList.remove("show"); el.startOverlay.classList.remove("show");
+  setMessage("せいかいして たまをもらおう！"); loadQuestion();
+}
+
+function drawRoundRect(x, y, w, h, r){
+  ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+}
+
+function drawBackground(){
+  const g = ctx.createLinearGradient(0,0,0,canvas.height); 
+  g.addColorStop(0, "#101832"); g.addColorStop(1, "#0a1020"); 
+  ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  for(let i=0;i<40;i++){ 
+    const x = (i*137 % canvas.width), y = (i*71 + performance.now()*0.02) % canvas.height; 
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(x,y,2,2); 
+  }
+  ctx.strokeStyle = "rgba(115,183,255,.08)";
+  for(let y=80; y<canvas.height; y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+}
+
+function drawPlayer(){
+  ctx.save(); ctx.translate(player.x, player.y); ctx.fillStyle = "#59d98e";
+  ctx.beginPath(); ctx.moveTo(0,-26); ctx.lineTo(28,20); ctx.lineTo(0,10); ctx.lineTo(-28,20); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#bdfed4"; ctx.fillRect(-5,-10,10,20); ctx.restore();
+}
+
+function drawBoss(){
+  ctx.save(); ctx.translate(boss.x, boss.y); ctx.fillStyle = boss.shield > 0 ? "#a4d0ff" : "#ff9f6e";
+  drawRoundRect(-65, -35, 130, 70, 24); ctx.fill();
+  ctx.fillStyle = "#4a1200"; 
+  ctx.fillRect(-32, -12, 22, 16); ctx.fillRect(10, -12, 22, 16);
+  ctx.fillStyle = "#fff3e8"; ctx.fillRect(-24, 12, 48, 10);
+  if (boss.shield > 0){ 
+    ctx.strokeStyle = "rgba(115,183,255,.9)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 85, 0, Math.PI*2); ctx.stroke(); 
+  }
+  ctx.restore();
+}
+
+function drawBullets(){
+  bullets.forEach(b => { ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); });
+  enemyShots.forEach(s => { ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
+  particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life/30); ctx.fillRect(p.x, p.y, 6, 6); ctx.globalAlpha = 1; });
+}
+
+function drawGuide(){
+  ctx.fillStyle = "rgba(255,255,255,.05)"; ctx.fillRect(0, canvas.height-52, canvas.width, 52);
+  ctx.fillStyle = "#dfe7ff"; ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, sans-serif"; 
+  ctx.fillText("せいかい → 左右(さゆう)でうごく → 🚀はっしゃ で あてろ！", 30, canvas.height-18);
+}
+
+function stepGame(){
+  if(keys.left) movePlayer(-player.speed); 
+  if(keys.right) movePlayer(player.speed);
+  
+  boss.t += 0.02; boss.x += boss.dir * 2.2; 
+  if(boss.x < 100 || boss.x > canvas.width - 100) boss.dir *= -1; 
+  boss.x += Math.sin(boss.t) * 0.8; 
+  if(boss.shield > 0) boss.shield--;
+  
+  for(let i=bullets.length-1;i>=0;i--){ 
+    const b = bullets[i]; b.y += b.vy; 
+    if(b.y < -10){ bullets.splice(i,1); continue; } 
+    if(Math.abs(b.x - boss.x) < 70 && Math.abs(b.y - boss.y) < 40){ bullets.splice(i,1); hitBoss(); } 
+  }
+  
+  if(Math.random() < 0.02 && !state.gameOver) {
+    enemyShots.push({ x: boss.x + (Math.random()-0.5)*40, y: boss.y+30, vy: 5 + Math.random()*1.5, r: 8, color:"#ff7676" });
+  }
+  
+  for(let i=enemyShots.length-1;i>=0;i--){ 
+    const s = enemyShots[i]; s.y += s.vy; 
+    if(s.y > canvas.height+10){ enemyShots.splice(i,1); continue; } 
+    if(Math.abs(s.x - player.x) < 32 && Math.abs(s.y - player.y) < 28){ enemyShots.splice(i,1); takePlayerHit(); } 
+  }
+  
+  for(let i=particles.length-1;i>=0;i--){ 
+    const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 1; 
+    if(p.life <= 0) particles.splice(i,1); 
+  }
+}
+
+function render(){
+  ctx.save();
+  if(shake > 0){ const dx = (Math.random()-0.5) * shake, dy = (Math.random()-0.5) * shake; ctx.translate(dx, dy); shake *= 0.85; }
+  drawBackground(); drawBoss(); drawPlayer(); drawBullets(); drawGuide(); ctx.restore();
+}
+
+function loop(){ 
+  if(!state.gameOver && !el.startOverlay.classList.contains("show")) stepGame(); 
+  render(); 
+  requestAnimationFrame(loop); 
+}
+
+window.addEventListener("keydown", e => { 
+  if(e.key === "ArrowLeft") keys.left = true; 
+  if(e.key === "ArrowRight") keys.right = true; 
+  if(e.key === " ") { e.preventDefault(); fire(); } 
+});
+window.addEventListener("keyup", e => { 
+  if(e.key === "ArrowLeft") keys.left = false; 
+  if(e.key === "ArrowRight") keys.right = false; 
+});
+
+let leftHold = null, rightHold = null;
+function holdStart(dir){ return (ev) => { ev.preventDefault(); if(dir === "left"){ keys.left = true; leftHold = setInterval(() => movePlayer(-player.speed), 16); } else { keys.right = true; rightHold = setInterval(() => movePlayer(player.speed), 16); } }; }
+function holdEnd(dir){ return (ev) => { ev.preventDefault(); if(dir === "left"){ keys.left = false; clearInterval(leftHold); } else { keys.right = false; clearInterval(rightHold); } }; }
+["pointerdown","touchstart"].forEach(ev => el.leftBtn.addEventListener(ev, holdStart("left"), {passive:false}));
+["pointerup","pointercancel","pointerleave","touchend"].forEach(ev => el.leftBtn.addEventListener(ev, holdEnd("left"), {passive:false}));
+["pointerdown","touchstart"].forEach(ev => el.rightBtn.addEventListener(ev, holdStart("right"), {passive:false}));
+["pointerup","pointercancel","pointerleave","touchend"].forEach(ev => el.rightBtn.addEventListener(ev, holdEnd("right"), {passive:false}));
+
+el.fireBtn.addEventListener("click", fire);
+el.startBtn.addEventListener("click", () => resetGame(false));
+el.howBtn.addEventListener("click", () => {
+  setMessage("クイズの こたえを えらんでね。たまをもらったら 発射(はっしゃ)で ボスを攻撃！");
+  playVoice("カタカナのクイズに せいかいすると、てきを たおせるよ！");
+});
+el.restartBtn.addEventListener("click", () => resetGame(false));
+el.reviewBtn.addEventListener("click", () => state.missed.length ? resetGame(true) : setMessage("ぜんぶ せいかい だよ！すごい！"));
+
+updateHud(); loop();
+</script>
+</body>
+</html>
