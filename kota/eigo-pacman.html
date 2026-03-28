@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>英単語パックマン 〜英検4級〜</title>
+  <style>
+    :root {
+      --pac: #ffe066;
+      --ghost1: #ff6eb4;
+      --ghost2: #00d4ff;
+      --wall: #1a237e;
+      --bg: #0a0a2a;
+      --hud: #111133;
+      --correct: #00e676;
+      --wrong: #ff1744;
+      --text: #ffffff;
+      --accent: #ffe066;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; overflow: hidden;
+    }
+    #app {
+      width: 100%; max-width: 480px;
+      height: 100vh; max-height: 860px;
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column;
+      background: var(--bg);
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; flex-direction: column; flex: 1; padding: 24px 20px; animation: fadeIn .3s ease; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== TITLE ===== */
+    #title-screen {
+      background: radial-gradient(ellipse at center, #1a1a4a 0%, #0a0a2a 100%);
+      align-items: center; justify-content: center; gap: 18px;
+    }
+    .title-logo {
+      font-size: 42px; font-weight: 900;
+      background: linear-gradient(180deg, #ffe066, #ffaa00);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      text-align: center; line-height: 1.1; margin-bottom: 4px;
+      text-shadow: none; letter-spacing: 2px;
+    }
+    .title-sub { color: #aab; font-size: 14px; text-align: center; margin-bottom: 8px; }
+    .pac-anim {
+      font-size: 52px; text-align: center;
+      animation: pacBounce 1s ease-in-out infinite alternate;
+    }
+    @keyframes pacBounce {
+      from { transform: scale(1); }
+      to { transform: scale(1.15) rotate(5deg); }
+    }
+    .btn {
+      width: 100%; padding: 16px;
+      border: none; border-radius: 14px;
+      font-size: 18px; font-weight: 900;
+      cursor: pointer; transition: transform .1s, box-shadow .1s;
+      box-shadow: 0 5px 0 rgba(0,0,0,.4);
+    }
+    .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.4); }
+    .btn-yellow { background: linear-gradient(180deg, #ffe066, #e6a800); color: #222; }
+    .btn-blue   { background: linear-gradient(180deg, #4fc3f7, #0277bd); color: #fff; }
+    .btn-pink   { background: linear-gradient(180deg, #f48fb1, #c2185b); color: #fff; }
+    .btn-gray   { background: linear-gradient(180deg, #78909c, #37474f); color: #fff; }
+    .btn-green  { background: linear-gradient(180deg, #69f0ae, #00796b); color: #111; font-weight:900; }
+
+    /* ===== GAME SCREEN ===== */
+    #game-screen { padding: 0; background: var(--bg); }
+    #hud {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; background: var(--hud); flex-shrink: 0;
+      border-bottom: 2px solid #223;
+    }
+    .hud-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .hud-label { font-size: 10px; color: #99a; }
+    .hud-value { font-size: 16px; font-weight: 900; color: var(--accent); }
+    #hp-hearts { font-size: 18px; letter-spacing: 2px; }
+    #theme-box {
+      background: rgba(255,224,102,.12);
+      border: 2px solid var(--accent);
+      border-radius: 12px; padding: 8px 14px;
+      text-align: center; flex-shrink: 0; margin: 8px 12px 0;
+    }
+    #theme-label { font-size: 11px; color: #99a; }
+    #theme-ja { font-size: 22px; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
+    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+    #maze-canvas { display: block; }
+    /* flash overlay */
+    #flash {
+      pointer-events: none; position: absolute; inset: 0;
+      border-radius: 0; opacity: 0; transition: opacity .15s;
+    }
+    /* d-pad */
+    #dpad {
+      display: grid; grid-template-columns: repeat(3,56px); grid-template-rows: repeat(3,56px);
+      gap: 4px; justify-content: center; padding: 10px 0 12px;
+      flex-shrink: 0; background: var(--hud); border-top: 2px solid #223;
+    }
+    .dpad-btn {
+      border: none; border-radius: 10px;
+      background: rgba(255,255,255,.1); color: #fff;
+      font-size: 26px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad-btn:active { background: rgba(255,224,102,.3); }
+    .dpad-center { pointer-events: none; }
+
+    /* ===== BOSS SCREEN ===== */
+    #boss-screen {
+      background: radial-gradient(ellipse at center, #1a0030 0%, #0a0010 100%);
+      align-items: center; gap: 16px;
+    }
+    .boss-title { font-size: 22px; color: #ff6eb4; font-weight: 900; text-align: center; letter-spacing: 2px; }
+    .boss-emoji-display { font-size: 80px; text-align: center; animation: bossFloat 1.2s ease-in-out infinite alternate; }
+    @keyframes bossFloat { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+    .boss-hp-bar { width: 100%; height: 20px; background: #330; border-radius: 10px; overflow: hidden; }
+    .boss-hp-fill { height: 100%; background: linear-gradient(90deg, #ff1744, #ff6e40); border-radius: 10px; transition: width .4s; }
+    .boss-question { background: rgba(255,255,255,.08); border: 2px solid #ff6eb4; border-radius: 14px; padding: 14px 16px; text-align: center; font-size: 18px; font-weight: 700; line-height: 1.5; width: 100%; }
+    .boss-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+    .boss-choice {
+      padding: 14px 8px; border: 2px solid rgba(255,255,255,.2);
+      border-radius: 12px; background: rgba(255,255,255,.06);
+      font-size: 16px; font-weight: 700; cursor: pointer; color: #fff;
+      transition: background .15s, border-color .15s;
+    }
+    .boss-choice:active { background: rgba(255,224,102,.2); }
+    .boss-choice.correct { background: rgba(0,230,118,.3); border-color: var(--correct); }
+    .boss-choice.wrong   { background: rgba(255,23,68,.3);  border-color: var(--wrong); }
+    .boss-progress { color: #aab; font-size: 13px; }
+    .boss-player-hp { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+
+    /* ===== RESULT SCREEN ===== */
+    #result-screen { background: radial-gradient(ellipse, #0d1a1a, #050d0d); align-items: center; gap: 14px; }
+    .result-title { font-size: 34px; font-weight: 900; text-align: center; }
+    .result-title.clear { color: var(--correct); }
+    .result-title.over  { color: var(--wrong); }
+    .result-card {
+      width: 100%; background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 16px; padding: 16px;
+    }
+    .result-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+    .result-val-good { color: var(--correct); }
+    .result-val-bad  { color: var(--wrong); }
+    #missed-list { width: 100%; overflow-y: auto; max-height: 140px; }
+    .missed-item { background: rgba(255,23,68,.1); border: 1px solid rgba(255,23,68,.3); border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: 14px; line-height: 1.4; }
+    .missed-ja { color: #aab; }
+    .missed-en { font-weight: 900; color: var(--wrong); font-size: 16px; }
+
+    /* ===== REVIEW SCREEN ===== */
+    #review-screen { background: var(--bg); }
+    #review-screen h2 { color: var(--accent); font-size: 22px; text-align: center; margin-bottom: 14px; }
+    #review-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .review-item {
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+      border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .review-ja { font-size: 18px; font-weight: 700; }
+    .review-en { font-size: 18px; color: var(--accent); font-weight: 900; }
+    .review-empty { text-align: center; color: #668; font-size: 16px; margin-top: 40px; }
+
+    /* ===== OVERLAY MESSAGES ===== */
+    #overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: none; align-items: center; justify-content: center; z-index: 100;
+    }
+    #overlay.show { display: flex; }
+    #overlay-box {
+      background: #1a1a3a; border: 3px solid var(--accent);
+      border-radius: 20px; padding: 28px 24px; max-width: 320px; width: 88%;
+      text-align: center; display: flex; flex-direction: column; gap: 14px;
+    }
+    #overlay-icon { font-size: 56px; }
+    #overlay-msg { font-size: 18px; font-weight: 700; line-height: 1.5; }
+    #overlay-sub { font-size: 13px; color: #aab; }
+    #overlay-btn { background: linear-gradient(180deg,#ffe066,#e6a800); color:#222; font-weight:900; }
+
+    /* Score popup */
+    .score-pop {
+      position: absolute; font-size: 22px; font-weight: 900; pointer-events: none;
+      animation: popUp .8s ease forwards;
+    }
+    @keyframes popUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-50px) scale(1.4); }
+    }
+
+    /* ======= STAGE SELECT ======= */
+    #stage-select-screen { background: radial-gradient(ellipse at center,#1a1a4a 0%,#0a0a2a 100%); gap:12px; padding:16px 14px; }
+    .ss-title { font-size:22px; font-weight:900; text-align:center; color:var(--accent); padding:6px 0 10px; }
+    .stage-card { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.07); border:2px solid rgba(255,255,255,.12); border-radius:16px; padding:14px; cursor:pointer; transition:all .2s; position:relative; }
+    .stage-card:not(.locked):active { transform:scale(.97); }
+    .stage-card.unlocked:hover { border-color:var(--accent); background:rgba(255,255,255,.13); }
+    .stage-card.cleared { border-color:rgba(0,230,100,.45); }
+    .stage-card.locked { opacity:.38; cursor:not-allowed; }
+    .sc-emoji { font-size:38px; flex-shrink:0; }
+    .sc-info { flex:1; }
+    .sc-name { font-size:15px; font-weight:800; }
+    .sc-sub  { font-size:11px; color:#99a; margin-top:2px; }
+    .sc-badge { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; flex-shrink:0; }
+    .rank-S { background:linear-gradient(135deg,#ffdd00,#ff8800); color:#222; box-shadow:0 0 10px #ffdd0088; }
+    .rank-A { background:linear-gradient(135deg,#88ff88,#00aa00); color:#222; }
+    .rank-B { background:linear-gradient(135deg,#88aaff,#0044aa); color:#fff; }
+    .rank-C { background:linear-gradient(135deg,#aa8866,#664422); color:#fff; }
+    .sc-lock { font-size:24px; }
+    .sc-new  { font-size:11px; color:#ffd700; font-weight:700; background:rgba(255,215,0,.18); padding:2px 7px; border-radius:10px; }
+
+    /* ======= COMBO BAR ======= */
+    #combo-bar { height:22px; display:flex; align-items:center; padding:0 14px; background:var(--hud); flex-shrink:0; border-bottom:1px solid #223; }
+    #combo-text { font-size:13px; font-weight:900; color:#ffd700; opacity:0; transition:opacity .3s; text-shadow:0 0 8px #ffd700; }
+    #combo-text.visible { opacity:1; }
+
+    /* ======= RESULT v2 ======= */
+    .rank-big { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+    .rank-circle { width:90px; height:90px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:48px; font-weight:900; animation:rankPop .5s cubic-bezier(.36,1.8,.6,1) both; }
+    .rank-label-txt { font-size:13px; font-weight:700; color:#aab; }
+    @keyframes rankPop { from{transform:scale(0) rotate(-180deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+
+    /* ======= SCRAMBLE BOSS ======= */
+    .scramble-answer { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; min-height:52px; align-items:center; padding:8px; background:rgba(255,255,255,.06); border-radius:12px; width:100%; }
+    .sc-slot { width:34px; height:40px; border-radius:8px; border:2px solid rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; }
+    .sc-slot.filled { background:rgba(255,255,255,.15); border-color:var(--accent); color:var(--accent); }
+    .sc-slot.correct-slot { background:rgba(0,230,100,.3); border-color:#00e676; color:#00e676; }
+    .sc-slot.wrong-slot  { background:rgba(255,23,68,.3); border-color:#ff1744; color:#ff1744; }
+    .scramble-tiles { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:100%; padding:4px; }
+    .sc-tile { width:38px; height:44px; background:linear-gradient(180deg,#3a3a6a,#22224a); border:2px solid #6666aa; border-radius:10px; font-size:18px; font-weight:900; color:#fff; cursor:pointer; transition:all .12s; }
+    .sc-tile:active { transform:scale(.88); }
+    .sc-tile:disabled { opacity:.3; cursor:default; }
+    .sc-tile.used { opacity:.2; }
+    .scramble-btns { display:flex; gap:10px; width:100%; margin-top:4px; }
+    .scramble-btns button { flex:1; padding:10px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; }
+    .sc-del-btn { background:linear-gradient(180deg,#78909c,#37474f); color:#fff; }
+    .sc-ok-btn  { background:linear-gradient(180deg,#ffe066,#e6a800); color:#222; }
+
+    /* ======= BOSS BATTLE ANIMATIONS ======= */
+    @keyframes bossGotHit {
+      0%   { transform: scale(1)    rotate(0deg);    filter: brightness(1); }
+      15%  { transform: scale(0.55) rotate(-25deg);  filter: brightness(8) saturate(0); }
+      35%  { transform: scale(1.3)  rotate(18deg);   filter: brightness(3) hue-rotate(180deg); }
+      60%  { transform: scale(0.92) rotate(-6deg);   filter: brightness(1.3); }
+      100% { transform: scale(1)    rotate(0deg);    filter: brightness(1); }
+    }
+    @keyframes bossAttacking {
+      0%   { transform: scale(1)   translateX(0px)  rotate(0deg); }
+      20%  { transform: scale(1.6) translateX(50px) rotate(18deg); }
+      40%  { transform: scale(1.8) translateX(-30px) rotate(-14deg); }
+      65%  { transform: scale(1.3) translateX(16px) rotate(5deg); }
+      100% { transform: scale(1)   translateX(0px)  rotate(0deg); }
+    }
+    .boss-hit-anim { animation: bossGotHit    0.7s ease forwards; }
+    .boss-atk-anim { animation: bossAttacking 0.65s ease forwards; }
+
+    @keyframes bossScreenRed {
+      0%,100% { box-shadow: inset 0 0 0px  0px rgba(255,50,50,0); }
+      35%     { box-shadow: inset 0 0 90px 50px rgba(255,50,50,0.55); }
+    }
+    @keyframes bossScreenGreen {
+      0%,100% { box-shadow: inset 0 0 0px  0px rgba(0,230,100,0); }
+      35%     { box-shadow: inset 0 0 70px 35px rgba(0,230,100,0.45); }
+    }
+    .boss-screen-red   { animation: bossScreenRed   0.6s ease; }
+    .boss-screen-green { animation: bossScreenGreen 0.55s ease; }
+
+    @keyframes heartsShake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-14px); }
+      45%     { transform: translateX(14px); }
+      70%     { transform: translateX(-9px); }
+      88%     { transform: translateX(5px); }
+    }
+    .hearts-shake { animation: heartsShake 0.45s ease; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ========== TITLE ========== -->
+  <div id="title-screen" class="screen active">
+    <div class="pac-anim">🟡</div>
+    <div class="title-logo">英単語<br>パックマン</div>
+    <div class="title-sub">英検4級単語を迷路でゲットしよう！</div>
+    <button class="btn btn-yellow" onclick="openStageSelect()">🎮 ステージを選ぶ</button>
+    <button class="btn btn-blue"   onclick="continueGame()">▶️ つづきから</button>
+    <button class="btn btn-pink"   onclick="openReview()">📖 復習モード</button>
+    <button class="btn btn-green"  id="btn-sound" onclick="toggleSound()">🔊 音声 ON</button>
+    <button class="btn btn-gray"   onclick="resetData()" style="margin-top:20px;">🗑️ データをリセット</button>
+  </div>
+
+  <!-- ========== STAGE SELECT ========== -->
+  <div id="stage-select-screen" class="screen">
+    <div class="ss-title">📋 ステージを選ぼう！</div>
+    <div id="stage-list"></div>
+    <button class="btn btn-gray" onclick="showScreen('title-screen')" style="margin-top:auto;flex-shrink:0">← タイトルへ</button>
+  </div>
+
+  <!-- ========== GAME ========== -->
+  <div id="game-screen" class="screen">
+    <div id="hud">
+      <div class="hud-block">
+        <div class="hud-label">ポイント</div>
+        <div class="hud-value" id="hud-score">0</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">こたえた数</div>
+        <div class="hud-value" id="hud-count">0 / 5</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">HP</div>
+        <div id="hp-hearts">❤️❤️❤️</div>
+      </div>
+    </div>
+    <div id="combo-bar"><span id="combo-text"></span></div>
+    <div id="theme-box">
+      <div class="theme-label">日本語のお題</div>
+      <div id="theme-ja">りんご</div>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="maze-canvas"></canvas>
+      <div id="flash"></div>
+    </div>
+    <div id="dpad">
+      <div></div>
+      <button class="dpad-btn" id="btn-up"    ontouchstart="startMove(0,-1)" ontouchend="stopMove()" ontouchcancel="stopMove()" onmousedown="startMove(0,-1)" onmouseup="stopMove()" onmouseleave="stopMove()">▲</button>
+      <div></div>
+      <button class="dpad-btn" id="btn-left"  ontouchstart="startMove(-1,0)" ontouchend="stopMove()" ontouchcancel="stopMove()" onmousedown="startMove(-1,0)" onmouseup="stopMove()" onmouseleave="stopMove()">◀</button>
+      <div class="dpad-btn dpad-center">●</div>
+      <button class="dpad-btn" id="btn-right" ontouchstart="startMove(1,0)"  ontouchend="stopMove()" ontouchcancel="stopMove()" onmousedown="startMove(1,0)"  onmouseup="stopMove()" onmouseleave="stopMove()">▶</button>
+      <div></div>
+      <button class="dpad-btn" id="btn-down"  ontouchstart="startMove(0,1)"  ontouchend="stopMove()" ontouchcancel="stopMove()" onmousedown="startMove(0,1)"  onmouseup="stopMove()" onmouseleave="stopMove()">▼</button>
+      <div></div>
+    </div>
+  </div>
+
+  <!-- ========== BOSS ========== -->
+  <div id="boss-screen" class="screen">
+    <div class="boss-title" id="boss-title">⚔️ ボス戦！</div>
+    <div id="boss-emoji" class="boss-emoji-display">👾</div>
+    <div style="width:100%">
+      <div style="font-size:12px;color:#aab;margin-bottom:4px;">ボスHP</div>
+      <div class="boss-hp-bar"><div class="boss-hp-fill" id="boss-hp-fill"></div></div>
+    </div>
+    <div class="boss-player-hp">プレイヤーHP: <span id="boss-player-hearts">❤️❤️❤️</span></div>
+    <div class="boss-question" id="boss-question">問題</div>
+    <div id="boss-choice4-area"><div class="boss-choices" id="boss-choices"></div></div>
+    <div id="boss-scramble-area" style="display:none;width:100%;gap:10px;display:none;flex-direction:column;align-items:center">
+      <div class="scramble-answer" id="scramble-answer"></div>
+      <div class="scramble-tiles" id="scramble-tiles"></div>
+      <div class="scramble-btns">
+        <button class="sc-del-btn" onclick="scrambleDelete()">⌫ 消す</button>
+        <button class="sc-ok-btn" id="sc-ok-btn" onclick="scrambleSubmit()">✔ 決定</button>
+      </div>
+    </div>
+    <div class="boss-progress" id="boss-progress">第1問 / 3問</div>
+  </div>
+
+  <!-- ========== RESULT ========== -->
+  <div id="result-screen" class="screen">
+    <div class="result-title" id="result-title">クリア！🎉</div>
+    <div class="rank-big"><div class="rank-circle" id="rank-circle">S</div><div class="rank-label-txt" id="rank-label"></div></div>
+    <div class="result-card">
+      <div class="result-row"><span>⭕ 正解数</span><span class="result-val-good" id="res-correct">0</span></div>
+      <div class="result-row"><span>❌ ミス数</span><span class="result-val-bad" id="res-wrong">0</span></div>
+      <div class="result-row"><span>🔥 最高コンボ</span><span class="result-val-good" id="res-combo">0</span></div>
+      <div class="result-row"><span>💰 ポイント</span><span class="result-val-good" id="res-score">0</span></div>
+    </div>
+    <div style="font-size:13px;color:#aab;align-self:flex-start;">間違えた単語</div>
+    <div id="missed-list"></div>
+    <button class="btn btn-yellow" id="btn-next-stage" onclick="goNextStage()" style="margin-top:auto;display:none">➡️ 次のステージへ</button>
+    <button class="btn btn-blue" onclick="retryStage()" style="margin-top:8px">🔄 もう一度</button>
+    <button class="btn btn-gray" onclick="showScreen('stage-select-screen')" style="margin-top:8px">📋 ステージ選択</button>
+  </div>
+
+  <!-- ========== REVIEW ========== -->
+  <div id="review-screen" class="screen">
+    <h2>📖 復習モード</h2>
+    <div id="review-list"></div>
+    <button class="btn btn-green" onclick="startReviewPlay()" style="margin-top:10px;flex-shrink:0">🔁 復習プレイ</button>
+    <button class="btn btn-gray" onclick="showScreen('title-screen')" style="margin-top:8px;flex-shrink:0">← タイトルへ戻る</button>
+  </div>
+
+  <!-- ========== OVERLAY ========== -->
+  <div id="overlay">
+    <div id="overlay-box">
+      <div id="overlay-icon">✅</div>
+      <div id="overlay-msg">メッセージ</div>
+      <div id="overlay-sub"></div>
+      <button class="btn btn-yellow" id="overlay-btn" onclick="closeOverlay()">OK</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== WORD DATA ====================
+const WORDS = [
+  // ===== 食べ物 (food) 20語 =====
+  {id:'f01',catKey:'food',cat:'食べ物',ja:'りんご',en:'apple',hint:'赤くて丸い果物'},
+  {id:'f02',catKey:'food',cat:'食べ物',ja:'ぎゅうにゅう',en:'milk',hint:'白い飲み物'},
+  {id:'f03',catKey:'food',cat:'食べ物',ja:'たまご',en:'egg',hint:'にわとりが産む丸いもの'},
+  {id:'f04',catKey:'food',cat:'食べ物',ja:'パン',en:'bread',hint:'小麦で作る焼き食べ物'},
+  {id:'f05',catKey:'food',cat:'食べ物',ja:'さかな',en:'fish',hint:'海や川に住む泳ぐ生き物'},
+  {id:'f06',catKey:'food',cat:'食べ物',ja:'やさい',en:'vegetable',hint:'畑でとれる緑の食べ物'},
+  {id:'f07',catKey:'food',cat:'食べ物',ja:'くだもの',en:'fruit',hint:'木に実る甘い食べ物'},
+  {id:'f08',catKey:'food',cat:'食べ物',ja:'にく',en:'meat',hint:'動物から取れる食べ物'},
+  {id:'f09',catKey:'food',cat:'食べ物',ja:'オレンジ',en:'orange',hint:'オレンジ色の丸い柑橘類'},
+  {id:'f10',catKey:'food',cat:'食べ物',ja:'バナナ',en:'banana',hint:'黄色くて長い果物'},
+  {id:'f11',catKey:'food',cat:'食べ物',ja:'ごはん',en:'rice',hint:'日本日本食の主食'},
+  {id:'f12',catKey:'food',cat:'食べ物',ja:'ケーキ',en:'cake',hint:'誕生日に食べる甘いもの'},
+  {id:'f13',catKey:'food',cat:'食べ物',ja:'スープ',en:'soup',hint:'温かい液体の料理'},
+  {id:'f14',catKey:'food',cat:'食べ物',ja:'サラダ',en:'salad',hint:'野菜をまぜた料理'},
+  {id:'f15',catKey:'food',cat:'食べ物',ja:'ジュース',en:'juice',hint:'果物から作る飲み物'},
+  {id:'f16',catKey:'food',cat:'食べ物',ja:'みず',en:'water',hint:'海や川にある透明な液体'},
+  {id:'f17',catKey:'food',cat:'食べ物',ja:'おちゃ',en:'tea',hint:'緑色の日本の伝統的飲み物'},
+  {id:'f18',catKey:'food',cat:'食べ物',ja:'ピザ',en:'pizza',hint:'丸くてチーズがかかっている料理'},
+  {id:'f19',catKey:'food',cat:'食べ物',ja:'チョコレート',en:'chocolate',hint:'甘い茶色いお菓子'},
+  {id:'f20',catKey:'food',cat:'食べ物',ja:'チーズ',en:'cheese',hint:'牛乳から作る白い食べ物'},
+  // ===== 動物 (animal) 18語 =====
+  {id:'a01',catKey:'animal',cat:'動物',ja:'ねこ',en:'cat',hint:'ニャーと鳴く動物'},
+  {id:'a02',catKey:'animal',cat:'動物',ja:'いぬ',en:'dog',hint:'ワンワンと吠える動物'},
+  {id:'a03',catKey:'animal',cat:'動物',ja:'うさぎ',en:'rabbit',hint:'長い耳で跳ねる動物'},
+  {id:'a04',catKey:'animal',cat:'動物',ja:'とり',en:'bird',hint:'羽を持ち空を飛ぶ動物'},
+  {id:'a05',catKey:'animal',cat:'動物',ja:'ぞう',en:'elephant',hint:'長い鼻が特徴の大きな動物'},
+  {id:'a06',catKey:'animal',cat:'動物',ja:'うま',en:'horse',hint:'ひづめで走り乗り物にもなる'},
+  {id:'a07',catKey:'animal',cat:'動物',ja:'ライオン',en:'lion',hint:'百獣の王、たてがみがある'},
+  {id:'a08',catKey:'animal',cat:'動物',ja:'さる',en:'monkey',hint:'木に登りバナナが好き'},
+  {id:'a09',catKey:'animal',cat:'動物',ja:'くま',en:'bear',hint:'大きくて茶色や黒い動物'},
+  {id:'a10',catKey:'animal',cat:'動物',ja:'きつね',en:'fox',hint:'しっぽが長くかしこい動物'},
+  {id:'a11',catKey:'animal',cat:'動物',ja:'うし',en:'cow',hint:'牛乳を出す動物、モーと鳴く'},
+  {id:'a12',catKey:'animal',cat:'動物',ja:'ぶた',en:'pig',hint:'ブーブーと鳴くピンクの動物'},
+  {id:'a13',catKey:'animal',cat:'動物',ja:'ひつじ',en:'sheep',hint:'白くてふわふわ、毛を刈られる動物'},
+  {id:'a14',catKey:'animal',cat:'動物',ja:'とら',en:'tiger',hint:'縞模様の大きなネコ科動物'},
+  {id:'a15',catKey:'animal',cat:'動物',ja:'かえる',en:'frog',hint:'ケロケロと鳴き池に住む動物'},
+  {id:'a16',catKey:'animal',cat:'動物',ja:'ペンギン',en:'penguin',hint:'南極に住む黒白の鳥'},
+  {id:'a17',catKey:'animal',cat:'動物',ja:'いるか',en:'dolphin',hint:'海に住む頭のいい哺乳類'},
+  {id:'a18',catKey:'animal',cat:'動物',ja:'かめ',en:'turtle',hint:'甲羅を持ちゆっくり歩く動物'},
+  // ===== 学校 (school) 20語 =====
+  {id:'s01',catKey:'school',cat:'学校',ja:'きょうしつ',en:'classroom',hint:'授業をする部屋'},
+  {id:'s02',catKey:'school',cat:'学校',ja:'としょかん',en:'library',hint:'本がたくさんある建物'},
+  {id:'s03',catKey:'school',cat:'学校',ja:'えんぴつ',en:'pencil',hint:'書くための細長い道具'},
+  {id:'s04',catKey:'school',cat:'学校',ja:'ほん',en:'book',hint:'ページがある読むもの'},
+  {id:'s05',catKey:'school',cat:'学校',ja:'つくえ',en:'desk',hint:'勉強する家具'},
+  {id:'s06',catKey:'school',cat:'学校',ja:'いす',en:'chair',hint:'座るための道具'},
+  {id:'s07',catKey:'school',cat:'学校',ja:'せんせい',en:'teacher',hint:'勉強を教える人'},
+  {id:'s08',catKey:'school',cat:'学校',ja:'せいと',en:'student',hint:'学校で勉強する人'},
+  {id:'s09',catKey:'school',cat:'学校',ja:'しゅくだい',en:'homework',hint:'家でやる学校の課題'},
+  {id:'s10',catKey:'school',cat:'学校',ja:'テスト',en:'test',hint:'知識を確認する試験'},
+  {id:'s11',catKey:'school',cat:'学校',ja:'えいご',en:'English',hint:'イギリスやアメリカの言語'},
+  {id:'s12',catKey:'school',cat:'学校',ja:'すうがく',en:'math',hint:'足し算・引き算・計算の教科'},
+  {id:'s13',catKey:'school',cat:'学校',ja:'おんがく',en:'music',hint:'歌や楽器を学ぶ教科'},
+  {id:'s14',catKey:'school',cat:'学校',ja:'ノート',en:'notebook',hint:'書き込める帳面'},
+  {id:'s15',catKey:'school',cat:'学校',ja:'けしごむ',en:'eraser',hint:'書いた字を消す道具'},
+  {id:'s16',catKey:'school',cat:'学校',ja:'あさ',en:'morning',hint:'一日の始まり'},
+  {id:'s17',catKey:'school',cat:'学校',ja:'ひる',en:'noon',hint:'太陽が一番高い時'},
+  {id:'s18',catKey:'school',cat:'学校',ja:'よる',en:'night',hint:'星が見える暗い時間'},
+  {id:'s19',catKey:'school',cat:'学校',ja:'きょう',en:'today',hint:'今日、今の日'},
+  {id:'s20',catKey:'school',cat:'学校',ja:'あした',en:'tomorrow',hint:'次の日'},
+  {id:'s21',catKey:'school',cat:'学校',ja:'きのう',en:'yesterday',hint:'前の日'},
+  // ===== 将来ステージ用データ =====
+  {id:'fam1',catKey:'family',cat:'家族',ja:'おとうさん',en:'father',hint:'男性の親'},
+  {id:'fam2',catKey:'family',cat:'家族',ja:'おかあさん',en:'mother',hint:'女性の親'},
+  {id:'fam3',catKey:'family',cat:'家族',ja:'おにいさん',en:'brother',hint:'年上の男兄弟'},
+  {id:'fam4',catKey:'family',cat:'家族',ja:'おねえさん',en:'sister',hint:'年上の女兄弟'},
+  {id:'fam5',catKey:'family',cat:'家族',ja:'そふ',en:'grandfather',hint:'父または母の父'},
+  {id:'fam6',catKey:'family',cat:'家族',ja:'そぼ',en:'grandmother',hint:'父または母の母'},
+  {id:'wtr1',catKey:'weather',cat:'天気',ja:'はれ',en:'sunny',hint:'太陽が出ている天気'},
+  {id:'wtr2',catKey:'weather',cat:'天気',ja:'あめ',en:'rainy',hint:'空から水が降る天気'},
+  {id:'wtr3',catKey:'weather',cat:'天気',ja:'くもり',en:'cloudy',hint:'空が雲で覆われている天気'},
+  {id:'wtr4',catKey:'weather',cat:'天気',ja:'ゆき',en:'snowy',hint:'冬に降る白い天気'},
+  {id:'veh1',catKey:'vehicle',cat:'乗り物',ja:'でんしゃ',en:'train',hint:'線路を走る乗り物'},
+  {id:'veh2',catKey:'vehicle',cat:'乗り物',ja:'バス',en:'bus',hint:'多くの人を乗せて走る乗り物'},
+  {id:'veh3',catKey:'vehicle',cat:'乗り物',ja:'じてんしゃ',en:'bike',hint:'ペダルを漕いで進む乗り物'},
+  {id:'veh4',catKey:'vehicle',cat:'乗り物',ja:'ひこうき',en:'airplane',hint:'空を飛ぶ乗り物'},
+  {id:'veh5',catKey:'vehicle',cat:'乗り物',ja:'ふね',en:'ship',hint:'海を渡る乗り物'},
+];
+
+// fake English decoy words pool (30語)
+const FAKE_WORDS = [
+  'table','green','window','happy','cloud','stone','river',
+  'light','heavy','sharp','corner','simple','dance','climb',
+  'paper','flower','silver','circle','bridge','spring','forest',
+  'island','castle','garden','market','street','sunset','winter',
+  'smile','magic'
+];
+// fake Japanese words pool (for reverse mode)
+const FAKE_JA = WORDS.map(w=>w.ja);
+
+// ==================== STAGE DEFINITIONS ====================
+const STAGES = [
+  { id:1, name:'食べ物ステージ', catKey:'food', emoji:'🍎',
+    bossEmoji:'🍔', bossName:'バーガーモンスター',
+    wallColor:'#5c2800', wallBorder:'#8b4500', bgColor:'#1a0800', accentColor:'#ff8800',
+    questionMode:'normal', bossType:'choice4', goalCount:7,
+    ghostConfigs:[{type:'normal',stepEvery:18,color:'#ff6eb4'}] },
+  { id:2, name:'動物ステージ', catKey:'animal', emoji:'🐱',
+    bossEmoji:'🦁', bossName:'ライオンゴースト',
+    wallColor:'#0a3a0a', wallBorder:'#1a6a1a', bgColor:'#021002', accentColor:'#44ee44',
+    questionMode:'reverse', bossType:'choice4', goalCount:7,
+    ghostConfigs:[{type:'normal',stepEvery:18,color:'#ff6eb4'},{type:'speed',stepEvery:10,color:'#ff4400'}] },
+  { id:3, name:'学校ステージ', catKey:'school', emoji:'📚',
+    bossEmoji:'🤖', bossName:'せんせいロボ',
+    wallColor:'#1a0a4a', wallBorder:'#2a1a7a', bgColor:'#050012', accentColor:'#8866ff',
+    questionMode:'hint', bossType:'scramble', goalCount:8,
+    ghostConfigs:[{type:'normal',stepEvery:16,color:'#ff6eb4'},{type:'speed',stepEvery:9,color:'#ff4400'}] },
+];
+
+// ==================== MAZE LAYOUT ====================
+// 0=path, 1=wall  (18 cols × 14 rows)
+const MAZE_COLS = 18;
+const MAZE_ROWS = 14;
+const MAZE = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,0,1,1,0,1,0,1,1,0,1,1,0,0,1],
+  [1,0,1,1,0,1,1,0,0,0,1,1,0,1,1,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,0,1,0,1,1,1,0,1,0,1,1,0,0,1],
+  [1,0,0,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1],
+  [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+  [1,0,1,1,0,1,0,1,1,1,0,1,0,1,1,0,0,1],
+  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,0,1,1,0,1,0,1,1,0,1,1,0,0,1],
+  [1,0,1,1,0,1,1,0,0,0,1,1,0,1,1,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+// collect all walkable cells
+function getOpenCells() {
+  const cells = [];
+  for (let r = 0; r < MAZE_ROWS; r++)
+    for (let c = 0; c < MAZE_COLS; c++)
+      if (MAZE[r][c] === 0) cells.push({r,c});
+  return cells;
+}
+const OPEN_CELLS = getOpenCells();
+
+// ==================== STATE ====================
+let state = {
+  currentStageIdx: 0,
+  score: 0, hp: 3, maxHp: 3,
+  correctCount: 0, wrongCount: 0, goalCount: 5,
+  combo: 0, maxCombo: 0,
+  player: {r:1, c:1, dx:1, dy:0, mouthAngle:0.25, mouthDir:1},
+  ghosts: [], wordItems: [], powerUpItems: [],
+  currentWord: null, questionMode: 'normal',
+  gameRunning: false, gameOver: false,
+  invincible: 0, slowTimer: 0,
+  answered: [], reviewList: [],
+  stageProgress: {}, totalScore: 0, lastStageId: 1,
+  bossWords: [], bossIdx: 0, bossHp: 3,
+  scramblePool: [], scrambleBuilt: [],
+  isReviewPlay: false, lastWordId: null, soundEnabled: true,
+};
+
+// ==================== PERSISTENCE ====================
+const SAVE_KEY = 'eigoPacmanV2';
+function saveData() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify({
+    reviewList: state.reviewList,
+    stageProgress: state.stageProgress,
+    totalScore: state.totalScore,
+    lastStageId: state.lastStageId,
+    soundEnabled: state.soundEnabled,
+  }));
+}
+function loadData() {
+  const d = localStorage.getItem(SAVE_KEY);
+  if (!d) return false;
+  const p = JSON.parse(d);
+  state.reviewList    = p.reviewList    || [];
+  state.stageProgress = p.stageProgress || {};
+  state.totalScore    = p.totalScore    || 0;
+  state.lastStageId   = p.lastStageId   || 1;
+  state.soundEnabled  = p.soundEnabled !== undefined ? p.soundEnabled : true;
+  document.getElementById('btn-sound') && (document.getElementById('btn-sound').textContent = state.soundEnabled ? '🔊 音声 ON' : '🔇 音声 OFF');
+  return true;
+}
+function resetData() {
+  if (!confirm('データをリセットしますか？')) return;
+  localStorage.removeItem(SAVE_KEY);
+  state.reviewList = []; state.stageProgress = {};
+  state.totalScore = 0;  state.lastStageId = 1;
+  state.lastWordId = null;
+  alert('リセットしました！');
+}
+
+// ==================== TTS (SOUND) ====================
+let _voiceUnlocked = false;
+function unlockVoice() {
+  if (_voiceUnlocked || !state.soundEnabled) return;
+  const u = new SpeechSynthesisUtterance('');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+  _voiceUnlocked = true;
+  window.removeEventListener('click', unlockVoice);
+  window.removeEventListener('touchstart', unlockVoice);
+}
+window.addEventListener('click', unlockVoice);
+window.addEventListener('touchstart', unlockVoice);
+
+function toggleSound() {
+  state.soundEnabled = !state.soundEnabled;
+  document.getElementById('btn-sound').textContent = state.soundEnabled ? '🔊 音声 ON' : '🔇 音声 OFF';
+  saveData();
+  if (state.soundEnabled) unlockVoice();
+}
+function playVoice(text) {
+  if (!state.soundEnabled) return;
+  speechSynthesis.cancel(); // 前の音声をキャンセルしてすぐ次を読む
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 1.0;
+  speechSynthesis.speak(u);
+}
+
+// ==================== SCREEN CONTROL ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ==================== OVERLAY ====================
+let overlayCallback = null;
+function showOverlay(icon, msg, sub, btnLabel, cb) {
+  document.getElementById('overlay-icon').textContent = icon;
+  document.getElementById('overlay-msg').textContent  = msg;
+  document.getElementById('overlay-sub').textContent  = sub || '';
+  document.getElementById('overlay-btn').textContent  = btnLabel||'OK';
+  overlayCallback = cb || null;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('show');
+  if (overlayCallback) { const cb = overlayCallback; overlayCallback = null; cb(); }
+}
+
+// ==================== STAGE THEME ====================
+function applyStageTheme(st) {
+  const r = document.documentElement;
+  r.style.setProperty('--wall',   st.wallColor);
+  r.style.setProperty('--bg',     st.bgColor);
+  r.style.setProperty('--accent', st.accentColor);
+  document.getElementById('app').style.background = st.bgColor;
+}
+
+// ==================== TITLE / STAGE SELECT ====================
+function openStageSelect() { loadData(); renderStageSelect(); showScreen('stage-select-screen'); }
+function continueGame() {
+  loadData();
+  const idx = STAGES.findIndex(s => s.id === state.lastStageId);
+  state.currentStageIdx = idx >= 0 ? idx : 0;
+  launchGame();
+}
+function openReview() { loadData(); renderReview(); showScreen('review-screen'); }
+
+function renderStageSelect() {
+  const list = document.getElementById('stage-list');
+  list.innerHTML = '';
+  STAGES.forEach((st, i) => {
+    const prog = state.stageProgress[st.id] || {};
+    const unlocked = i === 0 || !!(state.stageProgress[STAGES[i-1].id]||{}).cleared;
+    const card = document.createElement('div');
+    card.className = 'stage-card ' + (unlocked ? (prog.cleared ? 'cleared' : 'unlocked') : 'locked');
+    if (unlocked) card.onclick = () => selectStage(i);
+    let right = '';
+    if (!unlocked)         right = '<span class="sc-lock">🔒</span>';
+    else if (prog.cleared) right = `<span class="sc-badge rank-${prog.rank}">${prog.rank}</span>`;
+    else                   right = '<span class="sc-new">チャレンジ</span>';
+    card.innerHTML = `<div class="sc-emoji">${st.emoji}</div>
+      <div class="sc-info"><div class="sc-name">${st.name}</div>
+      <div class="sc-sub">${unlocked ? (prog.cleared?'✅ クリア済み':'未クリア') : '🔒 前のステージをクリアしよう'}</div></div>${right}`;
+    list.appendChild(card);
+  });
+}
+function selectStage(idx) {
+  state.currentStageIdx = idx;
+  state.lastStageId = STAGES[idx].id;
+  launchGame();
+}
+function launchGame() {
+  showScreen('game-screen');
+  requestAnimationFrame(() => requestAnimationFrame(() => initGame()));
+}
+function retryStage() { launchGame(); }
+function goNextStage() {
+  const next = state.currentStageIdx + 1;
+  if (next < STAGES.length) { state.currentStageIdx = next; launchGame(); }
+  else { renderStageSelect(); showScreen('stage-select-screen'); }
+}
+function startReviewPlay() {
+  if (!state.reviewList || state.reviewList.length === 0) { alert('まだ間違えた単語がないよ！'); return; }
+  state.isReviewPlay = true;
+  launchGame();
+}
+
+// ==================== RENDER REVIEW ====================
+function renderReview() {
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  if (!state.reviewList || state.reviewList.length === 0) {
+    list.innerHTML = '<div class="review-empty">まだ間違えた単語はないよ！👍</div>';
+    return;
+  }
+  // deduplicate
+  const seen = new Set();
+  state.reviewList.forEach(item => {
+    if (seen.has(item.en)) return;
+    seen.add(item.en);
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `<div class="review-ja">${item.ja}</div><div class="review-en">${item.en}</div>`;
+    list.appendChild(div);
+  });
+}
+
+// ==================== CANVAS SETUP ====================
+let canvas, ctx, cellW, cellH, animId;
+function setupCanvas() {
+  canvas = document.getElementById('maze-canvas');
+  const wrap = document.getElementById('canvas-wrap');
+  const W = wrap.clientWidth;
+  const H = wrap.clientHeight;
+  cellW = Math.floor(W / MAZE_COLS);
+  cellH = Math.floor(H / MAZE_ROWS);
+  // use the smaller cell to keep square-ish
+  const cell = Math.min(cellW, cellH);
+  cellW = cell; cellH = cell;
+  canvas.width  = cellW * MAZE_COLS;
+  canvas.height = cellH * MAZE_ROWS;
+  ctx = canvas.getContext('2d');
+}
+
+// ==================== GAME INIT ====================
+function initGame() {
+  setupCanvas();
+  const st = state.isReviewPlay ? STAGES[0] : STAGES[state.currentStageIdx];
+  applyStageTheme(st);
+  state.score = 0; state.hp = 3; state.maxHp = 3;
+  state.correctCount = 0; state.wrongCount = 0;
+  state.combo = 0; state.maxCombo = 0;
+  state.invincible = 0; state.slowTimer = 0;
+  state.gameRunning = true; state.gameOver = false;
+  state.answered = [];
+  state.questionMode = st.questionMode;
+  state.goalCount = st.goalCount;
+  state.powerUpItems = [];
+  state.player = {r:1, c:1, dx:1, dy:0, mouthAngle:0.25, mouthDir:1};
+  // ghosts from stage config
+  const gcells = [{r:12,c:1,dx:1,dy:0},{r:12,c:16,dx:-1,dy:0}];
+  state.ghosts = st.ghostConfigs.map((g,i) => ({
+    ...gcells[i], color:g.color, type:g.type, stepEvery:g.stepEvery, stepTimer:0
+  }));
+  // spawn power-ups
+  const puCells = shuffle([...OPEN_CELLS]).filter(c=>!(c.r===1&&c.c<=2)).slice(0,2);
+  state.powerUpItems = puCells.map((c,i)=>({r:c.r,c:c.c,type:i===0?'star':'clock'}));
+  pickNewWord();
+  updateHUD();
+  if (animId) cancelAnimationFrame(animId);
+  loop();
+}
+
+// ==================== WORD PICKING ====================
+function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+function pickNewWord() {
+  const st = state.isReviewPlay ? STAGES[0] : STAGES[state.currentStageIdx];
+  // review play uses all missed words
+  let pool = state.isReviewPlay
+    ? WORDS.filter(w => state.reviewList.some(r => r.en === w.en))
+    : WORDS.filter(w => w.catKey === st.catKey);
+  if (pool.length === 0) pool = WORDS.filter(w => w.catKey === st.catKey);
+
+  // prevent repeating the same word
+  let availablePool = pool.filter(w => w.id !== state.lastWordId);
+  if (availablePool.length === 0) availablePool = pool; // fallback if pool is too small
+
+  const target = availablePool[Math.floor(Math.random() * availablePool.length)];
+  state.currentWord = target;
+  state.lastWordId = target.id;
+  const mode = state.questionMode;
+
+  // theme box
+  const lbl = document.querySelector('.theme-label');
+  const themeEl = document.getElementById('theme-ja');
+  if (mode === 'normal')  { lbl.textContent = '日本語のお題'; themeEl.textContent = target.ja; }
+  else if (mode === 'reverse') { lbl.textContent = '英語は？'; themeEl.textContent = target.en; }
+  else /* hint */  { lbl.textContent = 'ヒント'; themeEl.textContent = target.hint || target.ja; }
+
+  // build word set for maze
+  let correctVal, fakeVals;
+  if (mode === 'reverse') {
+    correctVal = target.ja;
+    fakeVals = shuffle(FAKE_JA.filter(j => j !== target.ja)).slice(0, 3);
+  } else {
+    correctVal = target.en;
+    fakeVals = shuffle([...FAKE_WORDS]).slice(0, 3);
+  }
+  const positions = shuffle([...OPEN_CELLS]).filter(c => !(c.r===1&&c.c===1)).slice(0, 4+Math.floor(Math.random()*2));
+  const wordSet = shuffle([correctVal, ...fakeVals]).slice(0, positions.length);
+  if (!wordSet.includes(correctVal)) wordSet[0] = correctVal;
+  shuffle(wordSet);
+  state.wordItems = positions.map((pos, i) => ({
+    r:pos.r, c:pos.c,
+    word: wordSet[i % wordSet.length],
+    isCorrect: wordSet[i % wordSet.length] === correctVal,
+  }));
+}
+
+// ==================== MOVEMENT ====================
+function canMove(r, c) {
+  return r >= 0 && r < MAZE_ROWS && c >= 0 && c < MAZE_COLS && MAZE[r][c] === 0;
+}
+
+// 押している方向を管理
+let currentDir = {dx: 0, dy: 0};
+let playerMoveTimer = 0;
+const PLAYER_SPEED = 10; // フレーム数（大きいほど遅い）
+
+function startMove(dx, dy) { currentDir = {dx, dy}; }
+function stopMove()        { currentDir = {dx: 0, dy: 0}; }
+
+// 押している間だけ移動
+function updatePlayer() {
+  if (currentDir.dx === 0 && currentDir.dy === 0) {
+    playerMoveTimer = 0;
+    return;
+  }
+  playerMoveTimer++;
+  if (playerMoveTimer < PLAYER_SPEED) return;
+  playerMoveTimer = 0;
+
+  const p = state.player;
+  const nr = p.r + currentDir.dy;
+  const nc = p.c + currentDir.dx;
+  if (canMove(nr, nc)) {
+    p.r = nr; p.c = nc;
+    p.dx = currentDir.dx; p.dy = currentDir.dy;
+  }
+  checkCollisions();
+}
+
+// キーボード：押したら開始、離したら停止
+document.addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+  if (e.key === 'ArrowUp')    startMove(0, -1);
+  if (e.key === 'ArrowDown')  startMove(0,  1);
+  if (e.key === 'ArrowLeft')  startMove(-1,  0);
+  if (e.key === 'ArrowRight') startMove(1,   0);
+});
+document.addEventListener('keyup', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) stopMove();
+});
+
+function updateGhosts() {
+  const slow = state.slowTimer > 0 ? 2 : 1;
+  state.ghosts.forEach(g => {
+    g.stepTimer++;
+    if (g.stepTimer < g.stepEvery * slow) return;
+    g.stepTimer = 0;
+    let nr = g.r + g.dy;
+    let nc = g.c + g.dx;
+    const goChance = g.type === 'speed' ? 0.9 : 0.8;
+    if (canMove(nr, nc) && Math.random() < goChance) {
+      g.r = nr; g.c = nc;
+    } else {
+      const dirs = shuffle([{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]);
+      for (const d of dirs) {
+        if (canMove(g.r+d.dy, g.c+d.dx)) {
+          g.dx = d.dx; g.dy = d.dy;
+          g.r += d.dy; g.c += d.dx; break;
+        }
+      }
+    }
+    if (g.r === state.player.r && g.c === state.player.c && state.invincible === 0) {
+      state.combo = 0; updateHUD();
+      takeDamage('👻 おばけにつかまった！');
+    }
+  });
+}
+
+// ==================== COMBO ====================
+function comboUp() {
+  state.combo++;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+  updateHUD();
+  if (state.combo === 3) { state.score += 50; showScorePop('🔥 3コンボ! +50', cellW*9, cellH*2, '#ffd700'); }
+  if (state.combo === 5) { state.slowTimer = 300; showScorePop('⚡ 5コンボ! スロー！', cellW*9, cellH*2, '#44eeff'); }
+  if (state.combo === 7) { state.invincible = 600; showScorePop('⭐ 7コンボ! 無敵！', cellW*9, cellH*2, '#ffdd00'); }
+}
+function comboBreak() { state.combo = 0; updateHUD(); }
+
+// ==================== POWER-UPS ====================
+function applyPowerUp(type) {
+  if (type === 'star')  { state.invincible = Math.max(state.invincible, 720); showFlash('#ffdd00'); showScorePop('⭐ 無敵！', cellW*9, cellH*2, '#ffd700'); }
+  if (type === 'clock') { state.slowTimer  = Math.max(state.slowTimer,  600); showFlash('#4499ff'); showScorePop('⏰ スロー！', cellW*9, cellH*2, '#44ccff'); }
+}
+
+// ==================== COLLISION ====================
+function checkCollisions() {
+  const p = state.player;
+  // power-up collision
+  const puI = state.powerUpItems.findIndex(pu => pu.r===p.r && pu.c===p.c);
+  if (puI !== -1) { applyPowerUp(state.powerUpItems[puI].type); state.powerUpItems.splice(puI,1); }
+  // word collision
+  const hit = state.wordItems.findIndex(w => w.r===p.r && w.c===p.c);
+  if (hit === -1) return;
+  const item = state.wordItems[hit];
+  state.wordItems.splice(hit, 1);
+  if (item.isCorrect) {
+    playVoice(state.currentWord.en);
+    state.correctCount++;
+    const bonus = state.combo >= 3 ? 150 : 100;
+    state.score += bonus;
+    comboUp();
+    showFlash('#00e676');
+    showScorePop(`+${bonus}`, p.c*cellW+cellW/2, p.r*cellH, '#00e676');
+    state.answered.push({ja:state.currentWord.ja, en:state.currentWord.en, correct:true});
+    if (state.correctCount >= state.goalCount) {
+      state.gameRunning = false;
+      setTimeout(() => startBoss(), 600);
+    } else {
+      setTimeout(() => pickNewWord(), 200);
+    }
+  } else {
+    state.answered.push({ja:state.currentWord.ja, en:item.word, correct:false});
+    state.reviewList.push({ja:state.currentWord.ja, en:state.currentWord.en});
+    saveData(); comboBreak();
+    const mode = state.questionMode;
+    const correctAns = mode === 'reverse' ? state.currentWord.ja : state.currentWord.en;
+    takeDamage(`❌ 「${item.word}」はちがうよ！
+正解は「${correctAns}」`);
+  }
+}
+
+function takeDamage(msg) {
+  if (state.invincible > 0) return;
+  state.hp--; state.wrongCount++;
+  state.invincible = 90;
+  comboBreak();
+  updateHUD(); showFlash('#ff1744');
+  if (state.hp <= 0) {
+    state.gameRunning = false;
+    showOverlay('💔', 'ゲームオーバー…', msg, 'けっかをみる', () => showResult(false));
+  } else {
+    showOverlay('😵', 'ダメージ！', msg, 'つづける', null);
+  }
+}
+
+// ==================== FLASH ====================
+function showFlash(color) {
+  const el = document.getElementById('flash');
+  el.style.background = color; el.style.opacity = '0.4';
+  setTimeout(() => { el.style.opacity = '0'; }, 200);
+}
+
+// ==================== SCORE POP ====================
+function showScorePop(text, x, y, color) {
+  const wrap = document.getElementById('canvas-wrap');
+  const el = document.createElement('div');
+  el.className = 'score-pop'; el.textContent = text;
+  el.style.color = color; el.style.left = x+'px'; el.style.top = y+'px';
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+// ==================== HUD ====================
+function updateHUD() {
+  document.getElementById('hud-score').textContent = state.score;
+  document.getElementById('hud-count').textContent = `${state.correctCount} / ${state.goalCount}`;
+  const hearts = '❤️'.repeat(state.hp) + '🖤'.repeat(Math.max(0, state.hp<=0?0:state.maxHp-state.hp));
+  document.getElementById('hp-hearts').textContent = hearts;
+  const ct = document.getElementById('combo-text');
+  if (state.combo >= 2) { ct.textContent = `🔥 ${state.combo}コンボ！`; ct.classList.add('visible'); }
+  else { ct.classList.remove('visible'); }
+}
+
+// ==================== DRAW ====================
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // maze
+  const st = STAGES[state.currentStageIdx];
+  for (let r = 0; r < MAZE_ROWS; r++) {
+    for (let c = 0; c < MAZE_COLS; c++) {
+      const x = c * cellW, y = r * cellH;
+      if (MAZE[r][c] === 1) {
+        ctx.fillStyle = st.wallColor;
+        ctx.fillRect(x, y, cellW, cellH);
+        ctx.strokeStyle = st.wallBorder;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x+1, y+1, cellW-2, cellH-2);
+      } else {
+        ctx.fillStyle = st.bgColor;
+        ctx.fillRect(x, y, cellW, cellH);
+      }
+    }
+  }
+
+  // power-up items
+  state.powerUpItems.forEach(pu => {
+    ctx.font = `${Math.min(cellW,cellH)*0.75}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(pu.type==='star'?'⭐':'⏰', pu.c*cellW+cellW/2, pu.r*cellH+cellH/2);
+  });
+
+  // word items
+  state.wordItems.forEach(item => {
+    const x = item.c * cellW + cellW/2;
+    const y = item.r * cellH + cellH/2;
+    // capsule background
+    const w2 = Math.max(cellW * 1.4, item.word.length * 7 + 10);
+    const h2 = cellH * 0.7;
+    const isTarget = item.isCorrect; // visual hint OFF in gameplay
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.roundRect(x - w2/2, y - h2/2, w2, h2, 6);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // word text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.max(9, Math.min(13, Math.floor(cellH*0.38)))}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.word, x, y);
+  });
+
+  // ghosts
+  state.ghosts.forEach(g => {
+    const x = g.c * cellW + cellW/2;
+    const y = g.r * cellH + cellH/2;
+    const r2 = cellW * 0.38;
+    ctx.fillStyle = g.color;
+    ctx.beginPath();
+    // ghost body
+    ctx.arc(x, y - r2*0.1, r2, Math.PI, 0);
+    ctx.lineTo(x + r2, y + r2*0.9);
+    // jagged bottom
+    const jags = 3;
+    for (let j = jags; j >= 0; j--) {
+      const bx = x - r2 + (2*r2) * j/jags;
+      const by = y + r2*0.9 + (j%2===0 ? r2*0.3 : 0);
+      ctx.lineTo(bx, by);
+    }
+    ctx.closePath();
+    ctx.fill();
+    // eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(x - r2*0.3, y - r2*0.2, r2*0.22, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + r2*0.3, y - r2*0.2, r2*0.22, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(x - r2*0.22, y - r2*0.2, r2*0.12, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + r2*0.38, y - r2*0.2, r2*0.12, 0, Math.PI*2); ctx.fill();
+  });
+
+  // player (pac-man)
+  const p = state.player;
+  const px = p.c * cellW + cellW/2;
+  const py = p.r * cellH + cellH/2;
+  const pr = cellW * 0.4;
+
+  // animate mouth
+  p.mouthAngle += 0.04 * p.mouthDir;
+  if (p.mouthAngle > 0.25 || p.mouthAngle < 0.02) p.mouthDir *= -1;
+
+  // rotation based on direction
+  let angle = 0;
+  if (p.dx === 1)  angle = 0;
+  if (p.dx === -1) angle = Math.PI;
+  if (p.dy === -1) angle = -Math.PI/2;
+  if (p.dy === 1)  angle = Math.PI/2;
+
+  // invincible blink
+  const visible = state.invincible === 0 || Math.floor(state.invincible / 6) % 2 === 0;
+  if (visible) {
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(angle);
+    ctx.fillStyle = '#ffe066';
+    ctx.shadowColor = '#ffaa00';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, pr, p.mouthAngle * Math.PI, (2 - p.mouthAngle) * Math.PI);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ==================== GAME LOOP ====================
+function loop() {
+  if (!state.gameRunning) { draw(); return; }
+  if (state.invincible > 0) state.invincible--;
+  if (state.slowTimer   > 0) state.slowTimer--;
+  updatePlayer(); updateGhosts(); draw();
+  animId = requestAnimationFrame(loop);
+}
+
+// ==================== BOSS BATTLE ====================
+function startBoss() {
+  const st = STAGES[state.currentStageIdx];
+  const pool = shuffle(WORDS.filter(w => w.catKey === st.catKey));
+  state.bossWords = pool.slice(0, 3);
+  state.bossIdx = 0; state.bossHp = 3;
+  document.getElementById('boss-emoji').textContent = st.bossEmoji;
+  document.getElementById('boss-title') && (document.getElementById('boss-title').textContent = `⚔️ ${st.bossName}登場！`);
+  updateBossUI();
+  showScreen('boss-screen');
+  showBossQuestion();
+}
+
+function updateBossUI() {
+  const pct = (state.bossHp / 3) * 100;
+  document.getElementById('boss-hp-fill').style.width = pct + '%';
+  const hearts = '❤️'.repeat(state.hp) + '🖤'.repeat(Math.max(0, state.maxHp - state.hp));
+  document.getElementById('boss-player-hearts').textContent = hearts;
+  document.getElementById('boss-progress').textContent = `第${state.bossIdx+1}問 / ${state.bossWords.length}問`;
+}
+
+function showBossQuestion() {
+  if (state.bossIdx >= state.bossWords.length) { showResult(true); return; }
+  const word = state.bossWords[state.bossIdx];
+  const bossType = STAGES[state.currentStageIdx].bossType;
+  if (bossType === 'scramble') {
+    document.getElementById('boss-choice4-area').style.display = 'none';
+    document.getElementById('boss-scramble-area').style.display = 'flex';
+    document.getElementById('boss-question').textContent = `「${word.ja}」を英語でつづろう！`;
+    initScramble(word);
+  } else {
+    document.getElementById('boss-choice4-area').style.display = 'block';
+    document.getElementById('boss-scramble-area').style.display = 'none';
+    document.getElementById('boss-question').textContent = `「${word.ja}」を英語で言うと？`;
+    const fakes = shuffle([...FAKE_WORDS]).slice(0, 3);
+    const choices = shuffle([word.en, ...fakes]);
+    const choicesDiv = document.getElementById('boss-choices');
+    choicesDiv.innerHTML = '';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'boss-choice'; btn.textContent = c;
+      btn.onclick = () => answerBoss(btn, c, word.en, word);
+      choicesDiv.appendChild(btn);
+    });
+  }
+  updateBossUI();
+}
+
+// CSS アニメーションをリセットして再生するヘルパー
+function playBossAnim(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth; // reflow でアニメーションをリセット
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 800);
+}
+
+function answerBoss(btn, chosen, correct, word) {
+  // disable all
+  document.querySelectorAll('.boss-choice').forEach(b => b.disabled = true);
+
+  const bossEmoji  = document.getElementById('boss-emoji');
+  const bossScreen = document.getElementById('boss-screen');
+  const heartsEl   = document.getElementById('boss-player-hearts');
+
+  if (chosen === correct) {
+    playVoice(correct);
+    btn.classList.add('correct');
+    state.bossHp--;
+    state.score += 150;
+    // ✅ プレイヤー攻撃：ボスがダメージを受けるアニメーション
+    playBossAnim(bossEmoji,  'boss-hit-anim');
+    playBossAnim(bossScreen, 'boss-screen-green');
+  } else {
+    btn.classList.add('wrong');
+    // show correct
+    document.querySelectorAll('.boss-choice').forEach(b => {
+      if (b.textContent === correct) b.classList.add('correct');
+    });
+    state.hp--;
+    state.wrongCount++;
+    state.reviewList.push({ja: word.ja, en: word.en});
+    saveData();
+    // ❌ ボス攻撃：ボスが突進するアニメーション＋ハートシェイク
+    playBossAnim(bossEmoji,  'boss-atk-anim');
+    playBossAnim(bossScreen, 'boss-screen-red');
+    playBossAnim(heartsEl,   'hearts-shake');
+  }
+  updateBossUI();
+
+  if (state.hp <= 0) {
+    setTimeout(() => showResult(false), 1200);
+    return;
+  }
+
+  state.bossIdx++;
+  if (state.bossHp <= 0 || state.bossIdx >= state.bossWords.length) {
+    const won = state.bossHp <= 0 || (state.bossIdx >= state.bossWords.length && state.hp > 0);
+    setTimeout(() => showResult(won), 1200);
+  } else {
+    setTimeout(() => showBossQuestion(), 1000);
+  }
+}
+
+// ==================== SCRAMBLE BOSS ====================
+function initScramble(word) {
+  state.scramblePool = word.en.split('').map((l,i)=>({l,i,used:false})).sort(()=>Math.random()-.5);
+  state.scrambleBuilt = [];
+  renderScramble(word);
+}
+function renderScramble(word) {
+  const ans = document.getElementById('scramble-answer');
+  ans.innerHTML = '';
+  for (let i = 0; i < word.en.length; i++) {
+    const sp = document.createElement('span');
+    sp.className = 'sc-slot' + (i < state.scrambleBuilt.length ? ' filled' : '');
+    sp.textContent = i < state.scrambleBuilt.length ? state.scramblePool[state.scrambleBuilt[i]].l : '_';
+    ans.appendChild(sp);
+  }
+  const tiles = document.getElementById('scramble-tiles');
+  tiles.innerHTML = '';
+  state.scramblePool.forEach((t,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'sc-tile' + (t.used?' used':'');
+    btn.textContent = t.l; btn.disabled = t.used;
+    btn.onclick = () => { if(t.used)return; t.used=true; state.scrambleBuilt.push(i); renderScramble(word); };
+    tiles.appendChild(btn);
+  });
+  document.getElementById('sc-ok-btn').disabled = false;
+  document.getElementById('sc-ok-btn').textContent = '✔ 決定';
+}
+function scrambleDelete() {
+  if (!state.scrambleBuilt.length) return;
+  const i = state.scrambleBuilt.pop();
+  state.scramblePool[i].used = false;
+  renderScramble(state.bossWords[state.bossIdx]);
+}
+function scrambleSubmit() {
+  const word = state.bossWords[state.bossIdx];
+  const built = state.scrambleBuilt.map(i=>state.scramblePool[i].l).join('');
+  const ok = built === word.en;
+  const bossEmoji = document.getElementById('boss-emoji');
+  const bossScreen = document.getElementById('boss-screen');
+  const heartsEl = document.getElementById('boss-player-hearts');
+  document.querySelectorAll('.sc-tile').forEach(t=>t.disabled=true);
+  document.getElementById('sc-ok-btn').disabled = true;
+  // show result in slots
+  const slots = document.querySelectorAll('.sc-slot');
+  word.en.split('').forEach((l,i)=>{
+    if (slots[i]) { slots[i].className = 'sc-slot '+(ok?'correct-slot':'wrong-slot'); slots[i].textContent=ok?l:built[i]||'?'; }
+  });
+  document.getElementById('sc-ok-btn').textContent = ok ? '✅正解！' : '❌不正解';
+  if (ok) {
+    playVoice(word.en);
+    state.bossHp--; state.score += 150;
+    playBossAnim(bossEmoji,'boss-hit-anim'); playBossAnim(bossScreen,'boss-screen-green');
+  } else {
+    state.hp--; state.wrongCount++;
+    state.reviewList.push({ja:word.ja,en:word.en}); saveData();
+    playBossAnim(bossEmoji,'boss-atk-anim'); playBossAnim(bossScreen,'boss-screen-red'); playBossAnim(heartsEl,'hearts-shake');
+  }
+  updateBossUI();
+  if (state.hp<=0) { setTimeout(()=>showResult(false),1200); return; }
+  state.bossIdx++;
+  const done = state.bossHp<=0 || state.bossIdx>=state.bossWords.length;
+  setTimeout(()=>done?showResult(state.bossHp<=0||(state.bossIdx>=state.bossWords.length&&state.hp>0)):showBossQuestion(), 1200);
+}
+
+// ==================== RANK ====================
+function calculateRank() {
+  if (state.wrongCount === 0) return 'S';
+  if (state.wrongCount <= 1) return 'A';
+  if (state.wrongCount <= 3) return 'B';
+  return 'C';
+}
+
+// ==================== RESULT ====================
+function showResult(cleared) {
+  cancelAnimationFrame(animId);
+  state.gameRunning = false;
+  const rank = cleared ? calculateRank() : 'C';
+  if (cleared) {
+    const stId = STAGES[state.currentStageIdx].id;
+    const prev = state.stageProgress[stId] || {};
+    const rankOrder = {S:4,A:3,B:2,C:1};
+    if (!prev.cleared || rankOrder[rank] > rankOrder[prev.rank||'C']) {
+      state.stageProgress[stId] = {cleared:true, rank, score:state.score};
+    }
+    state.totalScore += state.score;
+    state.lastStageId = STAGES[state.currentStageIdx].id;
+  }
+  state.isReviewPlay = false;
+  saveData();
+
+  document.getElementById('result-title').textContent = cleared ? '🎉 ステージクリア！' : '💔 ゲームオーバー…';
+  document.getElementById('result-title').className = 'result-title ' + (cleared ? 'clear' : 'over');
+  const rc = document.getElementById('rank-circle');
+  rc.textContent = rank; rc.className = 'rank-circle rank-'+rank;
+  const labels = {S:'パーフェクト！',A:'すごい！',B:'よくできた！',C:'もっとがんばろう！'};
+  document.getElementById('rank-label').textContent = cleared ? labels[rank] : 'また挑戦しよう！';
+  document.getElementById('res-correct').textContent = state.correctCount;
+  document.getElementById('res-wrong').textContent = state.wrongCount;
+  document.getElementById('res-combo').textContent = state.maxCombo;
+  document.getElementById('res-score').textContent = state.score;
+  // next stage button
+  const nx = document.getElementById('btn-next-stage');
+  nx.style.display = cleared && state.currentStageIdx+1 < STAGES.length ? 'block' : 'none';
+  // missed words
+  const missed = state.reviewList.filter(w => state.answered.some(a=>a.ja===w.ja&&!a.correct));
+  const missedEl = document.getElementById('missed-list');
+  missedEl.innerHTML = '';
+  const seen = new Set();
+  missed.forEach(m=>{ if(seen.has(m.en))return; seen.add(m.en);
+    const d=document.createElement('div'); d.className='missed-item';
+    d.innerHTML=`<div class="missed-ja">${m.ja}</div><div class="missed-en">${m.en}</div>`;
+    missedEl.appendChild(d);
+  });
+  if (!missedEl.children.length) missedEl.innerHTML='<div style="color:#00e676;font-size:14px;padding:8px">全問正解！素晴らしい！🎊</div>';
+  showScreen('result-screen');
+}
+
+// ==================== INIT ====================
+loadData();
+</script>
+</body>
+</html>
