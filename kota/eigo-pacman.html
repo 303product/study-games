@@ -22,12 +22,13 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
-      display: flex; justify-content: center; align-items: center;
-      min-height: 100vh; overflow: hidden;
+      display: flex; justify-content: center; align-items: flex-start;
+      min-height: 100vh; overflow-x: hidden; overflow-y: auto;
+      padding: 20px 0;
     }
     #app {
-      width: 100%; max-width: 480px;
-      height: 100vh; max-height: 860px;
+      width: min(100%, 520px);
+      height: clamp(600px, 100vh, 860px);
       position: relative; overflow: hidden;
       display: flex; flex-direction: column;
       background: var(--bg);
@@ -77,6 +78,7 @@
     #game-screen { padding: 0; background: var(--bg); }
     #hud {
       display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 6px 14px;
       padding: 10px 14px; background: var(--hud); flex-shrink: 0;
       border-bottom: 2px solid #223;
     }
@@ -88,12 +90,13 @@
       background: rgba(255,224,102,.12);
       border: 2px solid var(--accent);
       border-radius: 12px; padding: 8px 14px;
-      text-align: center; flex-shrink: 0; margin: 8px 12px 0;
+      text-align: center; flex-shrink: 0;
+      margin: 8px auto 0; width: calc(100% - 24px);
     }
     #theme-label { font-size: 11px; color: #99a; }
     #theme-ja { font-size: 22px; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
-    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-    #maze-canvas { display: block; }
+    #canvas-wrap { flex: 1 1 auto; min-height: 260px; padding: 8px; display: flex; align-items: center; justify-content: center; position: relative; }
+    #maze-canvas { display: block; max-width: 100%; height: auto; }
     /* flash overlay */
     #flash {
       pointer-events: none; position: absolute; inset: 0;
@@ -729,6 +732,7 @@ function renderReview() {
 
 // ==================== CANVAS SETUP ====================
 let canvas, ctx, cellW, cellH, animId;
+let resizeTimer;
 function setupCanvas() {
   canvas = document.getElementById('maze-canvas');
   const wrap = document.getElementById('canvas-wrap');
@@ -743,6 +747,28 @@ function setupCanvas() {
   canvas.height = cellH * MAZE_ROWS;
   ctx = canvas.getContext('2d');
 }
+
+function updateAppHeight() {
+  const app = document.getElementById('app');
+  if (!app) return;
+  const minH = 600;
+  const maxH = 860;
+  const next = Math.max(minH, Math.min(window.innerHeight, maxH));
+  app.style.height = next + 'px';
+}
+
+function handleResize() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    updateAppHeight();
+    const wrap = document.getElementById('canvas-wrap');
+    if (!wrap || wrap.offsetParent === null) return;
+    setupCanvas();
+    if (ctx) draw();
+  }, 150);
+}
+
+window.addEventListener('resize', handleResize);
 
 // ==================== GAME INIT ====================
 function initGame() {
@@ -800,23 +826,51 @@ function pickNewWord() {
   else if (mode === 'reverse') { lbl.textContent = '英語は？'; themeEl.textContent = target.en; }
   else /* hint */  { lbl.textContent = 'ヒント'; themeEl.textContent = target.hint || target.ja; }
 
-  // build word set for maze
+  // determine number of choices
+  const numChoices = 4 + Math.floor(Math.random()*2);
+
+  // build word set without duplicating
   let correctVal, fakeVals;
   if (mode === 'reverse') {
     correctVal = target.ja;
-    fakeVals = shuffle(FAKE_JA.filter(j => j !== target.ja)).slice(0, 3);
+    fakeVals = shuffle(FAKE_JA.filter(j => j !== target.ja)).slice(0, numChoices - 1);
   } else {
     correctVal = target.en;
-    fakeVals = shuffle([...FAKE_WORDS]).slice(0, 3);
+    fakeVals = shuffle([...FAKE_WORDS]).slice(0, numChoices - 1);
   }
-  const positions = shuffle([...OPEN_CELLS]).filter(c => !(c.r===1&&c.c===1)).slice(0, 4+Math.floor(Math.random()*2));
-  const wordSet = shuffle([correctVal, ...fakeVals]).slice(0, positions.length);
-  if (!wordSet.includes(correctVal)) wordSet[0] = correctVal;
+  const wordSet = [correctVal, ...fakeVals];
   shuffle(wordSet);
+
+  // find positions that don't overlap visually or share cells with powerups
+  const positions = [];
+  const shuffledOpen = shuffle([...OPEN_CELLS]).filter(c => {
+    if (c.r === 1 && c.c === 1) return false;
+    if (state.powerUpItems.some(pu => pu.r === c.r && pu.c === c.c)) return false;
+    return true;
+  });
+
+  for (const c of shuffledOpen) {
+    let tooClose = false;
+    for (const p of positions) {
+      if (Math.abs(p.r - c.r) + Math.abs(p.c - c.c) < 3) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (!tooClose) positions.push(c);
+    if (positions.length === numChoices) break;
+  }
+  
+  // fallback if grid is too crowded
+  if (positions.length < numChoices) {
+    const unselected = shuffledOpen.filter(c => !positions.includes(c));
+    positions.push(...unselected.slice(0, numChoices - positions.length));
+  }
+
   state.wordItems = positions.map((pos, i) => ({
     r:pos.r, c:pos.c,
-    word: wordSet[i % wordSet.length],
-    isCorrect: wordSet[i % wordSet.length] === correctVal,
+    word: wordSet[i],
+    isCorrect: wordSet[i] === correctVal,
   }));
 }
 
@@ -1333,6 +1387,7 @@ function showResult(cleared) {
 }
 
 // ==================== INIT ====================
+updateAppHeight();
 loadData();
 </script>
 </body>
