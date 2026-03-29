@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>カタカナレスキュー</title>
+  <style>
+    :root {
+      --bg-top: #fdf4ff;
+      --bg-bottom: #dff6ff;
+      --accent: #ff7eb9;
+      --accent-dark: #ff4d91;
+      --good: #00bfa5;
+      --soft: #ffd166;
+      --text: #123;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Hiragino Sans', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .game-shell {
+      width: min(520px, 100%);
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 28px;
+      padding: 24px 20px 30px;
+      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .top-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+    .score-box { justify-self: flex-start; font-size: 16px; }
+    .progress-box { justify-self: flex-end; font-size: 16px; }
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(26px, 5vw, 34px);
+      color: var(--accent-dark);
+    }
+    .play-area {
+      background: #fffaf7;
+      border-radius: 22px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 360px;
+    }
+    .prompt {
+      margin: 0;
+      font-size: clamp(18px, 4vw, 24px);
+      text-align: center;
+      color: #345;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 14px;
+      width: 100%;
+      flex: 1;
+      align-content: center;
+    }
+    .choice-btn {
+      border: none;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #fff, #ffe9f4);
+      color: #111;
+      font-size: clamp(40px, 10vw, 60px);
+      font-weight: 700;
+      padding: 24px 10px;
+      box-shadow: 0 12px 18px rgba(255, 126, 185, 0.25);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .choice-btn:active { transform: translateY(3px); }
+    .choice-btn.correct {
+      background: linear-gradient(180deg, #fff8e1, #ffe082);
+      box-shadow: 0 0 16px rgba(255, 193, 7, 0.8);
+    }
+    .choice-btn.wrong {
+      animation: buzz 0.35s ease;
+      background: linear-gradient(180deg, #ffeaea, #ffd6d6);
+    }
+    @keyframes buzz {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .status {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      min-height: 34px;
+    }
+    .status.good { color: var(--good); }
+    .status.try { color: #ff7043; }
+    .status.neutral { color: #607d8b; }
+    .big-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+      box-shadow: 0 10px 20px rgba(255, 77, 145, 0.35);
+      cursor: pointer;
+    }
+    .hidden { display: none; }
+    .info-bar {
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .notes {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 20px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      font-size: 15px;
+    }
+    .notes h2 { margin: 0 0 8px; font-size: 18px; color: var(--accent-dark); }
+    .notes ul { margin: 0; padding-left: 20px; line-height: 1.6; }
+    @media (max-width: 520px) {
+      body { padding: 12px; }
+      .choice-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <header class="top-bar">
+      <div class="score-box">⭐ スコア <span id="score">0</span></div>
+      <h1>カタカナレスキュー</h1>
+      <div class="progress-box"><span id="round-now">0</span> / <span id="round-total">10</span></div>
+    </header>
+
+    <main class="play-area" aria-live="polite">
+      <p class="prompt" id="prompt">スタートボタンをおしてね</p>
+      <div class="choice-grid" id="choices"></div>
+      <div class="status neutral" id="status">こえをきいて えらんでね</div>
+      <button class="big-btn" id="start-btn">▶ スタート</button>
+    </main>
+
+    <footer class="info-bar">
+      こえが聞こえなくても文字を読んでタップできるよ
+    </footer>
+
+    <section class="notes">
+      <div>
+        <h2>あそびかた</h2>
+        <ul>
+          <li>スタートを押すと「◯◯をさがして！」と声と文字で出題。</li>
+          <li>まん中の大きなカタカナボタンをタップして答えよう。</li>
+          <li>正解で光り「せいかい！」とほめられ、10問遊ぶと終了。</li>
+        </ul>
+      </div>
+      <div>
+        <h2>これからのアップデート案</h2>
+        <ul>
+          <li>文字数をふやして段階的にむずかしくする。</li>
+          <li>問題タイムを計ってごほうびバッジを表示。</li>
+          <li>正解した文字カードを集めるコレクション機能。</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const LETTERS = ['ア','イ','ウ','エ','オ','カ','キ','ク','ケ','コ'];
+    const TOTAL_ROUNDS = 10;
+    const promptEl = document.getElementById('prompt');
+    const statusEl = document.getElementById('status');
+    const scoreEl = document.getElementById('score');
+    const roundEl = document.getElementById('round-now');
+    const roundTotalEl = document.getElementById('round-total');
+    const choicesEl = document.getElementById('choices');
+    const startBtn = document.getElementById('start-btn');
+
+    roundTotalEl.textContent = TOTAL_ROUNDS;
+
+    let score = 0;
+    let currentRound = 0;
+    let currentLetter = null;
+    let lastLetter = null;
+    let acceptingInput = false;
+    let voiceUnlocked = false;
+
+    const shuffle = (arr) => arr.slice().sort(() => Math.random() - 0.5);
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'ja-JP';
+        utter.rate = 0.9;
+        window.speechSynthesis.speak(utter);
+      } catch (err) {
+        console.warn('speech error', err);
+      }
+    }
+
+    function unlockVoiceOnce() {
+      if (voiceUnlocked) return;
+      voiceUnlocked = true;
+      speak('');
+      window.removeEventListener('click', unlockVoiceOnce);
+      window.removeEventListener('touchstart', unlockVoiceOnce);
+    }
+    window.addEventListener('click', unlockVoiceOnce, { passive: true });
+    window.addEventListener('touchstart', unlockVoiceOnce, { passive: true });
+
+    function startGame() {
+      score = 0;
+      currentRound = 0;
+      lastLetter = null;
+      updateScore();
+      statusMessage('こえをきいて えらんでね', 'neutral');
+      startBtn.classList.add('hidden');
+      setupQuestion();
+    }
+
+    function updateScore() {
+      scoreEl.textContent = score;
+    }
+
+    function statusMessage(text, tone) {
+      statusEl.textContent = text;
+      statusEl.className = `status ${tone}`;
+    }
+
+    function pickLetter() {
+      const pool = LETTERS.filter((l) => l !== lastLetter);
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function buildChoices(target) {
+      const choiceCount = Math.random() < 0.5 ? 2 : 3;
+      const distractors = shuffle(LETTERS.filter((l) => l !== target)).slice(0, choiceCount - 1);
+      return shuffle([target, ...distractors]);
+    }
+
+    function setupQuestion() {
+      if (currentRound >= TOTAL_ROUNDS) {
+        return endGame();
+      }
+      currentLetter = pickLetter();
+      promptEl.textContent = `「${currentLetter}」を さがして！`;
+      roundEl.textContent = currentRound + 1;
+      choicesEl.innerHTML = '';
+      const choiceSet = buildChoices(currentLetter);
+      choiceSet.forEach((char) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.type = 'button';
+        btn.textContent = char;
+        btn.addEventListener('click', () => handleChoice(btn, char));
+        choicesEl.appendChild(btn);
+      });
+      acceptingInput = true;
+      speak(`${currentLetter}を さがして！`);
+    }
+
+    function handleChoice(btn, char) {
+      if (!acceptingInput) return;
+      if (char === currentLetter) {
+        acceptingInput = false;
+        btn.classList.add('correct');
+        Array.from(document.querySelectorAll('.choice-btn')).forEach((b) => (b.disabled = true));
+        score += 1;
+        updateScore();
+        statusMessage('せいかい！ やったね！', 'good');
+        speak(currentLetter);
+        lastLetter = currentLetter;
+        setTimeout(() => {
+          currentRound += 1;
+          setupQuestion();
+        }, 1200);
+      } else {
+        statusMessage('おしい、もういちど！', 'try');
+        btn.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 400);
+      }
+    }
+
+    function endGame() {
+      acceptingInput = false;
+      promptEl.textContent = 'みんな たすけられたよ！';
+      statusMessage(`スコア: ${score} / ${TOTAL_ROUNDS} またあそぼう！`, 'good');
+      startBtn.textContent = '▶ もういちど';
+      startBtn.classList.remove('hidden');
+      roundEl.textContent = TOTAL_ROUNDS;
+      choicesEl.innerHTML = '';
+    }
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
