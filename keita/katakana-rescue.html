@@ -2,318 +2,518 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>カタカナレスキュー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>カタカナレスキュー隊</title>
   <style>
     :root {
-      --bg-top: #fdf4ff;
-      --bg-bottom: #dff6ff;
-      --accent: #ff7eb9;
-      --accent-dark: #ff4d91;
-      --good: #00bfa5;
-      --soft: #ffd166;
-      --text: #123;
+      --bg-color: #87CEEB; /* Sky blue */
+      --text-color: #333;
+      --primary: #FF9800; /* Orange */
+      --secondary: #4FC3F7; /* Light Blue */
+      --accent: #FFEB3B;
+      --correct: #00E676;
+      --wrong: #FF5252;
     }
-    * { box-sizing: border-box; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+
     body {
-      margin: 0;
+      background: #e0f7fa;
+      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
       min-height: 100vh;
-      font-family: 'Hiragino Sans', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
-      background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      padding: 20px;
+      overflow: hidden;
     }
-    .game-shell {
-      width: min(520px, 100%);
-      background: rgba(255, 255, 255, 0.92);
-      border-radius: 28px;
-      padding: 24px 20px 30px;
-      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.15);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .top-bar {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-    }
-    .score-box { justify-self: flex-start; font-size: 16px; }
-    .progress-box { justify-self: flex-end; font-size: 16px; }
-    h1 {
-      margin: 0;
-      text-align: center;
-      font-size: clamp(26px, 5vw, 34px);
-      color: var(--accent-dark);
-    }
-    .play-area {
-      background: #fffaf7;
-      border-radius: 22px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      min-height: 360px;
-    }
-    .prompt {
-      margin: 0;
-      font-size: clamp(18px, 4vw, 24px);
-      text-align: center;
-      color: #345;
-      min-height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .choice-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 14px;
+
+    #app {
       width: 100%;
-      flex: 1;
-      align-content: center;
+      max-width: 500px;
+      height: 100vh;
+      background: linear-gradient(180deg, #4fc3f7 0%, #e1f5fe 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
     }
-    .choice-btn {
-      border: none;
-      border-radius: 22px;
-      background: linear-gradient(180deg, #fff, #ffe9f4);
-      color: #111;
-      font-size: clamp(40px, 10vw, 60px);
-      font-weight: 700;
-      padding: 24px 10px;
-      box-shadow: 0 12px 18px rgba(255, 126, 185, 0.25);
-      cursor: pointer;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
-    }
-    .choice-btn:active { transform: translateY(3px); }
-    .choice-btn.correct {
-      background: linear-gradient(180deg, #fff8e1, #ffe082);
-      box-shadow: 0 0 16px rgba(255, 193, 7, 0.8);
-    }
-    .choice-btn.wrong {
-      animation: buzz 0.35s ease;
-      background: linear-gradient(180deg, #ffeaea, #ffd6d6);
-    }
-    @keyframes buzz {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-6px); }
-      75% { transform: translateX(6px); }
-    }
-    .status {
+
+    /* ====== SCREENS ====== */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.9);
+      z-index: 100;
+      transition: opacity 0.3s ease;
+      padding: 24px;
       text-align: center;
-      font-size: 18px;
-      font-weight: 700;
-      min-height: 34px;
     }
-    .status.good { color: var(--good); }
-    .status.try { color: #ff7043; }
-    .status.neutral { color: #607d8b; }
-    .big-btn {
-      border: none;
-      border-radius: 999px;
-      padding: 14px 18px;
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .title-logo {
+      font-size: 42px;
+      font-weight: 900;
+      color: #FF9800;
+      text-shadow: 2px 2px 0 #fff, 4px 4px 0 #ffcc80;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+
+    .start-desc {
       font-size: 18px;
-      font-weight: 700;
+      color: #555;
+      font-weight: bold;
+      margin-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    .btn {
+      background: linear-gradient(180deg, #FFB74D, #F57C00);
       color: white;
-      background: linear-gradient(180deg, var(--accent), var(--accent-dark));
-      box-shadow: 0 10px 20px rgba(255, 77, 145, 0.35);
+      border: none;
+      padding: 18px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      border-radius: 50px;
+      box-shadow: 0 6px 0 #E65100, 0 10px 10px rgba(0,0,0,0.2);
       cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
     }
-    .hidden { display: none; }
-    .info-bar {
-      text-align: center;
-      font-size: 14px;
-      color: #6b7280;
+    .btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 0px 0 #E65100, 0 4px 4px rgba(0,0,0,0.2);
     }
-    .notes {
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 20px;
-      padding: 16px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      font-size: 15px;
+
+    /* ====== GAME UI ====== */
+    header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.4);
+      z-index: 10;
     }
-    .notes h2 { margin: 0 0 8px; font-size: 18px; color: var(--accent-dark); }
-    .notes ul { margin: 0; padding-left: 20px; line-height: 1.6; }
-    @media (max-width: 520px) {
-      body { padding: 12px; }
-      .choice-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .ui-text {
+      font-size: 20px;
+      font-weight: 900;
+      color: #01579b;
     }
+
+    #play-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    footer {
+      height: 130px;
+      background: #81c784;
+      border-top: 6px solid #4caf50;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 16px;
+      z-index: 10;
+      position: relative;
+    }
+    .grass-layer {
+      position: absolute;
+      top: -15px; left: 0; width: 100%; height: 20px;
+      background: repeating-linear-gradient(-45deg, #4caf50, #4caf50 10px, #66bb6a 10px, #66bb6a 20px);
+      clip-path: polygon(0% 100%, 5% 0%, 10% 100%, 15% 0%, 20% 100%, 25% 0%, 30% 100%, 35% 0%, 40% 100%, 45% 0%, 50% 100%, 55% 0%, 60% 100%, 65% 0%, 70% 100%, 75% 0%, 80% 100%, 85% 0%, 90% 100%, 95% 0%, 100% 100%);
+    }
+
+    #character {
+      font-size: 64px;
+      filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+      transition: transform 0.2s;
+    }
+    .char-bounce {
+      animation: charBounce 0.4s ease infinite alternate;
+    }
+    @keyframes charBounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+    #dialogue-box {
+      background: white;
+      border: 4px solid #FF9800;
+      border-radius: 16px;
+      padding: 12px 16px;
+      flex: 1;
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+      position: relative;
+    }
+    #dialogue-box::before {
+      content: ''; position: absolute; left: -14px; top: 50%; transform: translateY(-50%);
+      border-width: 10px 14px 10px 0; border-style: solid; border-color: transparent #FF9800 transparent transparent;
+    }
+    #dialogue-box::after {
+      content: ''; position: absolute; left: -9px; top: 50%; transform: translateY(-50%);
+      border-width: 8px 12px 8px 0; border-style: solid; border-color: transparent white transparent transparent;
+    }
+
+    /* ====== BUBBLES ====== */
+    .bubble {
+      position: absolute;
+      width: 76px; height: 76px;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #81d4fa);
+      border: 2px solid #03a9f4;
+      border-radius: 50%;
+      box-shadow: 0 6px 10px rgba(0,0,0,0.15), inset 0 0 12px rgba(255,255,255,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      font-weight: 900;
+      color: #01579b;
+      cursor: pointer;
+      transform-origin: center;
+      transition: box-shadow 0.1s;
+    }
+    .bubble:active {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15), inset 0 0 12px rgba(255,255,255,0.9);
+    }
+
+    /* Animations */
+    .shake { animation: shakeAnim 0.4s ease-in-out; }
+    @keyframes shakeAnim {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-12px); }
+      40% { transform: translateX(12px); }
+      60% { transform: translateX(-8px); }
+      80% { transform: translateX(8px); }
+    }
+
+    .pop { pointer-events: none; animation: popAnim 0.4s ease forwards; background: radial-gradient(circle at center, #fff, #ffffaa); border-color: #ffd700; color: #ffaa00; }
+    @keyframes popAnim {
+      0% { transform: scale(1); opacity: 1; }
+      40% { transform: scale(1.4); opacity: 1; filter: brightness(1.2); }
+      100% { transform: scale(2); opacity: 0; }
+    }
+
+    /* ====== EFFECTS ====== */
+    #overlay-fx {
+      position: absolute; inset: 0; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50;
+    }
+    .fx-text {
+      font-size: 56px; font-weight: 900;
+      text-shadow: 0 4px 0 rgba(0,0,0,0.1), 0 0 20px rgba(255,255,255,0.8);
+      opacity: 0; transform: scale(0.5);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .fx-text.show { opacity: 1; transform: scale(1) translateY(-20px); }
+    .fx-correct { color: #FF9800; -webkit-text-stroke: 2px #fff; }
+
   </style>
 </head>
 <body>
-  <div class="game-shell">
-    <header class="top-bar">
-      <div class="score-box">⭐ スコア <span id="score">0</span></div>
-      <h1>カタカナレスキュー</h1>
-      <div class="progress-box"><span id="round-now">0</span> / <span id="round-total">10</span></div>
-    </header>
 
-    <main class="play-area" aria-live="polite">
-      <p class="prompt" id="prompt">スタートボタンをおしてね</p>
-      <div class="choice-grid" id="choices"></div>
-      <div class="status neutral" id="status">こえをきいて えらんでね</div>
-      <button class="big-btn" id="start-btn">▶ スタート</button>
-    </main>
-
-    <footer class="info-bar">
-      こえが聞こえなくても文字を読んでタップできるよ
-    </footer>
-
-    <section class="notes">
-      <div>
-        <h2>あそびかた</h2>
-        <ul>
-          <li>スタートを押すと「◯◯をさがして！」と声と文字で出題。</li>
-          <li>まん中の大きなカタカナボタンをタップして答えよう。</li>
-          <li>正解で光り「せいかい！」とほめられ、10問遊ぶと終了。</li>
-        </ul>
-      </div>
-      <div>
-        <h2>これからのアップデート案</h2>
-        <ul>
-          <li>文字数をふやして段階的にむずかしくする。</li>
-          <li>問題タイムを計ってごほうびバッジを表示。</li>
-          <li>正解した文字カードを集めるコレクション機能。</li>
-        </ul>
-      </div>
-    </section>
+<div id="app">
+  <!-- タイトル画面 -->
+  <div id="title-screen" class="screen">
+    <div class="title-logo">カタカナ<br>レスキュー隊</div>
+    <div style="font-size: 80px; margin-bottom: 20px; animation: charBounce 1s infinite alternate;">🐶🎈</div>
+    <div class="start-desc">おちてくるカタカナを<br>タップしてたすけよう！</div>
+    <button class="btn" id="btn-start">スタート</button>
   </div>
 
-  <script>
-    const LETTERS = ['ア','イ','ウ','エ','オ','カ','キ','ク','ケ','コ'];
-    const TOTAL_ROUNDS = 10;
-    const promptEl = document.getElementById('prompt');
-    const statusEl = document.getElementById('status');
-    const scoreEl = document.getElementById('score');
-    const roundEl = document.getElementById('round-now');
-    const roundTotalEl = document.getElementById('round-total');
-    const choicesEl = document.getElementById('choices');
-    const startBtn = document.getElementById('start-btn');
+  <!-- 結果画面 -->
+  <div id="result-screen" class="screen hidden">
+    <div style="font-size: 70px; margin-bottom: 10px;">🎉🐶🎉</div>
+    <div class="title-logo" style="font-size: 34px;">たくさん たすけたね！</div>
+    <div class="start-desc" style="font-size: 24px;">スコア: <span id="final-score">0</span> てん</div>
+    <button class="btn" id="btn-restart">もういちど</button>
+  </div>
 
-    roundTotalEl.textContent = TOTAL_ROUNDS;
+  <!-- ゲーム画面 -->
+  <header>
+    <div class="ui-text">⭐ <span id="score">0</span></div>
+    <div class="ui-text">もんだい <span id="q-num">1</span> / 10</div>
+  </header>
+  
+  <main id="play-area">
+    <!-- Bubble elements are injected here -->
+    <div id="overlay-fx"><div id="fx-msg" class="fx-text"></div></div>
+  </main>
 
-    let score = 0;
-    let currentRound = 0;
-    let currentLetter = null;
-    let lastLetter = null;
-    let acceptingInput = false;
-    let voiceUnlocked = false;
+  <footer>
+    <div class="grass-layer"></div>
+    <div id="character">🐶</div>
+    <div id="dialogue-box">ボタンをおしてね！</div>
+  </footer>
+</div>
 
-    const shuffle = (arr) => arr.slice().sort(() => Math.random() - 0.5);
+<script>
+// ===== データ & 状態 =====
+const LETTERS = ['ア','イ','ウ','エ','オ','カ','キ','ク','ケ','コ'];
+const HIRA = {'ア':'あ','イ':'い','ウ':'う','エ':'え','オ':'お','カ':'か','キ':'き','ク':'く','ケ':'け','コ':'こ'};
+const TOTAL_QUESTIONS = 10;
 
-    function speak(text) {
-      if (!('speechSynthesis' in window)) return;
-      try {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'ja-JP';
-        utter.rate = 0.9;
-        window.speechSynthesis.speak(utter);
-      } catch (err) {
-        console.warn('speech error', err);
-      }
+let state = {
+  score: 0,
+  questionIndex: 0,
+  targetLetter: '',
+  lastLetter: '',
+  bubbles: [], // { el, x, y, speed, offset, isTarget }
+  isPlaying: false,
+  isPaused: false,
+  animationId: null
+};
+
+// ===== UI要素 =====
+const screens = {
+  title: document.getElementById('title-screen'),
+  result: document.getElementById('result-screen')
+};
+const ui = {
+  score: document.getElementById('score'),
+  qNum: document.getElementById('q-num'),
+  playArea: document.getElementById('play-area'),
+  character: document.getElementById('character'),
+  dialogue: document.getElementById('dialogue-box'),
+  fxMsg: document.getElementById('fx-msg'),
+  finalScore: document.getElementById('final-score')
+};
+
+// ===== 音声機能 =====
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 1.0;
+  u.pitch = 1.2; // 少し高めで楽しい声に
+  speechSynthesis.speak(u);
+}
+
+// ユーザーアクションで音声を有効化
+function unlockAudio() {
+  const u = new SpeechSynthesisUtterance('');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+}
+
+// ===== ゲームの進行 =====
+document.getElementById('btn-start').addEventListener('click', () => {
+  unlockAudio();
+  startGame();
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  startGame();
+});
+
+function startGame() {
+  screens.title.classList.add('hidden');
+  screens.result.classList.add('hidden');
+  state.score = 0;
+  state.questionIndex = 0;
+  state.lastLetter = '';
+  updateHeader();
+  nextQuestion();
+}
+
+function updateHeader() {
+  ui.score.textContent = state.score;
+  ui.qNum.textContent = Math.min(state.questionIndex + 1, TOTAL_QUESTIONS);
+}
+
+function nextQuestion() {
+  if (state.questionIndex >= TOTAL_QUESTIONS) {
+    endGame();
+    return;
+  }
+  
+  state.isPaused = false;
+  state.isPlaying = true;
+  ui.character.className = 'char-bounce';
+  ui.character.textContent = '🐶';
+
+  // 正解の文字を選ぶ（前回と同じにならないように）
+  let target;
+  do { target = LETTERS[Math.floor(Math.random() * LETTERS.length)]; } 
+  while (target === state.lastLetter);
+  
+  state.targetLetter = target;
+  state.lastLetter = target;
+
+  const hiraTarget = HIRA[target] || target;
+  const msg = `「${hiraTarget}」を たすけて！`;
+  ui.dialogue.textContent = msg;
+  speak(msg);
+
+  spawnBubbles();
+  
+  if (!state.animationId) {
+    lastTime = performance.now();
+    loop(lastTime);
+  }
+}
+
+function spawnBubbles() {
+  ui.playArea.innerHTML = '<div id="overlay-fx"><div id="fx-msg" class="fx-text"></div></div>'; // クリア
+  state.bubbles = [];
+
+  const bubbleCount = 4; // 難易度に応じて変えても良い
+  
+  // 選択肢の文字を決める
+  let choices = [state.targetLetter];
+  let availableFakes = LETTERS.filter(l => l !== state.targetLetter);
+  availableFakes.sort(() => Math.random() - 0.5);
+  
+  for (let i = 0; i < bubbleCount - 1; i++) {
+    choices.push(availableFakes[i % availableFakes.length]);
+  }
+  choices.sort(() => Math.random() - 0.5);
+
+  const areaW = ui.playArea.clientWidth;
+  const bubbleSize = 76;
+  const sectionW = areaW / bubbleCount;
+
+  choices.forEach((letter, i) => {
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    el.textContent = letter;
+    
+    // 配置を重ならないようにエリアを分割して配置
+    const baseX = (sectionW * i) + (sectionW / 2) - (bubbleSize / 2);
+    // 初期Y: 画面上部外
+    const y = -bubbleSize - (Math.random() * 80);
+    // 文字の落下速度（少し速めに調整）
+    const speed = 1.2 + Math.random() * 0.8;
+    // ゆらゆら揺れるためのオフセット
+    const offset = Math.random() * Math.PI * 2;
+
+    state.bubbles.push({ el, baseX, y, speed, offset, text: letter, active: true });
+    ui.playArea.appendChild(el);
+
+    // タップイベント
+    const currentBubble = state.bubbles[state.bubbles.length - 1];
+    el.addEventListener('mousedown', (e) => handleTap(e, currentBubble));
+    el.addEventListener('touchstart', (e) => handleTap(e, currentBubble));
+  });
+}
+
+function handleTap(e, bObj) {
+  e.preventDefault();
+  if (state.isPaused || !bObj.active) return;
+
+  if (bObj.text === state.targetLetter) {
+    // 正解
+    correctAnswer(bObj);
+  } else {
+    // 不正解
+    wrongAnswer(bObj);
+  }
+}
+
+function correctAnswer(bObj) {
+  state.isPaused = true;
+  bObj.active = false;
+  bObj.el.classList.add('pop');
+  
+  state.score += 10;
+  updateHeader();
+
+  ui.character.className = '';
+  ui.character.textContent = '🤩';
+  ui.dialogue.textContent = 'やったー！';
+  speak(`${state.targetLetter}、せいかい！`);
+
+  showFx('せいかい！', 'fx-correct');
+
+  state.questionIndex++;
+  setTimeout(() => {
+    ui.fxMsg = document.getElementById('fx-msg');
+    if (ui.fxMsg) ui.fxMsg.classList.remove('show');
+    nextQuestion();
+  }, 2000);
+}
+
+function wrongAnswer(bObj) {
+  bObj.el.classList.remove('shake');
+  void bObj.el.offsetWidth; // リフロー
+  bObj.el.classList.add('shake');
+  
+  ui.character.textContent = '🐶💦';
+  ui.dialogue.textContent = 'おしい！もういちど！';
+  
+  // 間違えた時は怖がらせないように、やさしいセリフ等
+  setTimeout(() => {
+    if(!state.isPaused) {
+      ui.character.textContent = '🐶';
+      const hiraTarget = HIRA[state.targetLetter] || state.targetLetter;
+      ui.dialogue.textContent = `「${hiraTarget}」を たすけて！`;
+    }
+  }, 1500);
+}
+
+function showFx(text, typeClass) {
+  // 古いID参照を再取得
+  const fxMsg = document.getElementById('fx-msg');
+  if (!fxMsg) return;
+  fxMsg.textContent = text;
+  fxMsg.className = `fx-text ${typeClass}`;
+  void fxMsg.offsetWidth;
+  fxMsg.classList.add('show');
+}
+
+// ===== アニメーションループ =====
+let lastTime = 0;
+function loop(now) {
+  if (!state.isPlaying) {
+    state.animationId = null;
+    return;
+  }
+  state.animationId = requestAnimationFrame(loop);
+
+  const dt = now - lastTime;
+  lastTime = now;
+  if (!now || state.isPaused) return; // correct時は動きを止める
+
+  const areaH = ui.playArea.clientHeight;
+
+  state.bubbles.forEach(b => {
+    if (!b.active) return;
+    b.y += b.speed;
+    
+    // サイン波でゆらゆら左右に動く
+    const sway = Math.sin(now / 500 + b.offset) * 15;
+    const currentX = b.baseX + sway;
+
+    // 画面下部に到達したら上に戻る（ループ救出）
+    if (b.y > areaH + 20) {
+      b.y = -80;
+      b.baseX = Math.max(0, Math.min(ui.playArea.clientWidth - 76, b.baseX + (Math.random()*40-20)));
     }
 
-    function unlockVoiceOnce() {
-      if (voiceUnlocked) return;
-      voiceUnlocked = true;
-      speak('');
-      window.removeEventListener('click', unlockVoiceOnce);
-      window.removeEventListener('touchstart', unlockVoiceOnce);
-    }
-    window.addEventListener('click', unlockVoiceOnce, { passive: true });
-    window.addEventListener('touchstart', unlockVoiceOnce, { passive: true });
+    b.el.style.transform = `translate(${currentX}px, ${b.y}px)`;
+  });
+}
 
-    function startGame() {
-      score = 0;
-      currentRound = 0;
-      lastLetter = null;
-      updateScore();
-      statusMessage('こえをきいて えらんでね', 'neutral');
-      startBtn.classList.add('hidden');
-      setupQuestion();
-    }
+function endGame() {
+  state.isPlaying = false;
+  cancelAnimationFrame(state.animationId);
+  state.animationId = null;
+  
+  ui.finalScore.textContent = state.score;
+  screens.result.classList.remove('hidden');
+  speak("たくさん たすけたね！");
+}
 
-    function updateScore() {
-      scoreEl.textContent = score;
-    }
-
-    function statusMessage(text, tone) {
-      statusEl.textContent = text;
-      statusEl.className = `status ${tone}`;
-    }
-
-    function pickLetter() {
-      const pool = LETTERS.filter((l) => l !== lastLetter);
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
-
-    function buildChoices(target) {
-      const choiceCount = Math.random() < 0.5 ? 2 : 3;
-      const distractors = shuffle(LETTERS.filter((l) => l !== target)).slice(0, choiceCount - 1);
-      return shuffle([target, ...distractors]);
-    }
-
-    function setupQuestion() {
-      if (currentRound >= TOTAL_ROUNDS) {
-        return endGame();
-      }
-      currentLetter = pickLetter();
-      promptEl.textContent = `「${currentLetter}」を さがして！`;
-      roundEl.textContent = currentRound + 1;
-      choicesEl.innerHTML = '';
-      const choiceSet = buildChoices(currentLetter);
-      choiceSet.forEach((char) => {
-        const btn = document.createElement('button');
-        btn.className = 'choice-btn';
-        btn.type = 'button';
-        btn.textContent = char;
-        btn.addEventListener('click', () => handleChoice(btn, char));
-        choicesEl.appendChild(btn);
-      });
-      acceptingInput = true;
-      speak(`${currentLetter}を さがして！`);
-    }
-
-    function handleChoice(btn, char) {
-      if (!acceptingInput) return;
-      if (char === currentLetter) {
-        acceptingInput = false;
-        btn.classList.add('correct');
-        Array.from(document.querySelectorAll('.choice-btn')).forEach((b) => (b.disabled = true));
-        score += 1;
-        updateScore();
-        statusMessage('せいかい！ やったね！', 'good');
-        speak(currentLetter);
-        lastLetter = currentLetter;
-        setTimeout(() => {
-          currentRound += 1;
-          setupQuestion();
-        }, 1200);
-      } else {
-        statusMessage('おしい、もういちど！', 'try');
-        btn.classList.add('wrong');
-        setTimeout(() => btn.classList.remove('wrong'), 400);
-      }
-    }
-
-    function endGame() {
-      acceptingInput = false;
-      promptEl.textContent = 'みんな たすけられたよ！';
-      statusMessage(`スコア: ${score} / ${TOTAL_ROUNDS} またあそぼう！`, 'good');
-      startBtn.textContent = '▶ もういちど';
-      startBtn.classList.remove('hidden');
-      roundEl.textContent = TOTAL_ROUNDS;
-      choicesEl.innerHTML = '';
-    }
-
-    startBtn.addEventListener('click', startGame);
-  </script>
+</script>
 </body>
 </html>
