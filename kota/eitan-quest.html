@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>えいたんクエスト</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#fffbeb;color:#1c1917;min-height:100vh}
+.screen{display:none;flex-direction:column;min-height:100vh;max-width:430px;margin:0 auto;padding:16px}
+.screen.active{display:flex}
+button{cursor:pointer;border:none;font-family:inherit;font-size:inherit;touch-action:manipulation}
+button:active{transform:scale(.95)}
+
+/* ホーム */
+.home-header{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.home-header h1{margin:0;font-size:22px;font-weight:900;color:#92400e}
+.streak-bar{background:#fff7ed;border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin:8px 0}
+.streak-fire{font-size:28px}
+.streak-num{font-size:26px;font-weight:900;color:#ea580c}
+.streak-label{font-size:11px;color:#c2410c}
+.coin-area{margin-left:auto;display:flex;align-items:center;gap:4px;font-weight:700;color:#b45309}
+.avatar-card{background:#fff;border-radius:24px;padding:24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08);margin:8px 0}
+.avatar-emoji{font-size:80px;display:block;margin-bottom:6px}
+.avatar-name{font-weight:700;color:#44403c}
+.today-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin:8px 0}
+.today-card h3{margin:0 0 12px;font-size:15px;color:#57534e;display:flex;align-items:center;gap:6px}
+.today-stats{display:flex;justify-content:space-around;text-align:center}
+.today-stats .num{font-size:30px;font-weight:900}
+.today-stats .lbl{font-size:11px;color:#a8a29e}
+.btn-start{background:linear-gradient(135deg,#facc15,#f97316);color:#fff;font-size:22px;font-weight:900;padding:20px;border-radius:20px;width:100%;box-shadow:0 8px 20px rgba(249,115,22,.3);margin-top:auto}
+.btn-rewards{background:#fff;border:2px solid #fde68a;color:#92400e;font-size:16px;font-weight:700;padding:14px;border-radius:16px;width:100%;margin-top:10px}
+.btn-parent-link{background:none;border:none;color:#a78bfa;font-size:12px;text-decoration:underline;padding:0}
+.done-banner{background:#ecfdf5;border-radius:16px;padding:20px;text-align:center;margin-top:auto}
+.done-banner p{margin:4px 0;font-weight:900;color:#15803d;font-size:20px}
+
+/* 学習画面 */
+.learn-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.btn-close{background:none;color:#a8a29e;font-size:22px;padding:0;width:32px}
+.progress-bar{flex:1;background:#e5e7eb;border-radius:99px;height:10px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#facc15,#f97316);border-radius:99px;transition:width .4s}
+.progress-count{font-size:13px;color:#9ca3af;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;margin:2px}
+.tag-new{background:#dbeafe;color:#1d4ed8}
+.tag-review{background:#ffedd5;color:#c2410c}
+.tag-weak{background:#fee2e2;color:#b91c1c}
+.question-box{background:#fff;border-radius:20px;padding:20px;margin:12px 0;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.question-emoji{font-size:72px;text-align:center;display:block;padding:16px 0}
+.question-word{font-size:48px;font-weight:900;text-align:center;color:#1c1917;padding:8px}
+.question-meaning{font-size:20px;font-weight:700;text-align:center;color:#78716c;padding:8px}
+.question-hint{font-size:12px;text-align:center;color:#a8a29e;margin-top:4px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.choice-btn{background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:16px 12px;font-size:17px;font-weight:700;transition:all .15s}
+.choice-btn:disabled{cursor:default}
+.choice-btn.correct{background:#dcfce7;border-color:#22c55e;color:#15803d}
+.choice-btn.wrong{background:#fee2e2;border-color:#ef4444;color:#b91c1c}
+.choice-btn.hint-correct{background:#f0fdf4;border-color:#86efac}
+.fill-input{width:100%;text-align:center;font-size:24px;font-weight:700;padding:16px;border:2px solid #93c5fd;border-radius:16px;outline:none;font-family:inherit;margin-top:8px}
+.fill-input:focus{border-color:#3b82f6}
+.fill-input.correct{border-color:#22c55e;background:#dcfce7;color:#15803d}
+.fill-input.wrong{border-color:#ef4444;background:#fee2e2;color:#b91c1c}
+.btn-answer{background:#3b82f6;color:#fff;font-size:18px;font-weight:700;padding:16px;border-radius:16px;width:100%;margin-top:12px}
+.answer-reveal{text-align:center;font-weight:700;color:#15803d;margin-top:8px;font-size:16px}
+
+/* フィードバック */
+.feedback-overlay{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;z-index:100;max-width:430px;left:50%;transform:translateX(-50%)}
+.feedback-overlay.correct-bg{background:rgba(34,197,94,.15)}
+.feedback-overlay.wrong-bg{background:rgba(239,68,68,.12)}
+.feedback-card{border-radius:24px;padding:24px;text-align:center;box-shadow:0 -4px 24px rgba(0,0,0,.12)}
+.feedback-card.correct-card{background:#22c55e;color:#fff}
+.feedback-card.wrong-card{background:#ef4444;color:#fff}
+.feedback-emoji{font-size:48px;display:block;margin-bottom:8px}
+.feedback-title{font-size:24px;font-weight:900}
+.feedback-coins{color:rgba(255,255,255,.85);font-weight:700;margin-top:4px}
+.feedback-tap{color:rgba(255,255,255,.7);font-size:13px;margin-top:8px}
+
+/* 結果画面 */
+.result-screen{align-items:center;justify-content:space-between}
+.result-grade{font-size:96px;margin:0;text-align:center}
+.result-title{font-size:28px;font-weight:900;color:#92400e;text-align:center}
+.result-accuracy{background:#fff;border-radius:24px;padding:24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08);width:100%}
+.result-accuracy .big{font-size:64px;font-weight:900;color:#2563eb}
+.result-accuracy .sub{color:#9ca3af;font-size:13px}
+.result-stats{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.result-stats .n{font-size:24px;font-weight:900}
+.result-stats .l{font-size:11px;color:#9ca3af}
+.btn-home{background:linear-gradient(135deg,#facc15,#f97316);color:#fff;font-size:20px;font-weight:900;padding:18px;border-radius:18px;width:100%;box-shadow:0 6px 16px rgba(249,115,22,.3)}
+.btn-rewards2{background:#fff;border:2px solid #fde68a;color:#92400e;font-size:16px;font-weight:700;padding:14px;border-radius:16px;width:100%;margin-top:10px}
+
+/* ごほうびページ */
+.rewards-header{background:linear-gradient(135deg,#7c3aed,#4c1d95);padding:20px 16px 36px;border-radius:0 0 24px 24px;text-align:center;margin:-16px -16px 0}
+.rewards-header h1{color:#fff;margin:0 0 4px;font-size:20px;font-weight:900}
+.rewards-coin-bar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px}
+.rewards-coin-bar span{background:rgba(255,255,255,.2);border-radius:99px;color:#fff;font-weight:700;padding:4px 12px;font-size:14px}
+.rewards-avatar{font-size:72px;margin:8px 0 4px}
+.rewards-lv{color:rgba(255,255,255,.85);font-size:13px;font-weight:700}
+.rewards-tabs{display:flex;background:#fff;border-bottom:1px solid #e5e7eb}
+.rewards-tab{flex:1;padding:12px 4px;font-size:14px;font-weight:700;background:none;color:#9ca3af;border-bottom:2px solid transparent}
+.rewards-tab.active{color:#7c3aed;border-bottom-color:#7c3aed}
+.rewards-body{flex:1;padding:16px 0}
+.shop-item{background:#fff;border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.shop-item-icon{width:48px;height:48px;border-radius:12px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;font-size:24px}
+.shop-item-info{flex:1}
+.shop-item-name{font-weight:700;font-size:15px}
+.shop-item-desc{font-size:12px;color:#9ca3af}
+.btn-buy{background:#facc15;color:#713f12;font-weight:700;font-size:13px;padding:8px 14px;border-radius:12px;display:flex;align-items:center;gap:4px}
+.btn-buy.owned{background:#dcfce7;color:#15803d}
+.btn-buy.cant{background:#f3f4f6;color:#9ca3af}
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.badge-item{background:#fff;border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.badge-item.locked{opacity:.4}
+.badge-emoji{font-size:32px;display:block;margin-bottom:4px}
+.badge-label{font-size:11px;font-weight:700;color:#57534e}
+.level-bar-wrap{width:100%;background:#e5e7eb;border-radius:99px;height:12px;overflow:hidden;margin:8px 0}
+.level-bar-fill{height:100%;background:linear-gradient(90deg,#a855f7,#7c3aed);border-radius:99px}
+.btn-back{background:none;color:#fff;font-size:22px;padding:0;width:36px}
+.rewards-header-row{display:flex;align-items:center;margin-bottom:8px}
+
+/* 親ダッシュボード */
+.parent-header{background:#4f46e5;padding:16px;display:flex;align-items:center;gap:12px;margin:-16px -16px 16px}
+.parent-header h1{color:#fff;margin:0;font-size:18px;font-weight:900}
+.parent-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.parent-stat{background:#fff;border-radius:16px;padding:12px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.parent-stat .n{font-size:24px;font-weight:900}
+.parent-stat .l{font-size:11px;color:#9ca3af}
+.parent-section{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.parent-section h3{margin:0 0 12px;font-size:14px;color:#374151;display:flex;align-items:center;gap:6px}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:60px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bar-fill{width:100%;background:#818cf8;border-radius:4px 4px 0 0;min-height:3px}
+.bar-label{font-size:9px;color:#9ca3af}
+.weak-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.weak-row:last-child{border-bottom:none}
+.weak-word{font-weight:700;font-size:14px}
+.weak-ja{font-size:12px;color:#9ca3af;margin-left:6px}
+.weak-acc{font-size:13px;font-weight:700}
+.target-row{display:flex;align-items:center;gap:12px}
+.target-row input[type=range]{flex:1}
+.target-val{font-size:24px;font-weight:900;color:#4f46e5;width:32px;text-align:center}
+.btn-save{background:#4f46e5;color:#fff;font-weight:700;padding:12px;border-radius:12px;width:100%;margin-top:10px}
+.btn-save:disabled{opacity:.5}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- ホーム画面 -->
+<!-- ============================================================ -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <h1>えいたんクエスト</h1>
+    <button class="btn-parent-link" onclick="showScreen('screen-parent')">おやのページ</button>
+  </div>
+
+  <div class="streak-bar">
+    <span class="streak-fire">🔥</span>
+    <div>
+      <div class="streak-label">れんぞくきろく</div>
+      <div class="streak-num" id="home-streak">0</div>
+    </div>
+    <div class="coin-area">⭐<span id="home-coins">0</span>コイン</div>
+  </div>
+
+  <div class="avatar-card">
+    <span class="avatar-emoji" id="home-avatar">🐣</span>
+    <div class="avatar-name" id="home-name">ぼうけんしゃ</div>
+    <div id="home-done-msg" style="display:none;color:#16a34a;font-weight:700;font-size:13px;margin-top:6px">今日のべんきょうはかんりょう！🎉</div>
+  </div>
+
+  <div class="today-card">
+    <h3>📚 きょうのもんだい</h3>
+    <div class="today-stats">
+      <div><div class="num" id="home-remaining" style="color:#2563eb">0</div><div class="lbl">のこり</div></div>
+      <div><div class="num" id="home-new" style="color:#16a34a">0</div><div class="lbl">あたらしい</div></div>
+      <div><div class="num" id="home-review" style="color:#ea580c">0</div><div class="lbl">ふくしゅう</div></div>
+    </div>
+  </div>
+
+  <div id="home-start-area" style="margin-top:auto">
+    <button class="btn-start" onclick="startLearn()">べんきょう かいし！</button>
+  </div>
+  <div id="home-done-area" class="done-banner" style="display:none">
+    <p>今日はおわり！</p>
+    <span style="font-size:13px;color:#15803d">また明日来てね</span>
+  </div>
+  <button class="btn-rewards" onclick="showScreen('screen-rewards')" style="margin-top:10px">🏆 ごほうびをみる</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- 学習画面 -->
+<!-- ============================================================ -->
+<div id="screen-learn" class="screen">
+  <div class="learn-header">
+    <button class="btn-close" onclick="showScreen('screen-home')">✕</button>
+    <div class="progress-bar"><div class="progress-fill" id="learn-progress" style="width:0%"></div></div>
+    <div class="progress-count"><span id="learn-cur">1</span>/<span id="learn-total">1</span></div>
+  </div>
+
+  <div id="learn-tags"></div>
+
+  <!-- 問題エリア（JSで中身を差し替え） -->
+  <div id="learn-question-area"></div>
+
+  <!-- フィードバックオーバーレイ -->
+  <div id="feedback-overlay" class="feedback-overlay" style="display:none" onclick="nextQuestion()">
+    <div id="feedback-card" class="feedback-card">
+      <span id="feedback-emoji" class="feedback-emoji"></span>
+      <div id="feedback-title" class="feedback-title"></div>
+      <div id="feedback-coins" class="feedback-coins"></div>
+      <div class="feedback-tap">タップしてつぎへ</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 結果画面 -->
+<!-- ============================================================ -->
+<div id="screen-result" class="screen result-screen">
+  <div id="result-grade" class="result-grade"></div>
+  <div id="result-title" class="result-title"></div>
+  <div class="result-accuracy">
+    <div id="result-acc-num" class="big"></div>
+    <div id="result-acc-sub" class="sub"></div>
+  </div>
+  <div class="result-stats">
+    <div><div id="result-new" class="n" style="color:#16a34a"></div><div class="l">あたらしく<br>おぼえた</div></div>
+    <div><div id="result-rev" class="n" style="color:#ea580c"></div><div class="l">ふくしゅう<br>した</div></div>
+    <div><div id="result-coins" class="n" style="color:#ca8a04"></div><div class="l">コイン<br>もらった</div></div>
+  </div>
+  <button class="btn-home" onclick="goHome()">ホームにもどる</button>
+  <button class="btn-rewards2" onclick="showScreen('screen-rewards')">ごほうびをみる 🎁</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- ごほうび画面 -->
+<!-- ============================================================ -->
+<div id="screen-rewards" class="screen">
+  <div class="rewards-header">
+    <div class="rewards-header-row">
+      <button class="btn-back" onclick="showScreen('screen-home')">←</button>
+      <span style="flex:1;text-align:center;color:#fff;font-weight:900;font-size:18px">ごほうびページ</span>
+      <div class="rewards-coin-bar"><span>⭐ <span id="rw-coins">0</span></span></div>
+    </div>
+    <div style="text-align:center">
+      <div id="rw-avatar" class="rewards-avatar">🐣</div>
+      <div id="rw-lv" class="rewards-lv">レベル 1</div>
+    </div>
+  </div>
+
+  <div class="rewards-tabs">
+    <button class="rewards-tab active" onclick="rwTab('avatar',this)">キャラ</button>
+    <button class="rewards-tab" onclick="rwTab('shop',this)">ショップ</button>
+    <button class="rewards-tab" onclick="rwTab('badges',this)">バッジ</button>
+  </div>
+
+  <div class="rewards-body" id="rw-body"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 親ダッシュボード -->
+<!-- ============================================================ -->
+<div id="screen-parent" class="screen">
+  <div class="parent-header">
+    <button class="btn-back" onclick="showScreen('screen-home')">←</button>
+    <h1>おやのページ</h1>
+  </div>
+
+  <div class="parent-stat-grid">
+    <div class="parent-stat">
+      <div class="n" id="par-streak" style="color:#ea580c">0</div>
+      <div class="l">れんぞく日数</div>
+    </div>
+    <div class="parent-stat" id="par-today-stat">
+      <div class="n">⏳</div>
+      <div class="l">今日の学習</div>
+    </div>
+    <div class="parent-stat">
+      <div class="n" id="par-total" style="color:#2563eb">0</div>
+      <div class="l">累計単語数</div>
+    </div>
+  </div>
+
+  <div class="parent-section">
+    <h3>📈 直近7日の正答率</h3>
+    <div class="bar-chart" id="par-chart"></div>
+  </div>
+
+  <div class="parent-section" id="par-weak-section">
+    <h3>⚠️ にがてな単語</h3>
+    <div id="par-weak-list"></div>
+  </div>
+
+  <div class="parent-section">
+    <h3>⚙️ 1日の新しい単語の数</h3>
+    <div class="target-row">
+      <input type="range" min="1" max="10" id="par-target-input" oninput="document.getElementById('par-target-val').textContent=this.value">
+      <div class="target-val" id="par-target-val">3</div>
+    </div>
+    <button class="btn-save" id="par-save-btn" onclick="saveTarget()">ほぞんする</button>
+  </div>
+
+  <div style="margin-top:auto;padding-bottom:8px">
+    <button class="btn-rewards" onclick="showScreen('screen-home')">← ホームにもどる</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// データ: 英単語100件
+// ============================================================
+const WORDS = [
+  // 動物
+  {id:'a1',word:'cat',ja:'ねこ',cat:'animal',diff:1,emoji:'🐱'},
+  {id:'a2',word:'dog',ja:'いぬ',cat:'animal',diff:1,emoji:'🐶'},
+  {id:'a3',word:'bird',ja:'とり',cat:'animal',diff:1,emoji:'🐦'},
+  {id:'a4',word:'fish',ja:'さかな',cat:'animal',diff:1,emoji:'🐟'},
+  {id:'a5',word:'rabbit',ja:'うさぎ',cat:'animal',diff:1,emoji:'🐰'},
+  {id:'a6',word:'horse',ja:'うま',cat:'animal',diff:1,emoji:'🐴'},
+  {id:'a7',word:'cow',ja:'うし',cat:'animal',diff:1,emoji:'🐄'},
+  {id:'a8',word:'pig',ja:'ぶた',cat:'animal',diff:1,emoji:'🐷'},
+  {id:'a9',word:'sheep',ja:'ひつじ',cat:'animal',diff:2,emoji:'🐑'},
+  {id:'a10',word:'lion',ja:'ライオン',cat:'animal',diff:1,emoji:'🦁'},
+  {id:'a11',word:'tiger',ja:'トラ',cat:'animal',diff:1,emoji:'🐯'},
+  {id:'a12',word:'bear',ja:'くま',cat:'animal',diff:1,emoji:'🐻'},
+  {id:'a13',word:'monkey',ja:'さる',cat:'animal',diff:1,emoji:'🐒'},
+  {id:'a14',word:'snake',ja:'へび',cat:'animal',diff:2,emoji:'🐍'},
+  {id:'a15',word:'frog',ja:'かえる',cat:'animal',diff:2,emoji:'🐸'},
+  // 食べ物
+  {id:'f1',word:'apple',ja:'りんご',cat:'food',diff:1,emoji:'🍎'},
+  {id:'f2',word:'banana',ja:'バナナ',cat:'food',diff:1,emoji:'🍌'},
+  {id:'f3',word:'orange',ja:'オレンジ',cat:'food',diff:1,emoji:'🍊'},
+  {id:'f4',word:'bread',ja:'パン',cat:'food',diff:1,emoji:'🍞'},
+  {id:'f5',word:'rice',ja:'ごはん',cat:'food',diff:1,emoji:'🍚'},
+  {id:'f6',word:'milk',ja:'ぎゅうにゅう',cat:'food',diff:1,emoji:'🥛'},
+  {id:'f7',word:'egg',ja:'たまご',cat:'food',diff:1,emoji:'🥚'},
+  {id:'f8',word:'cake',ja:'ケーキ',cat:'food',diff:1,emoji:'🎂'},
+  {id:'f9',word:'pizza',ja:'ピザ',cat:'food',diff:1,emoji:'🍕'},
+  {id:'f10',word:'sandwich',ja:'サンドイッチ',cat:'food',diff:2,emoji:'🥪'},
+  {id:'f11',word:'soup',ja:'スープ',cat:'food',diff:1,emoji:'🍲'},
+  {id:'f12',word:'salad',ja:'サラダ',cat:'food',diff:1,emoji:'🥗'},
+  {id:'f13',word:'cookie',ja:'クッキー',cat:'food',diff:1,emoji:'🍪'},
+  {id:'f14',word:'juice',ja:'ジュース',cat:'food',diff:1,emoji:'🧃'},
+  {id:'f15',word:'water',ja:'みず',cat:'food',diff:1,emoji:'💧'},
+  // 色
+  {id:'c1',word:'red',ja:'あか',cat:'color',diff:1,emoji:'🔴'},
+  {id:'c2',word:'blue',ja:'あお',cat:'color',diff:1,emoji:'🔵'},
+  {id:'c3',word:'green',ja:'みどり',cat:'color',diff:1,emoji:'🟢'},
+  {id:'c4',word:'yellow',ja:'きいろ',cat:'color',diff:1,emoji:'🟡'},
+  {id:'c5',word:'white',ja:'しろ',cat:'color',diff:1,emoji:'⬜'},
+  {id:'c6',word:'black',ja:'くろ',cat:'color',diff:1,emoji:'⬛'},
+  {id:'c7',word:'pink',ja:'ピンク',cat:'color',diff:1,emoji:'🌸'},
+  {id:'c8',word:'purple',ja:'むらさき',cat:'color',diff:2,emoji:'🟣'},
+  {id:'c9',word:'brown',ja:'ちゃいろ',cat:'color',diff:2,emoji:'🟤'},
+  // 数字
+  {id:'n1',word:'one',ja:'いち',cat:'number',diff:1,emoji:'1️⃣'},
+  {id:'n2',word:'two',ja:'に',cat:'number',diff:1,emoji:'2️⃣'},
+  {id:'n3',word:'three',ja:'さん',cat:'number',diff:1,emoji:'3️⃣'},
+  {id:'n4',word:'four',ja:'し・よん',cat:'number',diff:1,emoji:'4️⃣'},
+  {id:'n5',word:'five',ja:'ご',cat:'number',diff:1,emoji:'5️⃣'},
+  {id:'n6',word:'six',ja:'ろく',cat:'number',diff:1,emoji:'6️⃣'},
+  {id:'n7',word:'seven',ja:'しち・なな',cat:'number',diff:1,emoji:'7️⃣'},
+  {id:'n8',word:'eight',ja:'はち',cat:'number',diff:1,emoji:'8️⃣'},
+  {id:'n9',word:'nine',ja:'く・きゅう',cat:'number',diff:1,emoji:'9️⃣'},
+  {id:'n10',word:'ten',ja:'じゅう',cat:'number',diff:1,emoji:'🔟'},
+  // 学校
+  {id:'s1',word:'school',ja:'がっこう',cat:'school',diff:1,emoji:'🏫'},
+  {id:'s2',word:'book',ja:'ほん',cat:'school',diff:1,emoji:'📖'},
+  {id:'s3',word:'pencil',ja:'えんぴつ',cat:'school',diff:1,emoji:'✏️'},
+  {id:'s4',word:'eraser',ja:'けしごむ',cat:'school',diff:2,emoji:'🟥'},
+  {id:'s5',word:'ruler',ja:'じょうぎ',cat:'school',diff:2,emoji:'📏'},
+  {id:'s6',word:'desk',ja:'つくえ',cat:'school',diff:1,emoji:'🪑'},
+  {id:'s7',word:'teacher',ja:'せんせい',cat:'school',diff:1,emoji:'👩‍🏫'},
+  {id:'s8',word:'student',ja:'せいと',cat:'school',diff:2,emoji:'🧑‍🎓'},
+  {id:'s9',word:'classroom',ja:'きょうしつ',cat:'school',diff:2,emoji:'🏛️'},
+  {id:'s10',word:'bag',ja:'かばん',cat:'school',diff:1,emoji:'🎒'},
+  // 体
+  {id:'b1',word:'head',ja:'あたま',cat:'body',diff:1,emoji:'🗣️'},
+  {id:'b2',word:'eye',ja:'め',cat:'body',diff:1,emoji:'👁️'},
+  {id:'b3',word:'nose',ja:'はな',cat:'body',diff:1,emoji:'👃'},
+  {id:'b4',word:'mouth',ja:'くち',cat:'body',diff:1,emoji:'👄'},
+  {id:'b5',word:'ear',ja:'みみ',cat:'body',diff:1,emoji:'👂'},
+  {id:'b6',word:'hand',ja:'て',cat:'body',diff:1,emoji:'✋'},
+  {id:'b7',word:'foot',ja:'あし',cat:'body',diff:1,emoji:'🦶'},
+  {id:'b8',word:'arm',ja:'うで',cat:'body',diff:2,emoji:'💪'},
+  {id:'b9',word:'leg',ja:'あしくび',cat:'body',diff:2,emoji:'🦵'},
+  // 自然・天気
+  {id:'t1',word:'sun',ja:'お日さま',cat:'nature',diff:1,emoji:'☀️'},
+  {id:'t2',word:'moon',ja:'つき',cat:'nature',diff:1,emoji:'🌙'},
+  {id:'t3',word:'star',ja:'ほし',cat:'nature',diff:1,emoji:'⭐'},
+  {id:'t4',word:'rain',ja:'あめ',cat:'nature',diff:1,emoji:'🌧️'},
+  {id:'t5',word:'snow',ja:'ゆき',cat:'nature',diff:1,emoji:'❄️'},
+  {id:'t6',word:'wind',ja:'かぜ',cat:'nature',diff:2,emoji:'🌬️'},
+  {id:'t7',word:'cloud',ja:'くも',cat:'nature',diff:1,emoji:'☁️'},
+  {id:'t8',word:'river',ja:'かわ',cat:'nature',diff:2,emoji:'🏞️'},
+  {id:'t9',word:'tree',ja:'き',cat:'nature',diff:1,emoji:'🌳'},
+  {id:'t10',word:'flower',ja:'はな',cat:'nature',diff:1,emoji:'🌸'},
+  // 乗り物
+  {id:'v1',word:'car',ja:'くるま',cat:'vehicle',diff:1,emoji:'🚗'},
+  {id:'v2',word:'bus',ja:'バス',cat:'vehicle',diff:1,emoji:'🚌'},
+  {id:'v3',word:'train',ja:'でんしゃ',cat:'vehicle',diff:1,emoji:'🚃'},
+  {id:'v4',word:'airplane',ja:'ひこうき',cat:'vehicle',diff:1,emoji:'✈️'},
+  {id:'v5',word:'bicycle',ja:'じてんしゃ',cat:'vehicle',diff:2,emoji:'🚲'},
+  {id:'v6',word:'ship',ja:'ふね',cat:'vehicle',diff:2,emoji:'🚢'},
+  {id:'v7',word:'rocket',ja:'ロケット',cat:'vehicle',diff:2,emoji:'🚀'},
+  // 形容詞
+  {id:'j1',word:'big',ja:'おおきい',cat:'adj',diff:1,emoji:'🐘'},
+  {id:'j2',word:'small',ja:'ちいさい',cat:'adj',diff:1,emoji:'🐜'},
+  {id:'j3',word:'fast',ja:'はやい',cat:'adj',diff:1,emoji:'⚡'},
+  {id:'j4',word:'slow',ja:'おそい',cat:'adj',diff:2,emoji:'🐢'},
+  {id:'j5',word:'hot',ja:'あつい',cat:'adj',diff:1,emoji:'🔥'},
+  {id:'j6',word:'cold',ja:'さむい',cat:'adj',diff:1,emoji:'🥶'},
+  {id:'j7',word:'happy',ja:'うれしい',cat:'adj',diff:2,emoji:'😊'},
+  {id:'j8',word:'sad',ja:'かなしい',cat:'adj',diff:2,emoji:'😢'},
+  {id:'j9',word:'tall',ja:'せがたかい',cat:'adj',diff:2,emoji:'🏀'},
+  {id:'j10',word:'strong',ja:'つよい',cat:'adj',diff:2,emoji:'💪'},
+  // 動詞
+  {id:'vb1',word:'run',ja:'はしる',cat:'verb',diff:2,emoji:'🏃'},
+  {id:'vb2',word:'jump',ja:'とぶ',cat:'verb',diff:2,emoji:'🦘'},
+  {id:'vb3',word:'swim',ja:'およぐ',cat:'verb',diff:2,emoji:'🏊'},
+  {id:'vb4',word:'eat',ja:'たべる',cat:'verb',diff:1,emoji:'🍽️'},
+  {id:'vb5',word:'drink',ja:'のむ',cat:'verb',diff:1,emoji:'🥤'},
+  {id:'vb6',word:'sleep',ja:'ねる',cat:'verb',diff:1,emoji:'😴'},
+  {id:'vb7',word:'read',ja:'よむ',cat:'verb',diff:2,emoji:'📚'},
+  {id:'vb8',word:'write',ja:'かく',cat:'verb',diff:2,emoji:'✍️'},
+  {id:'vb9',word:'play',ja:'あそぶ',cat:'verb',diff:1,emoji:'🎮'},
+  {id:'vb10',word:'study',ja:'べんきょうする',cat:'verb',diff:2,emoji:'📝'},
+];
+
+// ============================================================
+// アバターアイテム・バッジ
+// ============================================================
+const SHOP_ITEMS = [
+  {id:'h1',name:'まほうのぼうし',desc:'まほうつかいのぼうし',cost:50,type:'hat',emoji:'🎩'},
+  {id:'h2',name:'おうかん',desc:'おうじのおうかん',cost:100,type:'hat',emoji:'👑'},
+  {id:'h3',name:'にんじゃずきん',desc:'にんじゃのずきん',cost:80,type:'hat',emoji:'🥷'},
+  {id:'a1',name:'ちょうちょのはね',desc:'かわいいはね',cost:60,type:'acc',emoji:'🦋'},
+  {id:'a2',name:'きんのメダル',desc:'ゆうしゃのメダル',cost:120,type:'acc',emoji:'🏅'},
+  {id:'bg1',name:'ほしのはいけい',desc:'ほしぞらのはいけい',cost:150,type:'bg',emoji:'🌟'},
+  {id:'bg2',name:'にじのはいけい',desc:'にじいろのはいけい',cost:100,type:'bg',emoji:'🌈'},
+];
+const BADGES = [
+  {id:'streak_7',label:'7日れんぞく',emoji:'🔥'},
+  {id:'streak_30',label:'30日れんぞく',emoji:'💎'},
+  {id:'words_10',label:'10こおぼえた',emoji:'⭐'},
+  {id:'words_50',label:'50こおぼえた',emoji:'🌟'},
+  {id:'words_100',label:'100こおぼえた',emoji:'👑'},
+  {id:'perfect',label:'まんてん！',emoji:'💯'},
+];
+const AVATAR_EMOJIS = ['🐣','🐥','🐔','🦅','🦁','👑'];
+
+// ============================================================
+// LocalStorage データ管理
+// ============================================================
+const STORAGE_KEY = 'eitan_quest_v1';
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null') || defaultState();
+  } catch(e){ return defaultState(); }
+}
+function saveState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+function defaultState(){
+  return {
+    name:'ぼうけんしゃ',
+    streakDays:0,
+    coins:0,
+    avatarLevel:1,
+    dailyNewTarget:3,
+    lastStudyDate:null,
+    ownedItems:[],
+    badges:[],
+    progress:{},   // wordId → {level,correct,wrong,consecutive,nextReview,recentResults,weak}
+    sessions:[],   // [{date,new,review,correct,total,coins}]
+  };
+}
+
+let STATE = loadState();
+
+// ============================================================
+// 間隔反復ロジック
+// ============================================================
+function daysFromNow(n){
+  const d = new Date();
+  d.setDate(d.getDate()+n);
+  d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function isDueToday(p){
+  if(!p.nextReview) return true;
+  return new Date(p.nextReview) <= new Date();
+}
+function applyCorrect(p){
+  const cons = (p.consecutive||0)+1;
+  const intervals = {1:1,2:3,3:7,4:14};
+  const days = intervals[cons]||30;
+  const recent = [...(p.recentResults||[]),1].slice(-5);
+  return {
+    ...p,
+    correct:(p.correct||0)+1,
+    consecutive:cons,
+    level:Math.min(cons,5),
+    nextReview:daysFromNow(days),
+    recentResults:recent,
+    weak:calcWeak(recent),
+    mastered:cons>=5 ? new Date().toISOString() : p.mastered,
+  };
+}
+function applyWrong(p){
+  const recent = [...(p.recentResults||[]),0].slice(-5);
+  return {
+    ...p,
+    wrong:(p.wrong||0)+1,
+    consecutive:0,
+    level:Math.max(0,(p.level||0)-1),
+    nextReview:daysFromNow(1),
+    recentResults:recent,
+    weak:calcWeak(recent),
+    mastered:null,
+  };
+}
+function calcWeak(recent){
+  if(recent.length>=5 && recent.reduce((a,b)=>a+b,0)/recent.length<0.5) return true;
+  const last3=recent.slice(-3);
+  if(last3.length>=3 && last3.filter(r=>r===0).length>=2) return true;
+  return false;
+}
+function earnCoins(isNew,cons){
+  return (isNew?3:1)+(cons>=3?1:0);
+}
+
+// ============================================================
+// 今日の出題リスト作成
+// ============================================================
+function buildTodayList(){
+  const items=[];
+  const pr = STATE.progress;
+  // 復習対象
+  for(const w of WORDS){
+    const p=pr[w.id];
+    if(!p) continue;
+    if(isDueToday(p)||p.weak) items.push({word:w,progress:p,isNew:false});
+  }
+  // 新規
+  const learnedIds=new Set(Object.keys(pr));
+  let newCount=0;
+  for(const w of WORDS){
+    if(learnedIds.has(w.id)) continue;
+    if(newCount>=STATE.dailyNewTarget) break;
+    items.push({word:w,progress:null,isNew:true});
+    newCount++;
+  }
+  return shuffle(items);
+}
+
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+// ============================================================
+// 画面切り替え
+// ============================================================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='screen-home') renderHome();
+  if(id==='screen-rewards') renderRewards();
+  if(id==='screen-parent') renderParent();
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// ホーム画面レンダリング
+// ============================================================
+function renderHome(){
+  STATE = loadState();
+  const today = buildTodayList();
+  const newItems = today.filter(i=>i.isNew);
+  const revItems = today.filter(i=>!i.isNew);
+  const remaining = today.length;
+
+  const lvIdx = Math.min(STATE.avatarLevel-1, AVATAR_EMOJIS.length-1);
+  document.getElementById('home-avatar').textContent = AVATAR_EMOJIS[lvIdx];
+  document.getElementById('home-name').textContent = STATE.name;
+  document.getElementById('home-streak').textContent = STATE.streakDays;
+  document.getElementById('home-coins').textContent = STATE.coins;
+  document.getElementById('home-remaining').textContent = remaining;
+  document.getElementById('home-new').textContent = newItems.length;
+  document.getElementById('home-review').textContent = revItems.length;
+
+  const todayDone = remaining===0;
+  document.getElementById('home-done-msg').style.display = todayDone?'block':'none';
+  document.getElementById('home-start-area').style.display = todayDone?'none':'block';
+  document.getElementById('home-done-area').style.display = todayDone?'block':'none';
+}
+
+// ============================================================
+// 学習セッション
+// ============================================================
+let sessionItems=[];
+let sessionIdx=0;
+let sessionResult={newCount:0,reviewCount:0,correct:0,total:0,coins:0};
+let sessionStart=0;
+
+function startLearn(){
+  sessionItems = buildTodayList();
+  if(sessionItems.length===0) return;
+  sessionIdx=0;
+  sessionResult={newCount:0,reviewCount:0,correct:0,total:0,coins:0};
+  sessionStart=Date.now();
+  showScreen('screen-learn');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const item = sessionItems[sessionIdx];
+  const total = sessionItems.length;
+  const pct = (sessionIdx/total*100).toFixed(0);
+  document.getElementById('learn-progress').style.width=pct+'%';
+  document.getElementById('learn-cur').textContent=sessionIdx+1;
+  document.getElementById('learn-total').textContent=total;
+
+  // タグ
+  const tagsEl = document.getElementById('learn-tags');
+  tagsEl.innerHTML='';
+  if(item.isNew) tagsEl.innerHTML+='<span class="tag tag-new">あたらしい</span>';
+  else tagsEl.innerHTML+='<span class="tag tag-review">ふくしゅう</span>';
+  if(item.progress?.weak) tagsEl.innerHTML+='<span class="tag tag-weak">にがて</span>';
+
+  // 問題タイプを選ぶ
+  const type = pickType(item);
+  renderQuestionByType(item, type);
+}
+
+function pickType(item){
+  if(!item.progress) return 'en_ja'; // 新規は英→日から
+  const types=['en_ja','emoji_en','fill'];
+  return types[Math.floor(Math.random()*types.length)];
+}
+
+function buildChoicesJa(word){
+  const pool = shuffle(WORDS.filter(w=>w.id!==word.id)).slice(0,3).map(w=>w.ja);
+  return shuffle([word.ja,...pool]);
+}
+function buildChoicesEn(word){
+  const pool = shuffle(WORDS.filter(w=>w.id!==word.id)).slice(0,3).map(w=>w.word);
+  return shuffle([word.word,...pool]);
+}
+
+function renderQuestionByType(item,type){
+  const qa = document.getElementById('learn-question-area');
+  const w = item.word;
+
+  if(type==='en_ja'){
+    const choices = buildChoicesJa(w);
+    qa.innerHTML=`
+      <div class="question-box">
+        <div class="question-word">${w.word}</div>
+        <div class="question-hint">にほんごを えらんでね</div>
+      </div>
+      <div class="choices" id="choices-area">
+        ${choices.map(c=>`<button class="choice-btn" onclick="answerChoice(this,'${c}','${w.ja}')">${c}</button>`).join('')}
+      </div>`;
+  } else if(type==='emoji_en'){
+    const choices = buildChoicesEn(w);
+    qa.innerHTML=`
+      <div class="question-box">
+        <span class="question-emoji">${w.emoji}</span>
+        <div class="question-hint">えいごを えらんでね</div>
+      </div>
+      <div class="choices" id="choices-area">
+        ${choices.map(c=>`<button class="choice-btn" onclick="answerChoice(this,'${c}','${w.word}')">${c}</button>`).join('')}
+      </div>`;
+  } else { // fill
+    const half = Math.ceil(w.word.length/2);
+    const hint = w.word.slice(0,half)+'_'.repeat(w.word.length-half);
+    qa.innerHTML=`
+      <div class="question-box">
+        <div class="question-meaning">${w.ja}</div>
+        <div class="question-hint">えいごでかこう (${hint})</div>
+      </div>
+      <input class="fill-input" id="fill-input" type="text" placeholder="えいごをかこう" autocomplete="off" autocapitalize="off"
+        onkeydown="if(event.key==='Enter')answerFill()">
+      <button class="btn-answer" onclick="answerFill()">こたえる</button>`;
+    setTimeout(()=>document.getElementById('fill-input')?.focus(),100);
+  }
+}
+
+function answerChoice(btn, chosen, correct){
+  const buttons = document.querySelectorAll('.choice-btn');
+  buttons.forEach(b=>{b.disabled=true;});
+  const isCorrect = chosen===correct;
+  btn.classList.add(isCorrect?'correct':'wrong');
+  if(!isCorrect){
+    buttons.forEach(b=>{if(b.textContent===correct)b.classList.add('hint-correct');});
+  }
+  setTimeout(()=>processAnswer(isCorrect), 600);
+}
+
+function answerFill(){
+  const input = document.getElementById('fill-input');
+  if(!input||input.disabled) return;
+  const val = input.value.trim().toLowerCase();
+  const correct = sessionItems[sessionIdx].word.word.toLowerCase();
+  const isCorrect = val===correct;
+  input.disabled=true;
+  input.classList.add(isCorrect?'correct':'wrong');
+  document.querySelector('.btn-answer')&&(document.querySelector('.btn-answer').disabled=true);
+  if(!isCorrect){
+    const rev = document.getElementById('learn-question-area');
+    rev.insertAdjacentHTML('beforeend',`<div class="answer-reveal">こたえ: ${sessionItems[sessionIdx].word.word}</div>`);
+  }
+  setTimeout(()=>processAnswer(isCorrect), 700);
+}
+
+function processAnswer(isCorrect){
+  const item = sessionItems[sessionIdx];
+  const w = item.word;
+  const p = item.progress || {level:0,correct:0,wrong:0,consecutive:0,nextReview:null,recentResults:[],weak:false};
+  const updated = isCorrect ? applyCorrect(p) : applyWrong(p);
+  STATE.progress[w.id] = updated;
+
+  const coins = isCorrect ? earnCoins(item.isNew, updated.consecutive) : 0;
+  sessionResult.total++;
+  if(isCorrect){sessionResult.correct++;sessionResult.coins+=coins;STATE.coins+=coins;}
+  if(item.isNew) sessionResult.newCount++;
+  else sessionResult.reviewCount++;
+
+  // フィードバック表示
+  const overlay = document.getElementById('feedback-overlay');
+  const card = document.getElementById('feedback-card');
+  overlay.className='feedback-overlay '+(isCorrect?'correct-bg':'wrong-bg');
+  card.className='feedback-card '+(isCorrect?'correct-card':'wrong-card');
+  document.getElementById('feedback-emoji').textContent=isCorrect?'🎉':'😅';
+  document.getElementById('feedback-title').textContent=isCorrect?'せいかい！':'ざんねん…';
+  document.getElementById('feedback-coins').textContent=isCorrect&&coins>0?`+${coins}コイン`:'';
+  overlay.style.display='flex';
+  saveState(STATE);
+}
+
+function nextQuestion(){
+  document.getElementById('feedback-overlay').style.display='none';
+  sessionIdx++;
+  if(sessionIdx>=sessionItems.length){
+    finishSession();
+  } else {
+    renderQuestion();
+  }
+}
+
+function finishSession(){
+  // ストリーク更新
+  const today = todayStr();
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr = yesterday.toISOString().slice(0,10);
+  if(STATE.lastStudyDate===yesterdayStr) STATE.streakDays++;
+  else if(STATE.lastStudyDate!==today) STATE.streakDays=1;
+  STATE.lastStudyDate=today;
+
+  // アバターレベル（10単語ごとにup）
+  const total = Object.keys(STATE.progress).length;
+  STATE.avatarLevel = Math.min(6, Math.floor(total/10)+1);
+
+  // バッジ判定
+  if(STATE.streakDays>=7 && !STATE.badges.includes('streak_7')) STATE.badges.push('streak_7');
+  if(STATE.streakDays>=30 && !STATE.badges.includes('streak_30')) STATE.badges.push('streak_30');
+  if(total>=10 && !STATE.badges.includes('words_10')) STATE.badges.push('words_10');
+  if(total>=50 && !STATE.badges.includes('words_50')) STATE.badges.push('words_50');
+  if(total>=100 && !STATE.badges.includes('words_100')) STATE.badges.push('words_100');
+  const acc = sessionResult.total>0?sessionResult.correct/sessionResult.total:0;
+  if(acc===1 && sessionResult.total>=5 && !STATE.badges.includes('perfect')) STATE.badges.push('perfect');
+
+  // セッション記録
+  STATE.sessions.push({date:today,...sessionResult});
+  if(STATE.sessions.length>30) STATE.sessions=STATE.sessions.slice(-30);
+
+  saveState(STATE);
+
+  // 結果画面
+  const grade = acc>=0.9?'🌟':acc>=0.7?'⭐':acc>=0.5?'👍':'💪';
+  document.getElementById('result-grade').textContent=grade;
+  document.getElementById('result-title').textContent='よくできました！';
+  document.getElementById('result-acc-num').textContent=Math.round(acc*100)+'%';
+  document.getElementById('result-acc-sub').textContent=`${sessionResult.correct}/${sessionResult.total} もんせいかい`;
+  document.getElementById('result-new').textContent=sessionResult.newCount;
+  document.getElementById('result-rev').textContent=sessionResult.reviewCount;
+  document.getElementById('result-coins').textContent=sessionResult.coins;
+  showScreen('screen-result');
+}
+
+function goHome(){ showScreen('screen-home'); }
+
+// ============================================================
+// ごほうびページ
+// ============================================================
+let currentRwTab='avatar';
+
+function renderRewards(){
+  STATE=loadState();
+  const lvIdx=Math.min(STATE.avatarLevel-1,AVATAR_EMOJIS.length-1);
+  document.getElementById('rw-avatar').textContent=AVATAR_EMOJIS[lvIdx];
+  document.getElementById('rw-lv').textContent='レベル '+STATE.avatarLevel;
+  document.getElementById('rw-coins').textContent=STATE.coins;
+  rwTab(currentRwTab, null);
+}
+
+function rwTab(tab, btn){
+  currentRwTab=tab;
+  document.querySelectorAll('.rewards-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.rewards-tab').forEach((t,i)=>{
+      if(['avatar','shop','badges'][i]===tab) t.classList.add('active');
+    });
+  }
+
+  const body=document.getElementById('rw-body');
+  if(tab==='avatar'){
+    const total=Object.keys(STATE.progress).length;
+    const pct=Math.min(100,Math.floor((total%10)/10*100));
+    body.innerHTML=`
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:80px">${AVATAR_EMOJIS[Math.min(STATE.avatarLevel-1,5)]}</div>
+        <div class="level-bar-wrap"><div class="level-bar-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:13px;color:#9ca3af">レベル ${STATE.avatarLevel} / 6 （${total}単語おぼえた）</div>
+        <p style="color:#9ca3af;font-size:12px;margin-top:12px">べんきょうをつづけてキャラをそだてよう！</p>
+      </div>`;
+  } else if(tab==='shop'){
+    body.innerHTML=SHOP_ITEMS.map(item=>{
+      const owned=STATE.ownedItems.includes(item.id);
+      const canAfford=STATE.coins>=item.cost;
+      const btnClass=owned?'owned':canAfford?'':'cant';
+      const btnText=owned?'もってる':`⭐ ${item.cost}`;
+      return `<div class="shop-item">
+        <div class="shop-item-icon">${item.emoji}</div>
+        <div class="shop-item-info">
+          <div class="shop-item-name">${item.name}</div>
+          <div class="shop-item-desc">${item.desc}</div>
+        </div>
+        <button class="btn-buy ${btnClass}" onclick="buyItem('${item.id}',${item.cost})" ${owned||!canAfford?'disabled':''}>${btnText}</button>
+      </div>`;
+    }).join('');
+  } else {
+    body.innerHTML=`<div class="badge-grid">${BADGES.map(b=>{
+      const earned=STATE.badges.includes(b.id);
+      return `<div class="badge-item ${earned?'':'locked'}">
+        <span class="badge-emoji">${earned?b.emoji:'🔒'}</span>
+        <div class="badge-label">${b.label}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+}
+
+function buyItem(id,cost){
+  if(STATE.coins<cost||STATE.ownedItems.includes(id)) return;
+  STATE.coins-=cost;
+  STATE.ownedItems.push(id);
+  saveState(STATE);
+  renderRewards();
+}
+
+// ============================================================
+// 親ダッシュボード
+// ============================================================
+function renderParent(){
+  STATE=loadState();
+  const today=todayStr();
+  const total=Object.keys(STATE.progress).length;
+  const todayDone=STATE.lastStudyDate===today;
+
+  document.getElementById('par-streak').textContent=STATE.streakDays;
+  document.getElementById('par-total').textContent=total;
+  const ts=document.getElementById('par-today-stat');
+  ts.innerHTML=`<div class="n">${todayDone?'✅':'⏳'}</div><div class="l">今日の学習<br><b style="color:${todayDone?'#16a34a':'#9ca3af'}">${todayDone?'完了':'未完了'}</b></div>`;
+
+  // 直近7日グラフ
+  const last7=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);last7.push(d.toISOString().slice(0,10));}
+  const chart=document.getElementById('par-chart');
+  chart.innerHTML=last7.map(d=>{
+    const s=STATE.sessions.filter(s=>s.date===d);
+    const acc=s.length>0?(s[s.length-1].correct/Math.max(1,s[s.length-1].total)):0;
+    const h=Math.round(acc*52);
+    return `<div class="bar-col">
+      <div class="bar-fill" style="height:${h}px;background:${acc>0?'#818cf8':'#e5e7eb'}"></div>
+      <div class="bar-label">${new Date(d+'T00:00:00').getDate()}日</div>
+    </div>`;
+  }).join('');
+
+  // 苦手単語
+  const weakWords=WORDS.filter(w=>STATE.progress[w.id]?.weak).slice(0,10);
+  const wl=document.getElementById('par-weak-list');
+  if(weakWords.length===0){
+    document.getElementById('par-weak-section').style.display='none';
+  } else {
+    document.getElementById('par-weak-section').style.display='block';
+    wl.innerHTML=weakWords.map(w=>{
+      const p=STATE.progress[w.id];
+      const total=(p.correct||0)+(p.wrong||0);
+      const acc=total>0?Math.round(p.correct/total*100):0;
+      return `<div class="weak-row">
+        <div><span class="weak-word">${w.word}</span><span class="weak-ja">${w.ja}</span></div>
+        <span class="weak-acc" style="color:${acc<50?'#ef4444':'#f97316'}">${acc}%</span>
+      </div>`;
+    }).join('');
+  }
+
+  // 新規目標
+  document.getElementById('par-target-input').value=STATE.dailyNewTarget;
+  document.getElementById('par-target-val').textContent=STATE.dailyNewTarget;
+}
+
+function saveTarget(){
+  const v=Number(document.getElementById('par-target-input').value);
+  STATE.dailyNewTarget=v;
+  saveState(STATE);
+  const btn=document.getElementById('par-save-btn');
+  btn.textContent='ほぞんしました！';
+  btn.disabled=true;
+  setTimeout(()=>{btn.textContent='ほぞんする';btn.disabled=false;},1500);
+}
+
+// ============================================================
+// 初期化
+// ============================================================
+renderHome();
+</script>
+</body>
+</html>
