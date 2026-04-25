@@ -13,6 +13,10 @@
             --text-color: #333333;
             --white: #ffffff;
             --dark: #222222;
+            --ink: #172033;
+            --paper: #fffaf0;
+            --gold: #d69b2d;
+            --panel: rgba(255,255,255,0.88);
         }
 
         * {
@@ -24,7 +28,9 @@
         }
 
         body {
-            background-color: var(--bg-color);
+            background:
+                radial-gradient(circle at 50% 8%, rgba(252,200,0,0.22), transparent 30%),
+                linear-gradient(180deg, #20304b 0%, #7e2634 54%, #2a1720 100%);
             color: var(--text-color);
             display: flex;
             justify-content: center;
@@ -35,14 +41,17 @@
 
         #game-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             height: 100%;
-            background: var(--white);
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background:
+                linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
+                repeating-linear-gradient(90deg, rgba(201,58,64,0.08) 0 1px, transparent 1px 18px),
+                var(--paper);
+            box-shadow: 0 22px 70px rgba(0,0,0,0.34);
             position: relative;
             overflow: hidden;
-            border-left: 2px solid var(--primary);
-            border-right: 2px solid var(--primary);
+            border-left: 2px solid rgba(252,200,0,0.55);
+            border-right: 2px solid rgba(252,200,0,0.55);
         }
 
         .screen {
@@ -50,7 +59,7 @@
             width: 100%;
             height: 100%;
             flex-direction: column;
-            padding: 20px;
+            padding: max(18px, env(safe-area-inset-top)) 20px max(18px, env(safe-area-inset-bottom));
             animation: fadeIn 0.3s ease-in-out;
         }
 
@@ -199,40 +208,261 @@
         .choice-btn:active { background: #e6f0ff; }
         
         /* Battle */
-        .battle-area { display: flex; flex-direction: column; align-items: center; flex-grow: 1; margin-bottom: 20px; }
-        .enemy-container {
-            width: 150px; height: 150px; background: var(--dark); color: white;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            border-radius: 10px; font-size: 20px; font-weight: bold;
-            margin-bottom: 20px; border: 5px solid #8e44ad;
-            box-shadow: 0 0 15px rgba(142,68,173,0.5); transition: all 0.3s;
+        #battle-screen {
+            gap: 10px;
+            background:
+                radial-gradient(circle at 50% 18%, rgba(252,200,0,0.16), transparent 30%),
+                linear-gradient(180deg, rgba(23,32,51,0.96), rgba(100,31,42,0.92)),
+                var(--ink);
+            color: var(--white);
         }
-        .enemy-emoji { font-size: 60px; margin-bottom: 5px; }
+        #battle-screen .status-bar {
+            background: rgba(8,13,24,0.66);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+            margin-bottom: 0;
+            gap: 10px;
+        }
+        #battle-screen .status-bar span:first-child {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #battle-screen .status-bar span:last-child {
+            flex: 0 0 auto;
+        }
+        .battle-area {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0;
+            margin-bottom: 0;
+            gap: 10px;
+        }
+        .battle-field {
+            position: relative;
+            flex: 1;
+            min-height: 260px;
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 16px;
+            overflow: hidden;
+            background:
+                linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+                radial-gradient(circle at 50% 30%, rgba(252,200,0,0.18), transparent 34%),
+                linear-gradient(180deg, #25395e 0%, #16263d 48%, #46202a 100%);
+            background-size: auto, 48px 48px, auto, auto;
+            box-shadow: inset 0 -40px 90px rgba(0,0,0,0.3), 0 14px 30px rgba(0,0,0,0.24);
+        }
+        .battle-field::before {
+            content: "";
+            position: absolute;
+            left: -12%;
+            right: -12%;
+            bottom: -36px;
+            height: 118px;
+            background: linear-gradient(180deg, rgba(117,75,38,0.4), rgba(42,23,32,0.96));
+            transform: skewY(-3deg);
+        }
+        .battle-field::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 18% 20%, rgba(255,255,255,0.16), transparent 2px),
+                        radial-gradient(circle at 74% 18%, rgba(255,255,255,0.13), transparent 2px),
+                        radial-gradient(circle at 45% 12%, rgba(255,255,255,0.14), transparent 1px);
+            opacity: 0.65;
+            pointer-events: none;
+        }
+        .battle-character {
+            position: absolute;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 132px;
+        }
+        .battle-character.player-side {
+            left: 18px;
+            bottom: 18px;
+        }
+        .battle-character.enemy-side {
+            right: 18px;
+            top: 18px;
+        }
+        .fighter-label {
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0;
+            padding: 5px 10px;
+            border-radius: 999px;
+            color: #fff;
+            background: rgba(8,13,24,0.72);
+            border: 1px solid rgba(255,255,255,0.16);
+        }
+        .player-sprite, .enemy-container {
+            width: 138px;
+            height: 138px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border: 4px solid rgba(255,255,255,0.28);
+            box-shadow: 0 16px 30px rgba(0,0,0,0.28);
+            transition: transform 0.24s ease, filter 0.24s ease, box-shadow 0.24s ease;
+        }
+        .player-sprite {
+            background: linear-gradient(180deg, #2d6bb3, #12396f);
+            box-shadow: 0 0 0 4px rgba(30,80,162,0.18), 0 18px 32px rgba(0,0,0,0.28);
+        }
+        .player-emoji, .enemy-emoji {
+            font-size: 58px;
+            line-height: 1;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.28));
+        }
+        .enemy-container.normal {
+            background: linear-gradient(180deg, #2b2f3d, #141923);
+            border-color: rgba(30,80,162,0.82);
+        }
+        .enemy-container.boss {
+            background: linear-gradient(180deg, #7e306f, #421f54);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(252,200,0,0.16), 0 18px 36px rgba(0,0,0,0.32), 0 0 32px rgba(201,58,64,0.45);
+        }
+        .battle-versus {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            z-index: 3;
+            transform: translate(-50%, -50%) rotate(-10deg);
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(252,200,0,0.92);
+            color: #321308;
+            font-weight: 900;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+        }
+        .battle-effect {
+            position: absolute;
+            left: 50%;
+            top: 44%;
+            z-index: 4;
+            transform: translate(-50%, -50%);
+            min-width: 160px;
+            text-align: center;
+            color: #fff7c2;
+            font-size: 24px;
+            font-weight: 900;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.65);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .battle-effect.show {
+            animation: battlePop 0.9s ease both;
+        }
+        .battle-hud {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .battle-panel {
+            background: rgba(8,13,24,0.66);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+        }
+        .battle-panel-title {
+            font-size: 12px;
+            color: #f5d77b;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+        .battle-intent {
+            min-height: 42px;
+            line-height: 1.35;
+            font-size: 14px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        .skill-preview {
+            min-height: 42px;
+            line-height: 1.35;
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .hp-label-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 900;
+            margin: 2px 0 5px;
+        }
         
         @keyframes shakeDamage {
-            0%, 100% { transform: translateX(0); filter: drop-shadow(0 0 0 red); background: rgba(255,0,0,0.2); }
-            25% { transform: translateX(-10px); filter: drop-shadow(0 0 20px red); background: rgba(255,0,0,0.5); }
-            50% { transform: translateX(10px); filter: drop-shadow(0 0 20px red); background: rgba(255,0,0,0.5); }
-            75% { transform: translateX(-10px); filter: drop-shadow(0 0 20px red); background: rgba(255,0,0,0.5); }
+            0%, 100% { transform: translateX(0); filter: drop-shadow(0 0 0 red); }
+            25% { transform: translateX(-10px); filter: drop-shadow(0 0 20px red); }
+            50% { transform: translateX(10px); filter: drop-shadow(0 0 20px red); }
+            75% { transform: translateX(-10px); filter: drop-shadow(0 0 20px red); }
         }
         @keyframes healFlash {
-            0%, 100% { filter: drop-shadow(0 0 0 green); transform: scale(1); background: transparent; }
-            50% { filter: drop-shadow(0 0 20px green); transform: scale(1.02); background: rgba(0,255,0,0.2); }
+            0%, 100% { filter: drop-shadow(0 0 0 green); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 20px #72e69d); transform: scale(1.02); }
         }
+        @keyframes battlePop {
+            0% { opacity: 0; transform: translate(-50%, -42%) scale(0.7); }
+            22% { opacity: 1; transform: translate(-50%, -55%) scale(1.08); }
+            78% { opacity: 1; transform: translate(-50%, -62%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -72%) scale(0.96); }
+        }
+        .anim-attack { animation: lungeAttack 0.42s ease both; }
+        .anim-enemy-attack { animation: enemyLunge 0.42s ease both; }
         .anim-damage { animation: shakeDamage 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         .anim-heal { animation: healFlash 0.5s ease-in-out both; }
+        @keyframes lungeAttack {
+            0%, 100% { transform: translateX(0) scale(1); }
+            45% { transform: translateX(62px) scale(1.05); }
+        }
+        @keyframes enemyLunge {
+            0%, 100% { transform: translateX(0) scale(1); }
+            45% { transform: translateX(-62px) scale(1.05); }
+        }
 
-        .hp-bar-bg { width: 100%; height: 20px; background: #ccc; border-radius: 10px; margin-bottom: 10px; overflow: hidden; position: relative; }
-        .hp-bar-fill { height: 100%; background: #27ae60; width: 100%; transition: width 0.3s; }
-        .hp-bar-fill.danger { background: var(--primary); }
+        .hp-bar-bg { width: 100%; height: 20px; background: rgba(255,255,255,0.18); border-radius: 10px; margin-bottom: 10px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.18); }
+        .hp-bar-fill { height: 100%; background: linear-gradient(90deg,#37c871,#9be15d); width: 100%; transition: width 0.35s ease; }
+        .hp-bar-fill.enemy { background: linear-gradient(90deg,#f06a68,#c93a40); }
+        .hp-bar-fill.focus { background: linear-gradient(90deg,#fcc800,#ff9f43); }
+        .hp-bar-fill.danger { background: linear-gradient(90deg,#f87171,#c93a40); }
         .hp-bar-text {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             display: flex; justify-content: center; align-items: center;
             font-size: 12px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
         }
         .battle-log {
-            width: 100%; height: 100px; background: #f0f0f0; border-radius: 8px;
-            padding: 10px; font-size: 14px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #ccc;
+            width: 100%; height: 106px; background: rgba(8,13,24,0.78); color: #f8fafc; border-radius: 12px;
+            padding: 10px; font-size: 14px; line-height: 1.45; overflow-y: auto; margin-bottom: 0; border: 1px solid rgba(255,255,255,0.14);
+        }
+
+        @media (max-height: 720px) {
+            .battle-field { min-height: 220px; }
+            .player-sprite, .enemy-container { width: 116px; height: 116px; }
+            .player-emoji, .enemy-emoji { font-size: 48px; }
+            .battle-log { height: 88px; }
+        }
+
+        @media (max-width: 420px) {
+            .battle-character { min-width: 112px; }
+            .player-sprite, .enemy-container { width: 112px; height: 112px; border-radius: 14px; }
+            .player-emoji, .enemy-emoji { font-size: 46px; }
+            .battle-hud { grid-template-columns: 1fr; }
         }
 
         /* Result */
@@ -293,17 +523,51 @@
     <!-- Battle Screen -->
     <div id="battle-screen" class="screen">
         <div class="status-bar">
-            <span>⚔️ バトル！</span>
-            <span>自分のHP: <span id="battle-player-hp">100</span></span>
+            <span id="battle-era">バトル！</span>
+            <span>ターン <span id="battle-turn">1</span></span>
         </div>
         <div class="battle-area">
-            <div class="enemy-container" id="enemy-sprite">
-                <div class="enemy-emoji" id="enemy-emoji-disp">🥷</div>
-                <div id="enemy-name-disp">忍者</div>
+            <div class="battle-field">
+                <div class="battle-effect" id="battle-effect"></div>
+                <div class="battle-versus">対決</div>
+                <div class="battle-character player-side">
+                    <div class="fighter-label">あなた</div>
+                    <div class="player-sprite" id="player-sprite">
+                        <div class="player-emoji">⚔️</div>
+                        <div>歴史武者</div>
+                    </div>
+                </div>
+                <div class="battle-character enemy-side">
+                    <div class="fighter-label" id="enemy-title">敵将</div>
+                    <div class="enemy-container" id="enemy-sprite">
+                        <div class="enemy-emoji" id="enemy-emoji-disp">🥷</div>
+                        <div id="enemy-name-disp">忍者</div>
+                    </div>
+                </div>
             </div>
-            <div style="width: 100%; text-align: center; margin-bottom: 5px; font-weight: bold;">敵HP</div>
+            <div class="battle-hud">
+                <div class="battle-panel">
+                    <div class="hp-label-row"><span>自分HP</span><span id="battle-player-hp">100</span></div>
+                    <div class="hp-bar-bg">
+                        <div class="hp-bar-fill" id="player-hp-fill"></div>
+                        <div class="hp-bar-text" id="player-hp-text">100/100</div>
+                    </div>
+                    <div class="hp-label-row"><span>士気</span><span id="battle-focus-text">0/3</span></div>
+                    <div class="hp-bar-bg">
+                        <div class="hp-bar-fill focus" id="battle-focus-fill"></div>
+                        <div class="hp-bar-text" id="battle-combo-text">連続正解 0</div>
+                    </div>
+                </div>
+                <div class="battle-panel">
+                    <div class="battle-panel-title">敵の気配</div>
+                    <div class="battle-intent" id="battle-intent">様子を見ている...</div>
+                    <div class="battle-panel-title" style="margin-top:8px;">選んだ技</div>
+                    <div class="skill-preview" id="skill-preview">サイコロで技を決めよう</div>
+                </div>
+            </div>
+            <div class="hp-label-row"><span id="enemy-hp-label">敵HP</span><span id="enemy-hp-number">30/30</span></div>
             <div class="hp-bar-bg">
-                <div class="hp-bar-fill" id="enemy-hp-fill"></div>
+                <div class="hp-bar-fill enemy" id="enemy-hp-fill"></div>
                 <div class="hp-bar-text" id="enemy-hp-text">30/30</div>
             </div>
         </div>
@@ -600,7 +864,7 @@
         correct: 0, wrong: 0,
         learned: [],
         currentEnemy: null,
-        battleParams: { turn: 0, defending: false },
+        battleParams: { turn: 1, defending: false, combo: 0, focus: 0, enemyIntent: null },
         diceMode: 'map',
         currentSkill: null,
         clearedStages: {} // format: { 0: true, 1: true ... }
@@ -793,8 +1057,8 @@
             count = count >= 6 ? 1 : count + 1;
             dNum.innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][count-1];
             if(state.diceMode === 'battle') {
-                const skills = ['', '小攻撃', '防御', '連続攻撃', '回復', '特殊技', '必殺技'];
-                document.getElementById('dice-skill-name').innerText = skills[count];
+                const skills = getBattleSkills();
+                document.getElementById('dice-skill-name').innerText = skills[count-1].name;
             }
         }, 100);
     }
@@ -903,37 +1167,95 @@
     }
 
     // --- Battle Logic ---
+    function makeEnemyIntent(enemy) {
+        const lowHp = enemy.hp / enemy.maxHp <= 0.35;
+        const bossBonus = enemy.isBoss ? 6 : 0;
+        const strongChance = enemy.isBoss ? 0.38 : 0.24;
+        if(Math.random() < strongChance || lowHp) {
+            const dmg = Math.floor(Math.random() * 8) + 12 + bossBonus;
+            return { name: lowHp ? '捨て身の強襲' : '強攻撃', dmg, warning: '大きな一撃が来る。防御が有効。' };
+        }
+        const dmg = Math.floor(Math.random() * 7) + 6 + bossBonus;
+        return { name: '通常攻撃', dmg, warning: '落ち着いて反撃できる。' };
+    }
+
+    function prepareEnemyIntent() {
+        if(!state.currentEnemy) return;
+        state.battleParams.enemyIntent = makeEnemyIntent(state.currentEnemy);
+    }
+
+    function getBattleSkills() {
+        return [
+            { id: 1, name: '一太刀', desc: '安定した一撃', dmg: 12 },
+            { id: 2, name: '構え直し', desc: '次の敵ダメージを0。士気+1', type: 'defend' },
+            { id: 3, name: '二段斬り', desc: '2回攻撃', dmg: 11, hits: 2 },
+            { id: 4, name: '兵糧回復', desc: 'HPを22回復', type: 'heal', heal: 22 },
+            { id: 5, name: '時代の知略', desc: '強烈な一撃', dmg: 30 },
+            { id: 6, name: '天下無双', desc: '士気で威力アップ', dmg: 38, finisher: true }
+        ];
+    }
+
+    function showBattleEffect(text, color) {
+        const el = document.getElementById('battle-effect');
+        el.innerText = text;
+        el.style.color = color || '#fff7c2';
+        el.classList.remove('show');
+        void el.offsetWidth;
+        el.classList.add('show');
+    }
+
+    function setBattleButtonReady(ready) {
+        const btn = document.getElementById('btn-battle-dice');
+        btn.style.display = ready ? 'block' : 'none';
+        btn.disabled = !ready;
+    }
+
     function initBattle(enemyData) {
         state.currentEnemy = { ...enemyData, hp: enemyData.hp, maxHp: enemyData.hp };
-        state.battleParams = { turn: 0, defending: false };
+        state.battleParams = { turn: 1, defending: false, combo: 0, focus: 0, enemyIntent: null };
+        state.currentSkill = null;
+        prepareEnemyIntent();
         
         document.getElementById('enemy-emoji-disp').innerText = enemyData.emoji || '👾';
         document.getElementById('enemy-name-disp').innerText = enemyData.name;
+        document.getElementById('enemy-title').innerText = enemyData.isBoss ? 'ボス' : '敵将';
         
         const spr = document.getElementById('enemy-sprite');
-        if(enemyData.isBoss) {
-            spr.style.borderColor = 'var(--primary)';
-            spr.style.background = '#8e44ad';
-            spr.style.boxShadow = '0 0 20px rgba(200,0,0,0.5)';
-        } else {
-            spr.style.borderColor = 'var(--secondary)';
-            spr.style.background = 'var(--dark)';
-            spr.style.boxShadow = 'none';
-        }
+        spr.className = `enemy-container ${enemyData.isBoss ? 'boss' : 'normal'}`;
         
         updateBattleUI();
-        document.getElementById('battle-log').innerHTML = `${enemyData.name} が現れた！<br>サイコロを振って技を決めろ！`;
+        setBattleButtonReady(true);
+        document.getElementById('battle-log').innerHTML = `${enemyData.name} が立ちはだかった！<br>敵の気配を見ながら、サイコロで技を決めろ！`;
         changeScreen('battle-screen');
     }
 
     function updateBattleUI() {
-        document.getElementById('battle-player-hp').innerText = state.hp;
+        const stage = stagesData[state.currentStageId];
+        document.getElementById('battle-era').innerText = stage.name.replace(/^第\d+巻：/, '');
+        document.getElementById('battle-turn').innerText = state.battleParams.turn;
+        document.getElementById('battle-player-hp').innerText = `${Math.max(0, state.hp)}/${state.maxHp}`;
+        document.getElementById('player-hp-text').innerText = `${Math.max(0, state.hp)}/${state.maxHp}`;
+        document.getElementById('player-hp-fill').style.width = Math.max(0, Math.min(100, (state.hp / state.maxHp) * 100)) + '%';
+        document.getElementById('battle-focus-text').innerText = `${state.battleParams.focus}/3`;
+        document.getElementById('battle-focus-fill').style.width = `${(state.battleParams.focus / 3) * 100}%`;
+        document.getElementById('battle-combo-text').innerText = `連続正解 ${state.battleParams.combo}`;
+
         const enemy = state.currentEnemy;
         const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
         const fill = document.getElementById('enemy-hp-fill');
         fill.style.width = hpPercent + '%';
         if(hpPercent <= 30) fill.classList.add('danger'); else fill.classList.remove('danger');
-        document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
+        const enemyHpText = `${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
+        document.getElementById('enemy-hp-text').innerText = enemyHpText;
+        document.getElementById('enemy-hp-number').innerText = enemyHpText;
+        document.getElementById('enemy-hp-label').innerText = `${enemy.name} HP`;
+
+        const intent = state.battleParams.enemyIntent;
+        document.getElementById('battle-intent').innerText = intent
+            ? `${intent.name}: ${intent.dmg}ダメージ予告。${intent.warning}`
+            : '様子を見ている...';
+        const skill = state.currentSkill;
+        document.getElementById('skill-preview').innerText = skill ? `${skill.name}: ${skill.desc}` : 'サイコロで技を決めよう';
     }
 
     function logBattle(msg) {
@@ -942,15 +1264,10 @@
     }
 
     function proceedBattleDice(diceNum) {
-        const skills = [
-            { id: 1, name: '小攻撃', desc: '確実な一撃', dmg: 10 },
-            { id: 2, name: '防御', desc: '次の被ダメージを0にする', type: 'defend' },
-            { id: 3, name: '連続攻撃', desc: '2回攻撃！', dmg: 20 },
-            { id: 4, name: '回復', desc: 'HPを20回復', type: 'heal' },
-            { id: 5, name: '特殊技', desc: '強烈な一撃', dmg: 30 },
-            { id: 6, name: '必殺技', desc: '最大ダメージ', dmg: 45 }
-        ];
+        const skills = getBattleSkills();
         state.currentSkill = skills[diceNum-1];
+        setBattleButtonReady(false);
+        updateBattleUI();
         
         logBattle(`【技決定】 ${state.currentSkill.name}！ クイズに正解して発動しろ！`);
         
@@ -962,25 +1279,43 @@
     function executePlayerTurn(quizCorrect) {
         changeScreen('battle-screen');
         if(!quizCorrect) {
-            logBattle(`【失敗】 クイズ不正解！ 技が発動しなかった...`);
+            state.battleParams.combo = 0;
+            state.battleParams.focus = Math.max(0, state.battleParams.focus - 1);
+            logBattle(`【失敗】 クイズ不正解！ 技が発動しなかった... 士気が下がった。`);
+            showBattleEffect('失敗...', '#ffb4b4');
+            updateBattleUI();
             setTimeout(executeEnemyTurn, 1500);
             return;
         }
 
         const skill = state.currentSkill;
+        state.battleParams.combo++;
+        state.battleParams.focus = Math.min(3, state.battleParams.focus + 1);
         logBattle(`【成功】 ${skill.name} 発動！`);
         
         if(skill.dmg) {
-            state.currentEnemy.hp -= skill.dmg;
-            logBattle(`敵に ${skill.dmg} のダメージを与えた！`);
+            const hits = skill.hits || 1;
+            const focusBonus = state.battleParams.focus * (skill.finisher ? 7 : 3);
+            const comboBonus = Math.min(12, state.battleParams.combo * 2);
+            const totalDamage = Math.max(1, (skill.dmg * hits) + focusBonus + comboBonus);
+            state.currentEnemy.hp -= totalDamage;
+            if(skill.finisher) state.battleParams.focus = 0;
+            logBattle(`敵に ${totalDamage} ダメージ！${hits > 1 ? `（${hits}回攻撃）` : ''}`);
+            playAnim('player-sprite', 'anim-attack');
             playAnim('enemy-sprite', 'anim-damage');
+            showBattleEffect(`${totalDamage}ダメージ`, skill.finisher ? '#ffd166' : '#fff7c2');
         } else if(skill.type === 'defend') {
             state.battleParams.defending = true;
-            logBattle(`守りを固めた！次の敵の攻撃を防ぐ。`);
+            state.battleParams.focus = Math.min(3, state.battleParams.focus + 1);
+            logBattle(`守りを固めた！次の敵の攻撃を防ぐ。士気も上がった。`);
+            playAnim('player-sprite', 'anim-heal');
+            showBattleEffect('防御態勢', '#9be15d');
         } else if(skill.type === 'heal') {
-            state.hp = Math.min(state.maxHp, state.hp + 20);
-            logBattle(`HPが20回復した！`);
-            playAnim('game-container', 'anim-heal');
+            const healAmount = skill.heal + state.battleParams.focus * 3;
+            state.hp = Math.min(state.maxHp, state.hp + healAmount);
+            logBattle(`HPが ${healAmount} 回復した！`);
+            playAnim('player-sprite', 'anim-heal');
+            showBattleEffect(`+${healAmount}回復`, '#9be15d');
         }
         
         updateBattleUI();
@@ -996,32 +1331,39 @@
                 });
             }, 1000);
         } else {
-            document.getElementById('btn-battle-dice').style.display = 'none';
             setTimeout(executeEnemyTurn, 1500);
         }
     }
 
     function executeEnemyTurn() {
         const enemy = state.currentEnemy;
-        const eDmg = enemy.isBoss ? Math.floor(Math.random()*15) + 10 : Math.floor(Math.random()*10) + 5;
+        const intent = state.battleParams.enemyIntent || makeEnemyIntent(enemy);
+        const eDmg = intent.dmg;
         
-        logBattle(`【敵のターン】 ${enemy.name} の攻撃！`);
+        logBattle(`【敵のターン】 ${enemy.name} の ${intent.name}！`);
+        playAnim('enemy-sprite', 'anim-enemy-attack');
         
         setTimeout(() => {
             if(state.battleParams.defending) {
                 logBattle(`防御成功！ ダメージを受けなかった。`);
                 state.battleParams.defending = false;
+                showBattleEffect('防御成功', '#9be15d');
             } else {
                 state.hp -= eDmg;
                 logBattle(`${eDmg} のダメージを受けた...`);
-                playAnim('game-container', 'anim-damage');
+                playAnim('player-sprite', 'anim-damage');
+                showBattleEffect(`-${eDmg}`, '#ffb4b4');
             }
             updateBattleUI();
             
             if(state.hp <= 0) {
                 setTimeout(gameOver, 1000);
             } else {
-                document.getElementById('btn-battle-dice').style.display = 'block';
+                state.battleParams.turn++;
+                state.currentSkill = null;
+                prepareEnemyIntent();
+                updateBattleUI();
+                setBattleButtonReady(true);
             }
         }, 1000);
     }

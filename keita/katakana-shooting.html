@@ -2,14 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>カタカナシューティングバトル</title>
   <style>
     :root{
       --bg:#0b1020; --text:#f4f7ff; --muted:#b8c4e6; --good:#59d98e; --bad:#ff7676; --warn:#ffd166; --accent:#73b7ff;
     }
     *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-    html,body{margin:0; padding:0; width:100%; height:100%; background:linear-gradient(180deg,#09101d 0%, #0e1730 100%); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; overflow:hidden;}
+    html,body{margin:0; padding:0; width:100%; height:100%; background:linear-gradient(180deg,#09101d 0%, #0e1730 100%); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; overflow:hidden; touch-action: manipulation;}
     #app{width:100vw; height:100vh; display:flex; flex-direction:column;}
     
     .topbar{flex:0 0 auto; display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:6px; padding:8px; background:rgba(4,8,18,.35); backdrop-filter: blur(8px); border-bottom:1px solid rgba(255,255,255,.08);}
@@ -22,22 +22,23 @@
     .game-panel{position:relative; overflow:hidden; border-radius:18px; border:1px solid rgba(255,255,255,.08); background:radial-gradient(circle at 50% 10%, rgba(115,183,255,.18), transparent 30%), linear-gradient(180deg, #101832 0%, #0c1326 60%, #0a1020 100%); min-height:0;}
     canvas{ width:100%; height:100%; display:block; touch-action:none; }
     
-    .quiz-panel{display:flex; flex-direction:column; gap:8px; min-height:0;}
+    .quiz-panel{display:flex; flex-direction:column; gap:8px; min-height:0; overflow:auto; -webkit-overflow-scrolling:touch;}
     .question-box,.message{background:linear-gradient(180deg, rgba(28,39,75,.95), rgba(18,25,46,.95)); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:12px 14px; box-shadow: 0 8px 22px rgba(0,0,0,.18);}
     .unit{font-size:14px; color:var(--warn); margin-bottom:4px; font-weight:800;}
     .question{font-size:26px; line-height:1.2; font-weight:900; margin-bottom:6px;}
     .sub,.message{font-size:14px; color:var(--muted); font-weight:700;}
     
     .choices{display:grid; grid-template-columns:1fr; gap:10px;}
-    .choice{border:1px solid rgba(115,183,255,.18); background:linear-gradient(180deg, rgba(23,32,60,.95), rgba(15,21,39,.95)); color:#fff; border-radius:16px; padding:20px 10px; font-size:42px; font-weight:900; text-align:center;}
+    .choice{border:1px solid rgba(115,183,255,.18); background:linear-gradient(180deg, rgba(23,32,60,.95), rgba(15,21,39,.95)); color:#fff; border-radius:16px; padding:20px 10px; font-size:42px; font-weight:900; text-align:center; touch-action:manipulation;}
     .choice:disabled{ opacity:.6;}
     .choice.good{ border-color:rgba(89,217,142,.7); box-shadow: inset 0 0 0 2px rgba(89,217,142,.4); color:#59d98e; background:rgba(89,217,142,.1);}
     .choice.bad{ border-color:rgba(255,118,118,.7); box-shadow: inset 0 0 0 2px rgba(255,118,118,.4); color:#ff7676; background:rgba(255,118,118,.1);}
     
     .controls{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
-    .bigbtn{border:none; border-radius:16px; padding:14px; font-size:20px; font-weight:900; color:var(--text); background:linear-gradient(180deg, #26427e, #1d3360); box-shadow:0 6px 16px rgba(0,0,0,.25); cursor:pointer;}
+    .bigbtn{border:none; border-radius:16px; padding:14px; font-size:20px; font-weight:900; color:var(--text); background:linear-gradient(180deg, #26427e, #1d3360); box-shadow:0 6px 16px rgba(0,0,0,.25); cursor:pointer; touch-action:manipulation;}
     .bigbtn:active{transform:scale(0.98);}
     .bigbtn.secondary{ background:linear-gradient(180deg, #4c5a7b, #37425d);}
+    .bigbtn.power-ready{background:linear-gradient(180deg,#ffd166,#f27d42) !important; color:#1b1200; box-shadow:0 0 0 2px rgba(255,255,255,.28), 0 12px 26px rgba(255,139,66,.36);}
     
     .overlay{position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5,10,20,.8); padding:18px; z-index:100; backdrop-filter:blur(4px);}
     .overlay.show{display:flex;}
@@ -48,9 +49,14 @@
     .stat{background:rgba(255,255,255,.04); border-radius:14px; padding:10px;}
     .miss-list{max-height:160px; overflow:auto; margin-top:12px; font-size:15px; font-weight:700;}
     .miss-item{padding:8px 0; border-top:1px solid rgba(255,255,255,.08);}
+
+    @media (min-width: 981px){
+      .choices{grid-template-columns:repeat(3,minmax(0,1fr));}
+      .choice{min-height:96px; padding:18px 8px;}
+    }
     
     @media (max-width: 980px){ 
-      .layout{grid-template-columns:1fr; grid-template-rows: 40vh auto;} 
+      .layout{grid-template-columns:1fr; grid-template-rows: minmax(230px, 40vh) minmax(0, 1fr);} 
       .topbar{grid-template-columns:1fr 1fr;} 
       .choice{padding:14px; font-size:36px;}
       .question{font-size:22px;}
@@ -71,12 +77,12 @@
       <div class="overlay show" id="startOverlay">
         <div class="modal">
           <h1>カタカナシューティングバトル</h1>
-          <p>クイズに <strong>せいかい</strong> すると たまが もらえるよ。したの <strong>ボタンで うごいて</strong> 発射(はっしゃ)で てきを やっつけよう！</p>
+          <p>クイズに <strong>せいかい</strong> すると たまが もらえるよ。3れんぞくで <strong>パワー弾</strong> がチャージ！したの <strong>ボタンで うごいて</strong> 発射(はっしゃ)で てきを やっつけよう！</p>
           <div class="stats">
             <div class="stat"><div class="label">たいしょう</div><div class="value">6さい〜</div></div>
             <div class="stat"><div class="label">もんだい</div><div class="value">カタカナ・ことば</div></div>
           </div>
-          <button class="bigbtn secondary" id="soundBtn" style="width:100%; margin-bottom:12px; border:2px solid #59d98e; color:#59d98e;">🔈 音をだす (ON)</button>
+          <button class="bigbtn secondary" id="soundBtn" style="width:100%; margin-bottom:12px; border:2px solid #59d98e; color:#59d98e;">🔈 音をだす (OFF)</button>
           <div class="controls">
             <button class="bigbtn" id="startBtn">スタート</button>
             <button class="bigbtn secondary" id="howBtn">あそびかた</button>
@@ -103,7 +109,7 @@
       <div class="question-box">
         <div class="unit" id="unitText">じゅんびちゅう</div>
         <div class="question" id="questionText">スタートを おしてね</div>
-        <div class="sub" id="subText">あたると「たま」が 3こ もらえるよ！</div>
+        <div class="sub" id="subText">せいかいで「たま」をゲット。3れんぞくでパワー弾！</div>
       </div>
       <div class="choices" id="choicesBox"></div>
       <div class="controls">
@@ -118,6 +124,7 @@
 
 <script>
 // 音声管理
+const soundBtn = document.getElementById('soundBtn');
 let soundEnabled = false;
 let voiceUnlocked = false;
 
@@ -127,26 +134,30 @@ function unlockVoice() {
   u.volume = 0;
   speechSynthesis.speak(u);
   voiceUnlocked = true;
-  window.removeEventListener('click', unlockVoice);
-  window.removeEventListener('touchstart', unlockVoice);
+  window.removeEventListener('pointerdown', unlockVoice);
 }
 
-document.getElementById('soundBtn').addEventListener('click', () => {
-  soundEnabled = !soundEnabled;
-  const btn = document.getElementById('soundBtn');
+function updateSoundButton(){
   if (soundEnabled) {
-    btn.textContent = '🔊 音をだす (ON)';
-    btn.style.color = '#fff';
-    btn.style.borderColor = '#fff';
-    btn.style.background = 'linear-gradient(180deg,#59d98e,#2e9b5f)';
-    unlockVoice();
+    soundBtn.textContent = '🔊 音をだす (ON)';
+    soundBtn.style.color = '#fff';
+    soundBtn.style.borderColor = '#fff';
+    soundBtn.style.background = 'linear-gradient(180deg,#59d98e,#2e9b5f)';
   } else {
-    btn.textContent = '🔈 音をだす (OFF)';
-    btn.style.color = '#59d98e';
-    btn.style.borderColor = '#59d98e';
-    btn.style.background = 'transparent';
+    soundBtn.textContent = '🔈 音をだす (OFF)';
+    soundBtn.style.color = '#59d98e';
+    soundBtn.style.borderColor = '#59d98e';
+    soundBtn.style.background = 'transparent';
   }
+}
+
+soundBtn.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  if (soundEnabled) unlockVoice();
+  updateSoundButton();
 });
+
+updateSoundButton();
 
 function playVoice(text, rate = 0.9) {
   if (!soundEnabled) return;
@@ -188,7 +199,7 @@ const QUESTION_BANK = [
 ];
 
 const MAX_QUESTIONS = 10, PLAYER_MAX_HP = 5, BOSS_MAX_HP = 5;
-const state = { playerHp:PLAYER_MAX_HP, bossHp:BOSS_MAX_HP, ammo:0, streak:0, questionIndex:0, correctCount:0, firedCount:0, currentQuestion:null, questions:[], answeredCurrent:false, gameOver:false, missed:[] };
+const state = { playerHp:PLAYER_MAX_HP, bossHp:BOSS_MAX_HP, ammo:0, powerShots:0, streak:0, questionIndex:0, correctCount:0, firedCount:0, currentQuestion:null, questions:[], answeredCurrent:false, gameOver:false, missed:[], reviewMode:false };
 const el = {
   playerHpText: document.getElementById("playerHpText"), bossHpText: document.getElementById("bossHpText"),
   ammoText: document.getElementById("ammoText"), progressText: document.getElementById("progressText"),
@@ -205,20 +216,33 @@ const el = {
 };
 
 const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
-const player = { x:450, y:470, speed:8 }, boss = { x:450, y:90, dir:1, t:0, shield:0 };
-const bullets = [], enemyShots = [], particles = [];
+const player = { x:450, y:470, speed:8, invincible:0 };
+const boss = { x:450, y:90, dir:1, t:0, shield:0, nextAttack:85 };
+const bullets = [], enemyShots = [], particles = [], warnings = [], floatTexts = [], muzzleFlashes = [];
+const starLayers = [
+  Array.from({length:34}, (_, i) => ({ x:(i*137)%900, y:(i*71)%520, s:1+(i%3), speed:.18+(i%4)*.035 })),
+  Array.from({length:22}, (_, i) => ({ x:(i*223+80)%900, y:(i*113+40)%520, s:2+(i%2), speed:.38+(i%3)*.05 }))
+];
 const keys = { left:false, right:false };
 let shake = 0;
 
+window.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+
 function shuffle(arr){ return arr.slice().sort(() => Math.random() - 0.5); }
 function hearts(current, max){ return "♥".repeat(current) + "♡".repeat(Math.max(0, max-current)); }
+function totalQuestions(){ return state.questions.length || MAX_QUESTIONS; }
 function updateHud(){ 
   el.playerHpText.textContent = hearts(state.playerHp, PLAYER_MAX_HP); 
   el.bossHpText.textContent = hearts(state.bossHp, BOSS_MAX_HP); 
-  el.ammoText.textContent = `${state.ammo}こ / ${state.streak}れんぞく`; 
-  el.progressText.textContent = `${Math.min(state.questionIndex, MAX_QUESTIONS)} / ${MAX_QUESTIONS}`; 
+  el.ammoText.textContent = `${state.ammo}こ / ${state.streak}れんぞく${state.powerShots ? " / ★" + state.powerShots : ""}`; 
+  el.fireBtn.classList.toggle("power-ready", state.powerShots > 0 && state.ammo > 0);
+  el.fireBtn.textContent = state.powerShots > 0 && state.ammo > 0 ? "⭐ パワー発射！" : "🔥 発射 (はっしゃ)！";
+  const total = totalQuestions();
+  el.progressText.textContent = `${Math.min(state.questionIndex, total)} / ${total}`; 
 }
 function setMessage(text){ el.messageBox.textContent = text; }
+function rememberMiss(question){ if(!state.missed.includes(question)) state.missed.push(question); }
+function clearMiss(question){ const idx = state.missed.indexOf(question); if(idx !== -1) state.missed.splice(idx,1); }
 function disableChoices(){ [...el.choicesBox.querySelectorAll(".choice")].forEach(btn => btn.disabled = true); }
 
 function loadQuestion(){
@@ -227,7 +251,7 @@ function loadQuestion(){
   
   el.unitText.textContent = `もんだい: ${state.currentQuestion.unit}`;
   el.questionText.textContent = state.currentQuestion.question;
-  el.subText.textContent = "あたると「たま」が 2こ もらえるよ！";
+  el.subText.textContent = "せいかいで「たま」をゲット。3れんぞくでパワー弾！";
   
   playVoice(state.currentQuestion.text);
   
@@ -259,16 +283,23 @@ function answerQuestion(index, button){
   if(correct){
     playVoice("せいかい！" + state.currentQuestion.explanation, 1.1);
     state.correctCount++; state.streak++;
-    const gained = state.streak >= 3 ? 3 : 2; // シンプルに2発か3発
+    const gained = state.streak >= 3 ? 3 : 2;
     state.ammo += gained; 
-    spawnBurst(player.x, player.y-18, state.streak >= 3 ? "#ffd166" : "#59d98e", 18);
-    setMessage(`ピンポーン！「たま」を ${gained}こ ゲットしたよ！`);
+    spawnBurst(player.x, player.y-18, state.streak >= 3 ? "#ffd166" : "#59d98e", 18, state.streak >= 3 ? 1.2 : 1);
+    if(state.streak % 3 === 0){
+      state.powerShots++;
+      spawnFloatText(player.x, player.y-46, "パワー弾!", "#ffd166");
+      setMessage(`3れんぞく！「たま」を ${gained}こ と パワー弾を ゲット！`);
+    } else {
+      setMessage(`ピンポーン！「たま」を ${gained}こ ゲットしたよ！`);
+    }
+    if(state.reviewMode) clearMiss(state.currentQuestion);
   } else {
-    playVoice("ざんねん、ちがうよ！", 1.1);
-    state.streak = 0; state.playerHp--; shake = 10; state.missed.push(state.currentQuestion);
-    enemyShots.push({ x: boss.x, y: boss.y+30, vy: 5, r: 8, color:"#ff7676" });
+    takePlayerHit(true, "ざんねん、ちがうよ！");
+    rememberMiss(state.currentQuestion);
+    spawnFloatText(player.x, player.y-52, "ミス!", "#ff8a8a");
     setMessage(`ざんねん！ ${state.currentQuestion.explanation}`);
-    if(state.playerHp <= 0){ updateHud(); endGame("lose"); return; }
+    if(state.gameOver) return;
   }
   state.questionIndex++; updateHud();
   setTimeout(() => { if (!state.gameOver) nextQuestion(); }, 1600);
@@ -287,31 +318,52 @@ function fire(){
     setMessage("たまが ないよ。クイズに せいかいしてね。"); 
     return; 
   } 
-  bullets.push({ x: player.x, y: player.y-18, vy:-10, r:7 }); 
-  state.ammo--; state.firedCount++; updateHud(); 
-}
-
-function spawnBurst(x,y,color,count){ 
-  for(let i=0;i<count;i++) particles.push({ x, y, vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8, life:20+Math.random()*15, color }); 
-}
-
-function hitBoss(){ 
-  state.bossHp--; 
-  shake = 8; boss.shield = 10; 
-  spawnBurst(boss.x, boss.y, "#73b7ff", 30); 
+  const power = state.powerShots > 0;
+  bullets.push({ x: player.x, y: player.y-24, vx:0, vy:power ? -13.5 : -10.5, r:power ? 13 : 7, damage:power ? 2 : 1, power, trail:[] }); 
+  muzzleFlashes.push({ x:player.x, y:player.y-32, life:power ? 16 : 10, maxLife:power ? 16 : 10, power });
+  state.ammo--; 
+  if(power) state.powerShots--;
+  state.firedCount++; 
+  setMessage(power ? "パワー弾！あたると 2ダメージ！" : "はっしゃ！ボスをねらおう！");
   updateHud(); 
-  playVoice("ヒット！");
+}
+
+function spawnBurst(x,y,color,count,power=1){ 
+  for(let i=0;i<count;i++){
+    const life = 20 + Math.random()*18*power;
+    particles.push({ x, y, vx:(Math.random()-0.5)*8*power, vy:(Math.random()-0.5)*8*power, life, maxLife:life, size:3+Math.random()*4*power, color, gravity:.04 });
+  }
+}
+
+function spawnFloatText(x, y, text, color){
+  floatTexts.push({ x, y, text, color, life:42, maxLife:42, vy:-1.1 });
+}
+
+function queueBossShot(targetX, delay=34, color="#ff7676"){
+  warnings.push({ x:Math.max(46, Math.min(canvas.width-46, targetX)), timer:delay, max:delay, width:62, color });
+}
+
+function hitBoss(damage=1, power=false){ 
+  state.bossHp = Math.max(0, state.bossHp - damage); 
+  shake = power ? 14 : 8; boss.shield = power ? 16 : 10; 
+  spawnBurst(boss.x, boss.y, power ? "#ffd166" : "#73b7ff", power ? 46 : 30, power ? 1.45 : 1); 
+  spawnFloatText(boss.x, boss.y-56, power ? "2ダメージ!" : "ヒット!", power ? "#ffd166" : "#a4d0ff");
+  updateHud(); 
+  playVoice(power ? "パワーヒット！" : "ヒット！");
   
   if(state.bossHp <= 0) endGame("win"); 
   else setMessage(`ボスに あたった！ ボスのハート のこり ${state.bossHp}`); 
 }
 
-function takePlayerHit(){ 
-  state.playerHp--; shake = 10; state.streak = 0; 
-  spawnBurst(player.x, player.y, "#ff7676", 24); 
+function takePlayerHit(force=false, voiceText="ダメージ！"){ 
+  if(player.invincible > 0 && !force) return false;
+  state.playerHp--; shake = 10; state.streak = 0; player.invincible = 80;
+  spawnBurst(player.x, player.y, "#ff7676", 26, 1.15); 
+  spawnFloatText(player.x, player.y-48, "ダメージ", "#ff8a8a");
   updateHud(); 
-  playVoice("ダメージ！");
-  if(state.playerHp <= 0) endGame("lose"); 
+  playVoice(voiceText);
+  if(state.playerHp <= 0){ endGame("lose"); return true; }
+  return false;
 }
 
 function renderMissList(){
@@ -320,7 +372,7 @@ function renderMissList(){
 }
 
 function endGame(type){
-  state.gameOver = true; el.resultOverlay.classList.add("show");
+  state.gameOver = true; state.reviewMode = false; el.resultOverlay.classList.add("show");
   el.correctCountText.textContent = String(state.correctCount); 
   el.firedCountText.textContent = String(state.firedCount);
   if(type === "win"){ 
@@ -343,13 +395,15 @@ function endGame(type){
 }
 
 function resetGame(review=false){
-  window.addEventListener('click', unlockVoice);
-  window.addEventListener('touchstart', unlockVoice);
+  window.addEventListener('pointerdown', unlockVoice);
   
-  state.playerHp=PLAYER_MAX_HP; state.bossHp=BOSS_MAX_HP; state.ammo=0; state.streak=0; state.questionIndex=0; state.correctCount=0; state.firedCount=0; state.currentQuestion=null;
+  state.reviewMode = review;
+  if(!review) state.missed=[];
+  state.playerHp=PLAYER_MAX_HP; state.bossHp=BOSS_MAX_HP; state.ammo=0; state.powerShots=0; state.streak=0; state.questionIndex=0; state.correctCount=0; state.firedCount=0; state.currentQuestion=null;
   state.questions = review && state.missed.length ? shuffle(state.missed).slice(0, Math.min(MAX_QUESTIONS, state.missed.length)) : shuffle(QUESTION_BANK).slice(0, MAX_QUESTIONS);
-  state.answeredCurrent=false; state.gameOver=false; if(!review) state.missed=[];
-  bullets.length=0; enemyShots.length=0; particles.length=0; player.x=canvas.width/2; boss.x=canvas.width/2;
+  state.answeredCurrent=false; state.gameOver=false;
+  bullets.length=0; enemyShots.length=0; particles.length=0; warnings.length=0; floatTexts.length=0; muzzleFlashes.length=0;
+  player.x=canvas.width/2; player.invincible=0; boss.x=canvas.width/2; boss.nextAttack=85; boss.shield=0;
   updateHud(); el.resultOverlay.classList.remove("show"); el.startOverlay.classList.remove("show");
   setMessage("せいかいして たまをもらおう！"); loadQuestion();
 }
@@ -359,83 +413,261 @@ function drawRoundRect(x, y, w, h, r){
 }
 
 function drawBackground(){
+  const time = performance.now();
   const g = ctx.createLinearGradient(0,0,0,canvas.height); 
-  g.addColorStop(0, "#101832"); g.addColorStop(1, "#0a1020"); 
+  g.addColorStop(0, "#142447"); g.addColorStop(.58, "#0b1730"); g.addColorStop(1, "#101423"); 
   ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
-  
-  for(let i=0;i<40;i++){ 
-    const x = (i*137 % canvas.width), y = (i*71 + performance.now()*0.02) % canvas.height; 
-    ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(x,y,2,2); 
-  }
+
+  const nebula = ctx.createRadialGradient(canvas.width*.22, canvas.height*.12, 20, canvas.width*.22, canvas.height*.12, 260);
+  nebula.addColorStop(0, "rgba(255,209,102,.18)");
+  nebula.addColorStop(.45, "rgba(115,183,255,.14)");
+  nebula.addColorStop(1, "rgba(115,183,255,0)");
+  ctx.fillStyle = nebula; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.save();
+  ctx.globalAlpha = .85;
+  ctx.fillStyle = "rgba(255,209,102,.14)";
+  ctx.beginPath(); ctx.arc(canvas.width-96, 66, 46, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "rgba(255,209,102,.18)"; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.ellipse(canvas.width-96, 66, 72, 20, -.28, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+
+  starLayers.forEach((layer, layerIndex) => {
+    layer.forEach(star => {
+      const y = (star.y + time * star.speed * .04) % canvas.height;
+      const twinkle = .45 + Math.sin((time*.004) + star.x) * .18;
+      ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
+      ctx.fillRect(star.x, y, star.s, star.s);
+      if(layerIndex === 1){
+        ctx.fillStyle = "rgba(115,183,255,.16)";
+        ctx.fillRect(star.x-1, y+star.s+1, star.s+2, 8);
+      }
+    });
+  });
+
   ctx.strokeStyle = "rgba(115,183,255,.08)";
   for(let y=80; y<canvas.height; y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+  ctx.strokeStyle = "rgba(255,255,255,.035)";
+  for(let x=60; x<canvas.width; x+=90){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
 }
 
 function drawPlayer(){
-  ctx.save(); ctx.translate(player.x, player.y); ctx.fillStyle = "#59d98e";
-  ctx.beginPath(); ctx.moveTo(0,-26); ctx.lineTo(28,20); ctx.lineTo(0,10); ctx.lineTo(-28,20); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = "#bdfed4"; ctx.fillRect(-5,-10,10,20); ctx.restore();
+  const time = performance.now();
+  ctx.save(); 
+  ctx.translate(player.x, player.y); 
+  if(player.invincible > 0) ctx.globalAlpha = .58 + Math.sin(time*.03) * .24;
+  ctx.shadowColor = "rgba(89,217,142,.55)";
+  ctx.shadowBlur = 22;
+
+  const flame = 20 + Math.sin(time*.04) * 5 + (keys.left || keys.right ? 5 : 0);
+  const fg = ctx.createLinearGradient(0,18,0,18+flame);
+  fg.addColorStop(0, "rgba(255,209,102,.95)");
+  fg.addColorStop(.65, "rgba(255,118,118,.65)");
+  fg.addColorStop(1, "rgba(255,118,118,0)");
+  ctx.fillStyle = fg;
+  ctx.beginPath(); ctx.moveTo(-12,16); ctx.lineTo(0,18+flame); ctx.lineTo(12,16); ctx.closePath(); ctx.fill();
+
+  const ship = ctx.createLinearGradient(0,-30,0,24);
+  ship.addColorStop(0, "#bdfed4");
+  ship.addColorStop(.44, "#59d98e");
+  ship.addColorStop(1, "#1d9c68");
+  ctx.fillStyle = ship;
+  ctx.beginPath(); 
+  ctx.moveTo(0,-32); ctx.lineTo(34,22); ctx.lineTo(11,14); ctx.lineTo(0,26); ctx.lineTo(-11,14); ctx.lineTo(-34,22); 
+  ctx.closePath(); ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(11,16,32,.72)";
+  ctx.beginPath(); ctx.ellipse(0,-9,9,14,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.8)";
+  ctx.beginPath(); ctx.arc(-3,-15,3,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.45)";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-18,12); ctx.lineTo(18,12); ctx.stroke();
+  ctx.restore();
 }
 
 function drawBoss(){
-  ctx.save(); ctx.translate(boss.x, boss.y); ctx.fillStyle = boss.shield > 0 ? "#a4d0ff" : "#ff9f6e";
-  drawRoundRect(-65, -35, 130, 70, 24); ctx.fill();
-  ctx.fillStyle = "#4a1200"; 
-  ctx.fillRect(-32, -12, 22, 16); ctx.fillRect(10, -12, 22, 16);
-  ctx.fillStyle = "#fff3e8"; ctx.fillRect(-24, 12, 48, 10);
+  const time = performance.now();
+  const angry = state.bossHp <= 2;
+  ctx.save(); 
+  ctx.translate(boss.x, boss.y + Math.sin(time*.006) * 4); 
+  ctx.shadowColor = angry ? "rgba(255,118,118,.45)" : "rgba(255,159,110,.35)";
+  ctx.shadowBlur = 24;
+
+  ctx.fillStyle = "rgba(0,0,0,.2)";
+  ctx.beginPath(); ctx.ellipse(0, 48, 88, 18, 0, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = angry ? "#ff7368" : (boss.shield > 0 ? "#a4d0ff" : "#ff9f6e");
+  drawRoundRect(-70, -38, 140, 76, 24); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = angry ? "#7f1010" : "#4a1200"; 
+  drawRoundRect(-40, -13, 26, 18, 6); ctx.fill();
+  drawRoundRect(14, -13, 26, 18, 6); ctx.fill();
+  ctx.fillStyle = "#fff3e8"; drawRoundRect(-28, 13, 56, 12, 4); ctx.fill();
+  ctx.fillStyle = angry ? "#ffcf66" : "#73b7ff";
+  ctx.beginPath(); ctx.arc(-27,-4,5,0,Math.PI*2); ctx.arc(27,-4,5,0,Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle = "rgba(255,255,255,.45)";
+  ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(-68,2); ctx.quadraticCurveTo(-104,18,-94,48); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(68,2); ctx.quadraticCurveTo(104,18,94,48); ctx.stroke();
+  ctx.fillStyle = "#ffd166";
+  ctx.beginPath(); ctx.arc(-94,48,9,0,Math.PI*2); ctx.arc(94,48,9,0,Math.PI*2); ctx.fill();
+
   if (boss.shield > 0){ 
-    ctx.strokeStyle = "rgba(115,183,255,.9)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 85, 0, Math.PI*2); ctx.stroke(); 
+    ctx.strokeStyle = "rgba(115,183,255,.9)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 88 + Math.sin(time*.04)*3, 0, Math.PI*2); ctx.stroke(); 
   }
   ctx.restore();
 }
 
 function drawBullets(){
-  bullets.forEach(b => { ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); });
-  enemyShots.forEach(s => { ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
-  particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life/30); ctx.fillRect(p.x, p.y, 6, 6); ctx.globalAlpha = 1; });
+  bullets.forEach(b => { 
+    b.trail.forEach((t, idx) => {
+      ctx.globalAlpha = (idx + 1) / b.trail.length * .28;
+      ctx.fillStyle = b.power ? "#ffd166" : "#73b7ff";
+      ctx.beginPath(); ctx.arc(t.x, t.y, b.r * .8, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    const glow = ctx.createRadialGradient(b.x, b.y, 2, b.x, b.y, b.r*2.8);
+    glow.addColorStop(0, b.power ? "#fff7bf" : "#ffffff");
+    glow.addColorStop(.45, b.power ? "#ffd166" : "#73b7ff");
+    glow.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r*2.8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = b.power ? "#fff1a8" : "#dff2ff";
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); 
+  });
+  enemyShots.forEach(s => { 
+    s.trail.forEach((t, idx) => {
+      ctx.globalAlpha = (idx + 1) / s.trail.length * .22;
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(t.x, t.y, s.r, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = s.color; 
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.beginPath(); ctx.arc(s.x-3, s.y-3, Math.max(2, s.r*.35), 0, Math.PI*2); ctx.fill();
+  });
+}
+
+function drawWarnings(){
+  warnings.forEach(w => {
+    const alpha = .18 + (1 - w.timer / w.max) * .32;
+    ctx.fillStyle = `rgba(255,118,118,${alpha})`;
+    ctx.fillRect(w.x - w.width/2, 0, w.width, canvas.height);
+    ctx.strokeStyle = "rgba(255,209,102,.72)";
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(w.x, boss.y+34); ctx.lineTo(w.x, canvas.height-42); ctx.stroke();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 26px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("!", w.x, canvas.height-86);
+    ctx.textAlign = "start";
+  });
+}
+
+function drawEffects(){
+  muzzleFlashes.forEach(f => {
+    const a = Math.max(0, f.life / f.maxLife);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = f.power ? "#ffd166" : "#73b7ff";
+    ctx.beginPath(); ctx.arc(f.x, f.y, (f.power ? 28 : 18) * (1-a*.25), 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  particles.forEach(p => { 
+    ctx.fillStyle = p.color; 
+    ctx.globalAlpha = Math.max(0, p.life/p.maxLife); 
+    ctx.fillRect(p.x, p.y, p.size, p.size); 
+    ctx.globalAlpha = 1; 
+  });
+  floatTexts.forEach(t => {
+    ctx.globalAlpha = Math.max(0, t.life/t.maxLife);
+    ctx.fillStyle = t.color;
+    ctx.font = "bold 26px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.textAlign = "start";
+    ctx.globalAlpha = 1;
+  });
 }
 
 function drawGuide(){
-  ctx.fillStyle = "rgba(255,255,255,.05)"; ctx.fillRect(0, canvas.height-52, canvas.width, 52);
-  ctx.fillStyle = "#dfe7ff"; ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, sans-serif"; 
-  ctx.fillText("せいかい → 左右(さゆう)でうごく → 🚀はっしゃ で あてろ！", 30, canvas.height-18);
+  const guide = state.powerShots > 0 && state.ammo > 0 ? "★パワー弾で 2ダメージ！  あかい予告をよけよう" : "せいかい → 左右(さゆう)でうごく → はっしゃ で あてろ！";
+  ctx.fillStyle = "rgba(7,13,28,.58)"; ctx.fillRect(0, canvas.height-54, canvas.width, 54);
+  ctx.fillStyle = state.powerShots > 0 && state.ammo > 0 ? "#ffd166" : "#dfe7ff"; 
+  ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, sans-serif"; 
+  ctx.fillText(guide, 30, canvas.height-20);
 }
 
 function stepGame(){
   if(keys.left) movePlayer(-player.speed); 
   if(keys.right) movePlayer(player.speed);
+  if(player.invincible > 0) player.invincible--;
   
-  boss.t += 0.02; boss.x += boss.dir * 2.2; 
+  const phase = state.bossHp <= 2 ? 2 : (state.bossHp <= 3 ? 1 : 0);
+  boss.t += 0.024 + phase * .004; 
+  boss.x += boss.dir * (2.1 + phase * .55); 
   if(boss.x < 100 || boss.x > canvas.width - 100) boss.dir *= -1; 
-  boss.x += Math.sin(boss.t) * 0.8; 
+  boss.x += Math.sin(boss.t) * (0.8 + phase * .25); 
   if(boss.shield > 0) boss.shield--;
+
+  const combatActive = state.ammo > 0 || bullets.length > 0 || enemyShots.length > 0 || warnings.length > 0;
+  if(combatActive) boss.nextAttack--;
+  if(combatActive && boss.nextAttack <= 0 && !state.gameOver){
+    const drift = (Math.random()-.5) * (phase ? 110 : 80);
+    queueBossShot(player.x + drift, Math.max(22, 36 - phase * 5), phase ? "#ff9f6e" : "#ff7676");
+    boss.nextAttack = 92 - phase * 18 + Math.random()*32;
+  }
+
+  for(let i=warnings.length-1;i>=0;i--){
+    const w = warnings[i];
+    w.timer--;
+    if(w.timer <= 0){
+      enemyShots.push({ x:w.x, y:boss.y+38, vx:0, vy:5.1+phase*.55, r:phase ? 10 : 8, color:w.color, trail:[] });
+      warnings.splice(i,1);
+    }
+  }
   
   for(let i=bullets.length-1;i>=0;i--){ 
-    const b = bullets[i]; b.y += b.vy; 
-    if(b.y < -10){ bullets.splice(i,1); continue; } 
-    if(Math.abs(b.x - boss.x) < 70 && Math.abs(b.y - boss.y) < 40){ bullets.splice(i,1); hitBoss(); } 
+    const b = bullets[i]; 
+    b.trail.push({x:b.x, y:b.y});
+    if(b.trail.length > (b.power ? 8 : 5)) b.trail.shift();
+    b.x += b.vx; b.y += b.vy; 
+    if(b.y < -24){ bullets.splice(i,1); continue; } 
+    if(Math.abs(b.x - boss.x) < 74 && Math.abs(b.y - boss.y) < 44){ bullets.splice(i,1); hitBoss(b.damage, b.power); } 
   }
-  
-  if(Math.random() < 0.02 && !state.gameOver) {
-    enemyShots.push({ x: boss.x + (Math.random()-0.5)*40, y: boss.y+30, vy: 5 + Math.random()*1.5, r: 8, color:"#ff7676" });
-  }
-  
+
   for(let i=enemyShots.length-1;i>=0;i--){ 
-    const s = enemyShots[i]; s.y += s.vy; 
+    const s = enemyShots[i]; 
+    s.trail.push({x:s.x, y:s.y});
+    if(s.trail.length > 6) s.trail.shift();
+    s.y += s.vy; s.x += s.vx || 0;
     if(s.y > canvas.height+10){ enemyShots.splice(i,1); continue; } 
     if(Math.abs(s.x - player.x) < 32 && Math.abs(s.y - player.y) < 28){ enemyShots.splice(i,1); takePlayerHit(); } 
   }
   
   for(let i=particles.length-1;i>=0;i--){ 
-    const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 1; 
+    const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += p.gravity || 0; p.vx *= .98; p.life -= 1; 
     if(p.life <= 0) particles.splice(i,1); 
+  }
+
+  for(let i=floatTexts.length-1;i>=0;i--){
+    const t = floatTexts[i]; t.y += t.vy; t.life--;
+    if(t.life <= 0) floatTexts.splice(i,1);
+  }
+
+  for(let i=muzzleFlashes.length-1;i>=0;i--){
+    muzzleFlashes[i].life--;
+    if(muzzleFlashes[i].life <= 0) muzzleFlashes.splice(i,1);
   }
 }
 
 function render(){
   ctx.save();
   if(shake > 0){ const dx = (Math.random()-0.5) * shake, dy = (Math.random()-0.5) * shake; ctx.translate(dx, dy); shake *= 0.85; }
-  drawBackground(); drawBoss(); drawPlayer(); drawBullets(); drawGuide(); ctx.restore();
+  drawBackground(); drawWarnings(); drawBoss(); drawPlayer(); drawBullets(); drawEffects(); drawGuide(); ctx.restore();
 }
 
 function loop(){ 
@@ -457,10 +689,10 @@ window.addEventListener("keyup", e => {
 let leftHold = null, rightHold = null;
 function holdStart(dir){ return (ev) => { ev.preventDefault(); if(dir === "left"){ keys.left = true; leftHold = setInterval(() => movePlayer(-player.speed), 16); } else { keys.right = true; rightHold = setInterval(() => movePlayer(player.speed), 16); } }; }
 function holdEnd(dir){ return (ev) => { ev.preventDefault(); if(dir === "left"){ keys.left = false; clearInterval(leftHold); } else { keys.right = false; clearInterval(rightHold); } }; }
-["pointerdown","touchstart"].forEach(ev => el.leftBtn.addEventListener(ev, holdStart("left"), {passive:false}));
-["pointerup","pointercancel","pointerleave","touchend"].forEach(ev => el.leftBtn.addEventListener(ev, holdEnd("left"), {passive:false}));
-["pointerdown","touchstart"].forEach(ev => el.rightBtn.addEventListener(ev, holdStart("right"), {passive:false}));
-["pointerup","pointercancel","pointerleave","touchend"].forEach(ev => el.rightBtn.addEventListener(ev, holdEnd("right"), {passive:false}));
+el.leftBtn.addEventListener("pointerdown", holdStart("left"), {passive:false});
+["pointerup","pointercancel","pointerleave"].forEach(ev => el.leftBtn.addEventListener(ev, holdEnd("left"), {passive:false}));
+el.rightBtn.addEventListener("pointerdown", holdStart("right"), {passive:false});
+["pointerup","pointercancel","pointerleave"].forEach(ev => el.rightBtn.addEventListener(ev, holdEnd("right"), {passive:false}));
 
 el.fireBtn.addEventListener("click", fire);
 el.startBtn.addEventListener("click", () => resetGame(false));
