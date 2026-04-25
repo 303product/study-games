@@ -8022,6 +8022,55 @@ function loadState(){
   try{ const d=localStorage.getItem("geoBattle"); if(d){const s=JSON.parse(d);Object.assign(state,s);} }catch(e){}
 }
 
+function getRestoreTarget(){
+  const params = new URLSearchParams(location.search);
+  if(params.get("restore")) return params.get("restore");
+  const m = location.hash.match(/^#restore-([a-z0-9_-]+)$/i);
+  return m ? m[1] : "";
+}
+
+function restoreProgressToCountry(countryId){
+  const targetIndex = COUNTRIES.findIndex(c => c && c.id === countryId);
+  if(targetIndex < 0) return false;
+
+  const targetCountry = COUNTRIES[targetIndex];
+  const restoredIds = COUNTRIES.slice(0, targetIndex + 1).filter(Boolean).map(c => c.id);
+  const merged = [...new Set([...(state.cleared || []), ...restoredIds])];
+  const message = `${targetCountry.name}までの${restoredIds.length}か国を征服済みに戻しますか？\n現在のポイントや苦手帳は消しません。`;
+
+  if(!confirm(message)) return false;
+
+  state.cleared = merged;
+  state.bossClears = Math.max(state.bossClears || 0, Math.floor(state.cleared.length / 5));
+  state.finalBossDefeated = false;
+  state.currentCountry = null;
+  state.questions = [];
+  state.qIdx = 0;
+  state.enemyHp = 100;
+  state.enemyMaxHp = 100;
+  state.combo = 0;
+  state.battlePts = 0;
+  state.correctCount = 0;
+  state.answered = false;
+  state.isBoss = false;
+  state.isFinalBoss = false;
+  clearTimer();
+  saveState();
+
+  try{
+    if(history.replaceState) history.replaceState(null, "", location.pathname);
+  }catch(e){}
+  alert(`${targetCountry.name}まで復元しました。`);
+  openMap();
+  return true;
+}
+
+function handleRestoreLink(){
+  const target = getRestoreTarget();
+  if(!target) return false;
+  return restoreProgressToCountry(target);
+}
+
 // =====================================================================
 // SCREEN
 // =====================================================================
@@ -8558,6 +8607,7 @@ function buySnack(){
 }
 
 loadState();
+handleRestoreLink();
 initStars();
 </script>
 </body>
